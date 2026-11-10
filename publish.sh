@@ -3,6 +3,7 @@
 set -e
 SRC=$(cd "$(dirname "$0")" && pwd)
 DST=/data/games/cat-walk/minigames
+python3 "$SRC/build_index.py"
 mkdir -p "$DST"
 cp "$SRC"/*.html "$DST"/
 cd "$SRC"
