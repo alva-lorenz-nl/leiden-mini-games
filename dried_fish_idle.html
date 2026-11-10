@@ -335,10 +335,14 @@ function render(){
     $('doRebirth').addEventListener('click', doRebirth);
   }
 
-  // 日志
-  $('logBox').innerHTML = state.log.length
-    ? state.log.map((l,i)=>`<p class="${i===0?'new':''}">${l.text}</p>`).join('')
-    : '<p style="color:#5f5546">（还没有记录。小猫先捞一把试试。）</p>';
+  // 日志（只在有新记录时重画，避免最上面那条反复播动画）
+  const sig = state.log.map(l=>l.t + '|' + l.text).join('~');
+  if(sig !== logSig){
+    logSig = sig;
+    $('logBox').innerHTML = state.log.length
+      ? state.log.map((l,i)=>`<p class="${i===0?'new':''}">${l.text}</p>`).join('')
+      : '<p style="color:#5f5546">（还没有记录。小猫先捞一把试试。）</p>';
+  }
 
   // 账本
   const mins = Math.max(1, Math.round((Date.now() - state.born)/60000));
@@ -369,6 +373,7 @@ function gain(n){
   checkAch();
 }
 
+let logSig = '';
 let toastQueue = [], toastBusy = false;
 
 function showToast(a){
