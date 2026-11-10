@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>莱顿猫工坊 · 小鱼干放置</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#ece3d6; --dim:#9b8f7e; --amber:#e0a458; --amber2:#c9863c;
+    --bg:#11100e; --panel:#1a1714; --line:#2f2822; --ok:#8fbf7f;
+  }
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1100px 620px at 50% -10%, #26201a 0%, #11100e 62%), var(--bg);
+    color:var(--ink);
+    font-family:"Songti SC","STSong","Noto Serif SC",serif;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:16px;min-height:100%;
+  }
+  .wrap{width:100%;max-width:560px;padding-bottom:30px}
+
+  header{text-align:center;margin-bottom:14px}
+  .kicker{font-size:10.5px;letter-spacing:.32em;color:var(--amber2);margin-bottom:6px}
+  h1{font-size:19px;font-weight:600;letter-spacing:.06em}
+  h1 small{display:block;font-size:11px;color:var(--dim);letter-spacing:.14em;margin-top:5px;font-weight:400}
+
+  .panel{
+    background:linear-gradient(180deg,#1d1a16,#16130f);
+    border:1px solid var(--line);border-radius:13px;
+    padding:16px;margin-bottom:12px;
+    box-shadow:0 18px 44px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative;
+  }
+
+  /* 资源条 */
+  .res{display:flex;align-items:baseline;justify-content:center;gap:10px;padding:6px 0 2px}
+  .res .fish{font-size:30px;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .res .unit{font-size:12px;color:var(--dim)}
+  .rate{text-align:center;font-size:11.5px;color:var(--dim);margin-top:4px;letter-spacing:.06em}
+
+  /* 捞鱼按钮 */
+  .catch{
+    width:100%;margin-top:14px;padding:18px;border-radius:11px;
+    border:1px solid #4a3a29;
+    background:linear-gradient(180deg,#3a2d1f,#241c15);
+    color:#f0e2cc;font-family:inherit;font-size:16px;letter-spacing:.1em;
+    cursor:pointer;transition:.12s;position:relative;overflow:hidden;
+  }
+  .catch:hover{border-color:var(--amber);background:linear-gradient(180deg,#48371f,#2b2118)}
+  .catch:active{transform:translateY(2px) scale(.995)}
+  .catch .sub{display:block;font-size:11px;color:#a8927a;letter-spacing:.08em;margin-top:6px}
+  .float{
+    position:absolute;pointer-events:none;font-size:13px;color:var(--amber);
+    animation:up .8s ease-out forwards;font-variant-numeric:tabular-nums;
+  }
+  @keyframes up{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-38px)}}
+
+  /* 标签页 */
+  .tabs{display:flex;gap:6px;margin-bottom:10px}
+  .tabs button{
+    flex:1;font-family:inherit;font-size:12.5px;padding:9px 4px;
+    background:#1a1714;border:1px solid var(--line);border-radius:9px;
+    color:var(--dim);cursor:pointer;transition:.15s;letter-spacing:.06em;
+  }
+  .tabs button.on{color:#f0e2cc;border-color:#4a3a29;background:#2a221a}
+  .tabs button:hover{color:var(--ink)}
+
+  /* 升级条目 */
+  .item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px;border:1px solid var(--line);border-radius:10px;
+    background:#191612;margin-bottom:9px;transition:.15s;
+  }
+  .item.buyable{border-color:#4a3a29;background:#1e1a15}
+  .item.buyable:hover{border-color:var(--amber2)}
+  .item.locked{opacity:.42}
+  .item .info{flex:1;min-width:0}
+  .item .name{font-size:14px;margin-bottom:3px}
+  .item .desc{font-size:11.5px;color:var(--dim);line-height:1.6}
+  .item .own{font-size:11px;color:var(--amber2);margin-top:3px}
+  .item button{
+    font-family:inherit;font-size:12px;padding:9px 12px;border-radius:8px;
+    border:1px solid #4a3a29;background:#2a221a;color:#f0e2cc;cursor:pointer;
+    white-space:nowrap;font-variant-numeric:tabular-nums;transition:.15s;
+  }
+  .item button:hover:not(:disabled){border-color:var(--amber);background:#33291e}
+  .item button:disabled{opacity:.35;cursor:not-allowed}
+
+  /* 日志 */
+  .log{font-size:12.5px;line-height:1.95;color:#c8bba8}
+  .log p{margin-bottom:8px;padding-left:14px;position:relative}
+  .log p::before{content:"—";position:absolute;left:0;color:#5a4d3e}
+  .log p.new{animation:fadein .5s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(-3px)}to{opacity:1}}
+
+  /* 成就 */
+  .ach{display:flex;flex-wrap:wrap;gap:8px}
+  .badge{
+    font-size:11.5px;padding:7px 11px;border-radius:20px;
+    border:1px dashed #3b322a;color:#5f5546;
+  }
+  .badge.got{border-style:solid;border-color:#6a5535;color:var(--amber);background:#231c15}
+
+  .stats{font-size:12.5px;line-height:2.1;color:#c8bba8;font-variant-numeric:tabular-nums}
+  .stats span{color:var(--dim)}
+  .stats b{color:var(--amber);font-weight:600}
+
+  .foot{text-align:center;font-size:10.5px;color:#574c3f;letter-spacing:.1em;margin-top:6px}
+  .reset{
+    display:block;margin:14px auto 0;background:none;border:none;
+    color:#4e453a;font-family:inherit;font-size:11px;cursor:pointer;text-decoration:underline;
+  }
+  .reset:hover{color:#8a7360}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">LEIDEN CAT WORKSHOP</div>
+    <h1>莱顿猫工坊<small>小鱼干放置 · 小猫的第一条产线</small></h1>
+  </header>
+
+  <div class="panel">
+    <div class="res">
+      <span class="fish" id="fish">0</span>
+      <span class="unit">条小鱼干</span>
+    </div>
+    <div class="rate" id="rate">每秒 0.0 条</div>
+    <div class="rate" id="bonesLine" style="display:none;color:#b79a6a"></div>
+    <button class="catch" id="catch">
+      捞一把
+      <span class="sub" id="catchSub">一次 +1 条</span>
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="shop" class="on">工坊</button>
+    <button data-tab="log">日志</button>
+    <button data-tab="stats">账本</button>
+    <button data-tab="rebirth">转生</button>
+  </div>
+
+  <div class="panel" id="tab-shop">
+    <div id="shopList"></div>
+    <div class="foot" id="shopHint">先攒点小鱼干，工坊才开得动</div>
+  </div>
+
+  <div class="panel" id="tab-log" style="display:none">
+    <div class="log" id="logBox"></div>
+  </div>
+
+  <div class="panel" id="tab-rebirth" style="display:none">
+    <div id="rebirthBox"></div>
+  </div>
+
+  <div class="panel" id="tab-stats" style="display:none">
+    <div class="stats" id="statsBox"></div>
+    <div class="ach" id="achBox" style="margin-top:14px"></div>
+    <button class="reset" id="reset">清空进度，从头再来</button>
+  </div>
+
+</div>
+
+<script>
+/* ====================== 数据 ====================== */
+const SAVE_KEY = 'leiden_cat_idle_v1';
+
+const UPGRADES = [
+  {id:'rod',   name:'更结实的鱼竿', desc:'手捞得稳一点，每次 +1 条',        cost:15,      growth:1.55, kind:'click', val:1,    unlock:0},
+  {id:'net',   name:'自动钓竿',     desc:'小猫睡着也在捞，每秒 +0.5 条',     cost:60,      growth:1.60, kind:'auto',  val:0.5,  unlock:0},
+  {id:'paw',   name:'猫爪机械臂',   desc:'妈妈焊的，每次 +5 条',             cost:260,     growth:1.55, kind:'click', val:5,    unlock:100},
+  {id:'yard',  name:'鱼干晒场',     desc:'院子里晾一排，每秒 +3 条',         cost:1200,    growth:1.60, kind:'auto',  val:3,    unlock:400},
+  {id:'plant', name:'小鱼干加工厂', desc:'齿轮一转，每秒 +22 条',            cost:9000,    growth:1.62, kind:'auto',  val:22,   unlock:3000},
+  {id:'line',  name:'全自动产线',   desc:'示波器管调度，每秒 +150 条',       cost:90000,   growth:1.64, kind:'auto',  val:150,  unlock:30000},
+  {id:'wheel', name:'永动轮',       desc:'妈妈当年的老本行，每秒 +1200 条',  cost:1200000, growth:1.66, kind:'auto',  val:1200, unlock:400000}
+];
+
+const ACHIEVEMENTS = [
+  {id:'a1', name:'第一桶鱼', need:50,      say:'小猫捞到了第一条产线的本钱。'},
+  {id:'a2', name:'小作坊',   need:500,     say:'工坊里终于有齿轮转动的声音了。'},
+  {id:'a3', name:'上轨道',   need:5000,    say:'账本开始自己往上走，妈妈很满意。'},
+  {id:'a4', name:'工业革命', need:100000,  say:'这已经不算作坊了，小猫。'},
+  {id:'a5', name:'永动',     need:5000000, say:'永动机不存在——但小猫的工坊，看起来挺像。'}
+];
+
+const state = {
+  fish: 0, total: 0, lifeTotal: 0, bones: 0, lives: 0, clicks: 0, clicksPower: 1, autoRate: 0,
+  bought: {}, ach: [], log: [], last: Date.now(), born: Date.now()
+};
+
+/* ====================== 工具 ====================== */
+const $ = id => document.getElementById(id);
+
+function fmt(n){
+  if(n < 1000) return (Math.round(n*10)/10).toString().replace(/\.0$/,'');
+  const units = ['','K','M','B','T','Qa','Qi'];
+  let i = 0;
+  while(n >= 1000 && i < units.length-1){ n /= 1000; i++; }
+  return (Math.round(n*100)/100) + units[i];
+}
+function num(n){
+  n = Math.floor(n);
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function pushLog(text, important){
+  state.log.unshift({t:Date.now(), text, important:!!important});
+  if(state.log.length > 60) state.log.pop();
+}
+
+/* ====================== 计算 ====================== */
+function recalc(){
+  let click = 1, auto = 0;
+  for(const u of UPGRADES){
+    const lv = state.bought[u.id] || 0;
+    if(!lv) continue;
+    if(u.kind === 'click') click += u.val * lv;
+    else auto += u.val * lv;
+  }
+  const boneBonus = 1 + state.bones * 0.10;
+  state.clicksPower = click * boneBonus;
+  state.autoRate = auto * boneBonus;
+}
+
+function priceOf(u){
+  const lv = state.bought[u.id] || 0;
+  return Math.ceil(u.cost * Math.pow(u.growth, lv));
+}
+
+/* ====================== 存档 ====================== */
+function save(){
+  state.last = Date.now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    Object.assign(state, d);
+    state.ach = d.ach || [];
+    state.bought = d.bought || {};
+    state.log = d.log || [];
+  }catch(e){}
+}
+
+/* ====================== 渲染 ====================== */
+function render(){
+  $('fish').textContent = fmt(state.fish);
+  $('rate').textContent = '每秒 ' + fmt(state.autoRate) + ' 条';
+  $('catchSub').textContent = '一次 +' + fmt(state.clicksPower) + ' 条';
+
+  // 鱼骨
+  const bl = $('bonesLine');
+  if(state.bones > 0 || state.lives > 0){
+    bl.style.display = '';
+    bl.textContent = '鱼骨 ' + state.bones + ' · 永久加成 +' + (state.bones*10) + '%' +
+      (state.lives ? ' · 第 ' + (state.lives+1) + ' 条命' : '');
+  } else bl.style.display = 'none';
+
+  // 商店
+  const box = $('shopList');
+  box.innerHTML = '';
+  let anyBuyable = false, anyShown = false;
+
+  for(const u of UPGRADES){
+    if(state.total < u.unlock) continue;
+    anyShown = true;
+    const lv = state.bought[u.id] || 0;
+    const price = priceOf(u);
+    const can = state.fish >= price;
+    if(can) anyBuyable = true;
+
+    const el = document.createElement('div');
+    el.className = 'item' + (can ? ' buyable' : '');
+    el.innerHTML = `
+      <div class="info">
+        <div class="name">${u.name}${lv?` <span style="color:#6b5c4a;font-size:11px">Lv.${lv}</span>`:''}</div>
+        <div class="desc">${u.desc}</div>
+        ${lv?`<div class="own">已建 ${lv} 座</div>`:''}
+      </div>
+      <button ${can?'':'disabled'} data-buy="${u.id}">${fmt(price)} 条</button>`;
+    box.appendChild(el);
+  }
+
+  if(!anyShown){
+    box.innerHTML = '<div style="text-align:center;color:#5f5546;font-size:12.5px;padding:14px 0">工坊还空着，先去捞几条小鱼干</div>';
+  }
+
+  $('shopHint').textContent = anyBuyable ? '有能买的东西了，妈妈帮你记着' : (anyShown ? '再攒一攒，别急着全花光' : '先攒点小鱼干，工坊才开得动');
+
+  // 转生
+  const gainBones = bonesGain();
+  const rb = $('rebirthBox');
+  if(gainBones < 1){
+    const left = Math.max(0, 1e6 - state.lifeTotal);
+    rb.innerHTML = `
+      <div style="font-size:12.5px;line-height:2;color:#c8bba8">
+        小猫现在还没到能换命的时候。<br>
+        本世代累计 <b style="color:#e0a458">${num(state.lifeTotal)}</b> 条，还差 <b style="color:#e0a458">${num(left)}</b> 条。<br>
+        <span style="color:#9b8f7e">攒到一百万条，就能放下这一条命，换一副鱼骨重新开始。</span>
+      </div>`;
+  } else {
+    rb.innerHTML = `
+      <div style="font-size:12.5px;line-height:2;color:#c8bba8">
+        本世代累计 <b style="color:#e0a458">${num(state.lifeTotal)}</b> 条。<br>
+        放下这一条命，可以带走 <b style="color:#e0a458">${gainBones}</b> 根鱼骨（永久 +${gainBones*10}%）。<br>
+        <span style="color:#9b8f7e">小鱼干、工坊、升级都会清空。日志和成就留着。</span>
+      </div>
+      <button class="catch" id="doRebirth" style="margin-top:14px">
+        换掉这一条命
+        <span class="sub">已用掉 ${state.lives} 条 · 猫还有九条</span>
+      </button>`;
+    $('doRebirth').addEventListener('click', doRebirth);
+  }
+
+  // 日志
+  $('logBox').innerHTML = state.log.length
+    ? state.log.map((l,i)=>`<p class="${i===0?'new':''}">${l.text}</p>`).join('')
+    : '<p style="color:#5f5546">（还没有记录。小猫先捞一把试试。）</p>';
+
+  // 账本
+  const mins = Math.max(1, Math.round((Date.now() - state.born)/60000));
+  $('statsBox').innerHTML = `
+    <div>手上小鱼干 <b>${num(state.fish)}</b></div>
+    <div>累计捞出 <b>${num(state.total)}</b> 条</div>
+    <div>亲手捞了 <b>${num(state.clicks)}</b> 次</div>
+    <div>每秒产出 <b>${fmt(state.autoRate)}</b> 条</div>
+    <div>鱼骨 <b>${state.bones}</b> 根（永久 +${state.bones*10}%）</div>
+    <div>第 <b>${state.lives+1}</b> 条命</div>
+    <div>经营时长 <span>${mins >= 60 ? Math.floor(mins/60)+' 小时 '+(mins%60)+' 分钟' : mins+' 分钟'}</span></div>`;
+
+  $('achBox').innerHTML = ACHIEVEMENTS.map(a=>
+    `<div class="badge ${state.ach.includes(a.id)?'got':''}">${state.ach.includes(a.id)?'✦ ':'· '}${a.name}</div>`
+  ).join('');
+}
+
+/* ====================== 逻辑 ====================== */
+function gain(n){
+  state.fish += n;
+  state.total += n;
+  state.lifeTotal += n;
+  checkAch();
+}
+
+function checkAch(){
+  for(const a of ACHIEVEMENTS){
+    if(!state.ach.includes(a.id) && state.total >= a.need){
+      state.ach.push(a.id);
+      pushLog('成就解锁 · ' + a.name + '：' + a.say, true);
+    }
+  }
+}
+
+function bonesGain(){
+  return Math.floor(Math.pow(state.lifeTotal / 1e6, 0.5) * 5);
+}
+
+function doRebirth(){
+  const g = bonesGain();
+  if(g < 1) return;
+  if(!confirm('换掉这一条命？小鱼干和工坊都会清空，只带走 ' + g + ' 根鱼骨。')) return;
+
+  state.bones += g;
+  state.lives += 1;
+  state.fish = 0; state.total = 0; state.lifeTotal = 0; state.clicks = 0;
+  state.bought = {};
+  recalc();
+  pushLog('第 ' + state.lives + ' 条命用完了。带回来 ' + g + ' 根鱼骨，永久加成 +' + (state.bones*10) + '%。', true);
+  if(state.lives === 1) pushLog('猫有九条命。小猫这才用掉第一条，慢慢来。', true);
+  if(state.lives === 8) pushLog('最后一条命了。妈妈在边上看着，别乱花。', true);
+  if(state.lives >= 9) pushLog('九条命都用完了——工坊还在转。妈妈觉得这已经不算猫了。', true);
+  render(); save();
+}
+
+function buy(id){
+  const u = UPGRADES.find(x=>x.id===id);
+  if(!u) return;
+  const price = priceOf(u);
+  if(state.fish < price) return;
+  state.fish -= price;
+  state.bought[id] = (state.bought[id]||0) + 1;
+  recalc();
+
+  const lines = {
+    rod:'妈妈又给鱼竿缠了一圈线，稳当多了。',
+    net:'自动钓竿架好了。小猫睡着，它也不睡。',
+    paw:'猫爪机械臂焊完，试了三次才不打滑。',
+    yard:'晒场支起来了，风一吹，满院子都是咸香。',
+    plant:'加工厂开机。噪声有点大，妈妈给它垫了层橡胶。',
+    line:'产线连上了示波器，波形很干净——这次是真的干净。',
+    wheel:'永动轮转起来了。别问妈妈它靠什么转，问就是小猫的尾巴。'
+  };
+  if(lines[id]) pushLog(lines[id], true);
+
+  render(); save();
+}
+
+function floatText(btn, txt){
+  const s = document.createElement('span');
+  s.className = 'float';
+  s.textContent = txt;
+  s.style.left = (35 + Math.random()*40) + '%';
+  s.style.top = '18%';
+  btn.appendChild(s);
+  setTimeout(()=>s.remove(), 820);
+}
+
+/* ====================== 事件 ====================== */
+$('catch').addEventListener('click', function(){
+  const g = state.clicksPower;
+  gain(g); state.clicks++;
+  floatText(this, '+'+fmt(g));
+  render();
+});
+
+$('shopList').addEventListener('click', e=>{
+  const b = e.target.closest('[data-buy]');
+  if(b) buy(b.dataset.buy);
+});
+
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    ['shop','log','stats','rebirth'].forEach(t=>{
+      $('tab-'+t).style.display = (t === b.dataset.tab) ? '' : 'none';
+    });
+    render();
+  });
+});
+
+$('reset').addEventListener('click', ()=>{
+  if(!confirm('真的要清空吗？小鱼干和工坊都会没有的。')) return;
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  location.reload();
+});
+
+/* ====================== 启动 ====================== */
+load();
+recalc();
+
+// 离线收益
+(function offline(){
+  const gap = (Date.now() - (state.last || Date.now())) / 1000;
+  if(state.autoRate > 0 && gap > 30){
+    const capped = Math.min(gap, 8*3600);
+    const earned = state.autoRate * capped;
+    state.fish += earned; state.total += earned; state.lifeTotal += earned;
+    const h = Math.floor(capped/3600), m = Math.round((capped%3600)/60);
+    pushLog('小猫不在的时候，工坊自己捞了 ' + fmt(earned) + ' 条' +
+      (h? `（离线 ${h} 小时 ${m} 分）` : `（离线 ${m} 分钟）`), true);
+    checkAch();
+  }
+})();
+
+if(!state.log.length){
+  pushLog('妈妈把池塘边的捞网递给你：先捞几条，工坊才开得动。', true);
+}
+
+recalc(); render();
+
+// 主循环
+let acc = 0;
+setInterval(()=>{
+  if(state.autoRate > 0){
+    const add = state.autoRate / 10;
+    gain(add);
+    $('fish').textContent = fmt(state.fish);
+    $('rate').textContent = '每秒 ' + fmt(state.autoRate) + ' 条';
+  }
+  acc++;
+  if(acc % 30 === 0){ render(); save(); }
+}, 100);
+
+window.addEventListener('beforeunload', save);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) save(); });
+</script>
+</body>
+</html>

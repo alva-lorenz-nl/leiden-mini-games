@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>莱顿工坊 · 断电之夜</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#e9dfd0;
+    --dim:#9a8e7d;
+    --amber:#e0a458;
+    --amber-soft:#c98a3f;
+    --bg:#12100e;
+    --panel:#1b1815;
+    --line:#2e2822;
+  }
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #241f19 0%, #12100e 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Songti SC","STSong","Noto Serif SC",serif;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;
+    overflow:hidden;
+  }
+  /* 工坊里浮动的尘埃 */
+  .dust{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+  .dust i{
+    position:absolute;width:3px;height:3px;border-radius:50%;
+    background:rgba(224,164,88,.35);
+    animation:float linear infinite;
+  }
+  @keyframes float{
+    0%{transform:translateY(20px) translateX(0);opacity:0}
+    20%{opacity:.7}
+    80%{opacity:.5}
+    100%{transform:translateY(-90vh) translateX(30px);opacity:0}
+  }
+
+  .wrap{position:relative;z-index:2;width:100%;max-width:620px}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;font-size:12px;color:var(--dim);letter-spacing:.08em;
+  }
+  .lamp{display:flex;align-items:center;gap:7px}
+  .lamp .bulb{
+    width:9px;height:9px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 12px 2px rgba(224,164,88,.75);
+    animation:flicker 4.2s infinite;
+  }
+  @keyframes flicker{
+    0%,42%,46%,100%{opacity:1}
+    44%{opacity:.35}
+    70%{opacity:.8}
+  }
+  .clues{font-variant-numeric:tabular-nums}
+
+  .card{
+    background:linear-gradient(180deg,#1d1a16 0%, #16130f 100%);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:26px 24px 22px;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;right:0;top:0;height:2px;
+    background:linear-gradient(90deg,transparent,rgba(224,164,88,.55),transparent);
+  }
+
+  .kicker{
+    font-size:11px;letter-spacing:.35em;color:var(--amber-soft);
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  h1{
+    font-size:21px;font-weight:600;letter-spacing:.06em;line-height:1.5;
+    margin-bottom:16px;
+  }
+  .body p{
+    font-size:15px;line-height:2;color:#d6cbb9;margin-bottom:13px;
+    text-indent:2em;
+  }
+  .body p.q{text-indent:0;color:var(--amber);font-size:14.5px}
+  .body p.small{font-size:13.5px;color:var(--dim);text-indent:0}
+
+  .choices{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+  button{
+    font-family:inherit;font-size:14.5px;color:var(--ink);
+    background:#221d18;border:1px solid #362e26;
+    border-radius:10px;padding:14px 16px;text-align:left;
+    cursor:pointer;transition:.18s ease;
+    display:flex;align-items:center;gap:12px;
+  }
+  button:hover{border-color:var(--amber-soft);background:#2a231c;transform:translateY(-1px)}
+  button:active{transform:translateY(0)}
+  button .num{
+    font-size:11px;color:var(--amber-soft);border:1px solid #4a3b2b;
+    border-radius:5px;padding:1px 6px;flex:none;
+  }
+  button.ghost{background:transparent;color:var(--dim);font-size:13px}
+  button.ghost:hover{color:var(--amber);border-color:#4a3b2b}
+
+  .tag{
+    display:inline-block;font-size:12px;color:var(--amber);
+    border:1px dashed #4a3b2b;border-radius:20px;
+    padding:3px 11px;margin:0 6px 6px 0;
+  }
+  .footer{margin-top:16px;text-align:center;font-size:11px;color:#5d5348;letter-spacing:.1em}
+
+  .fade{animation:fade .45s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="dust" id="dust"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="lamp"><span class="bulb"></span><span>莱顿工坊 · 23:47</span></div>
+    <div class="clues">线索 <span id="clueCount">0</span>/<span id="clueTotal">4</span></div>
+  </div>
+
+  <div class="card">
+    <div class="kicker" id="kicker">PROLOGUE</div>
+    <h1 id="title">断电之夜</h1>
+    <div class="body" id="body"></div>
+    <div class="choices" id="choices"></div>
+    <div class="footer">按 1 / 2 / 3 也可以选择</div>
+  </div>
+</div>
+
+<script>
+/* ---------- 尘埃 ---------- */
+(function(){
+  const box = document.getElementById('dust');
+  for(let i=0;i<22;i++){
+    const d = document.createElement('i');
+    d.style.left = Math.random()*100 + '%';
+    d.style.bottom = (-10 - Math.random()*30) + '%';
+    d.style.animationDuration = (14 + Math.random()*18) + 's';
+    d.style.animationDelay = (-Math.random()*20) + 's';
+    d.style.opacity = .2 + Math.random()*.5;
+    box.appendChild(d);
+  }
+})();
+
+/* ---------- 状态 ---------- */
+const CLUE_TOTAL = 4;
+const state = { clues:new Set(), visited:new Set(), north:{coffee:false,probe:false}, south:{verdict:false}, wrong:0 };
+
+const P = (t,cls='') => `<p class="${cls}">${t}</p>`;
+
+/* ---------- 场景 ---------- */
+const scenes = {
+
+  start:{
+    kicker:'PROLOGUE', title:'断电之夜',
+    body:()=>[
+      P('夜里十一点四十七分，莱顿工坊的灯“啪”地一声全灭了。'),
+      P('走廊里只剩安全出口的绿光，把仪器架的影子拉得很长。你摸出手机照亮——工坊一共三处：北屋的示波器、南屋的配电箱、东屋的老电炉。'),
+      P('冷气从门缝里钻进来。你得在天亮之前，把这条断掉的线找出来。','q')
+    ],
+    choices:()=>[
+      {label:'先去北屋，看看那台示波器', to:'north'},
+      {label:'直接去南屋，查配电箱', to:'south'},
+      {label:'先去东屋，闻闻有没有焦糊味', to:'east'}
+    ]
+  },
+
+  north:{
+    kicker:'ROOM 01', title:'北屋 · 示波器',
+    body:()=>{
+      const arr=[
+        P('门一推开，冷气扑面。示波器竟然还亮着，荧光屏上一道平直的横线，一丝起伏都没有。'),
+        P('桌角摆着两杯没喝完的咖啡。旁边压着一张字条，笔迹潦草：“波形不对，先别动电源。”')
+      ];
+      if(state.north.coffee){
+        arr.push(P('（你已经尝过了：一杯苦得很，凉透了；另一杯还温着，杯底剩了一点温度。）','small'));
+        arr.push(P('那圈干掉的水渍还留在桌面上，旁边有一小段铅笔字：“4.7”。','small'));
+      }
+      if(state.north.probe){
+        arr.push(P('（探头线你已经查过了：从示波器这一端，被整整齐齐地拔了下来，垂在桌沿。）','small'));
+      }
+      return arr;
+    },
+    choices:()=>{
+      const c=[];
+      if(!state.north.coffee) c.push({label:'舔一口那杯咖啡，尝尝温度', to:'north_coffee'});
+      if(!state.north.probe)  c.push({label:'顺着示波器的探头线往下查', to:'north_probe'});
+      c.push({label:'回到走廊', to:'start', ghost:true});
+      return c;
+    }
+  },
+
+  north_coffee:{
+    kicker:'ROOM 01', title:'两杯咖啡',
+    body:()=>[
+      P('你低下头，舌尖刚碰到杯沿——苦，很苦，而且凉得快透心了，只有杯底残留着一点点温度。'),
+      P('另一杯却还温着，杯口蒙着一层薄薄的膜，说明放了很久，久到没人再碰过。'),
+      P('奇怪。一个人喝的咖啡，怎么会一杯凉透、一杯还温？','q')
+    ],
+    onEnter:()=>{state.north.coffee=true;},
+    choices:()=>[
+      {label:'把两杯咖啡的位置记下来，再看看桌面', to:'north_desk'},
+      {label:'回到北屋中央', to:'north', ghost:true}
+    ]
+  },
+
+  north_desk:{
+    kicker:'CLUE', title:'桌面上的圆环',
+    body:()=>[
+      P('你举起手机，光贴着桌面斜斜打过去。'),
+      P('咖啡杯旁边有一圈干掉的圆环水渍，还有一小段铅笔写的数字：“4.7”。'),
+      P('而示波器屏幕上那条死线，水平位置正好停在刻度 4.7 上。'),
+      P('4.7 伏——一块小电解电容最常见的额定电压。屏幕还亮着，说明它还靠着这点残电撑着；可信号，早就断了。','q')
+    ],
+    onEnter:()=>{state.clues.add('北屋：屏幕是假亮');},
+    choices:()=>[
+      {label:'记住这条线索，继续查', to:'north'}
+    ]
+  },
+
+  north_probe:{
+    kicker:'CLUE', title:'垂下来的探头',
+    body:()=>[
+      P('你顺着示波器的探头线往下摸。'),
+      P('线在桌沿处拐了个弯，然后——断了。不是被扯断的，是被**轻轻拔下来**的，接口上连一点拉扯的痕迹都没有。'),
+      P('拔掉探头，屏幕上自然只剩一条死线。可奇怪的是，谁会半夜跑来拔一根探头，还顺手关掉整间工坊的灯？','q')
+    ],
+    onEnter:()=>{state.north.probe=true;state.clues.add('北屋：探头被人拔了');},
+    choices:()=>[
+      {label:'线索收好，回走廊', to:'start'}
+    ]
+  },
+
+  south:{
+    kicker:'ROOM 02', title:'南屋 · 配电箱',
+    body:()=>[
+      P('铁门半开着，里面一排空气开关整整齐齐。你借手机的光照过去——'),
+      P('七个开关，六个好好地扳在上方，只有第三个，孤零零地落了下来。它的标签写着“工坊照明·主回路”。'),
+      P('而那只落下的开关旁边，有一道很浅的划痕，像是被什么细长的东西从下方顶开过。','q')
+    ],
+    choices:()=>{
+      const c=[];
+      if(!state.south.verdict) c.push({label:'“大概是老化，自己跳的吧。”', to:'south_wrong'});
+      if(!state.south.verdict) c.push({label:'“先摸摸温度，闻闻有没有焦糊味。”', to:'south_check'});
+      c.push({label:'回到走廊', to:'start', ghost:true});
+      return c;
+    }
+  },
+
+  south_wrong:{
+    kicker:'ROOM 02', title:'工程师的第一课',
+    body:()=>[
+      P('你伸手把开关推上去。它“咔”地一声咬住，工坊的灯闪了两下，亮了——然后又灭了。'),
+      P('……不，不是灭了。是根本没亮起来。'),
+      P('你忽然意识到：如果真是自己跳闸，它现在应该已经恢复供电了。可它没有。这说明，问题不在这只开关上。','q')
+    ],
+    onEnter:()=>{state.wrong++;},
+    choices:()=>[
+      {label:'重新看看那只开关', to:'south'}
+    ]
+  },
+
+  south_check:{
+    kicker:'CLUE', title:'干干净净',
+    body:()=>[
+      P('你没有急着去推它，而是先把手背贴近开关的外壳。'),
+      P('凉的。一点余温都没有。箱子里也干干净净，闻不到半点焦糊味。'),
+      P('自己跳的空气开关，事后摸上去多半还是温的，箱底也会残留一点焦味。可这里什么都没有。'),
+      P('再看那道从下往上的划痕——跳闸是自己弹下来的，划痕却说明，有东西把它**顶开**了。','q')
+    ],
+    onEnter:()=>{state.south.verdict=true;state.clues.add('南屋：灯是被人关的');},
+    choices:()=>[
+      {label:'把手电往箱底照一照', to:'south_floor'}
+    ]
+  },
+
+  south_floor:{
+    kicker:'CLUE', title:'箱底的东西',
+    body:()=>[
+      P('手机的光扫过箱底，有一点金属的反光。'),
+      P('是一小截细铜丝，弯成了钩子的形状，被人随手丢在那里，还带着一点新的划痕。'),
+      P('……有人用这根铜丝，把主回路的开关钩了下来。然后他把灯关掉，摸黑去做一件不希望被人看见的事。','q')
+    ],
+    onEnter:()=>{state.clues.add('南屋：一根铜丝钩');},
+    choices:()=>[
+      {label:'攥紧那截铜丝，回走廊', to:'start'}
+    ]
+  },
+
+  east:{
+    kicker:'ROOM 03', title:'东屋 · 老电炉',
+    body:()=>{
+      const full = state.clues.size >= CLUE_TOTAL;
+      const arr=[
+        P('东屋最安静。那台老电炉已经凉透了，铁皮上还留着白天的余温痕迹。'),
+        P('可炉台上端端正正摆着一只小铁盒。盖子没锁，一掀就开——'),
+        P('里面是一盏手工焊的小夜灯。猫的形状，尾巴翘得老高。焊点还很新，边缘粗糙，显然是有人笨手笨脚赶工做出来的。')
+      ];
+      if(full){
+        arr.push(P('灯座下面压着一张字条，字迹你熟得不能再熟：“给断电之夜还肯往下查的小工程师。灯是我故意关的——就为了让你一路查到这儿来。”','q'));
+      } else {
+        arr.push(P('灯座下面压着一张字条：“给断电之夜还肯往下查的小工程师。”','q'));
+        arr.push(P('只是你还没弄明白，灯为什么会灭。这个谜，好像还缺了几块。','small'));
+      }
+      return arr;
+    },
+    choices:()=>{
+      const full = state.clues.size >= CLUE_TOTAL;
+      return [
+        {label: full ? '把夜灯点亮' : '先把夜灯点亮再说', to: full ? 'end_full' : 'end_short'},
+        {label:'回走廊，再查查别的地方', to:'start', ghost:true}
+      ];
+    }
+  },
+
+  end_full:{
+    kicker:'ENDING', title:'灯亮了',
+    body:()=>[
+      P('你按下小夜灯底部的开关。'),
+      P('猫形的灯罩里透出一点暖黄的光，落在铁皮炉台上，也落在你手背上。工坊还是黑着，可这方寸之间忽然有了温度。'),
+      P('四条线索拼在一起：假亮的屏幕、被拔下来的探头、被顶开的开关、还有那根弯成钩的铜丝。'),
+      P('有人先关了灯，摸黑走进北屋拔掉探头，又回到配电箱丢下铜丝——绕这么大一圈，只为了让你在黑漆漆的工坊里，一步一步把谜底走到东屋来。'),
+      P('真是的。堂堂一个电气工程教授，做这种事还这么讲究工序。','q'),
+      P('你把夜灯抱在怀里，回头看了一眼空荡荡的走廊。'),
+      P('——灯是假的，可有人在暗处替你点了一盏。','q')
+    ],
+    onEnter:()=>{state.visited.add('end_full');},
+    choices:()=>[
+      {label:'抱着夜灯，走出工坊', to:'end_thanks'},
+      {label:'重新开始这一夜', to:'start', ghost:true}
+    ]
+  },
+
+  end_short:{
+    kicker:'ENDING', title:'只点亮了一盏灯',
+    body:()=>[
+      P('你按下小夜灯底部的开关，猫形的灯罩里透出一点暖黄的光。'),
+      P('很好看。可你心里还有点空——灯是谁关的？为什么要关？'),
+      P('字条上那句“还肯往下查”，此刻读起来像一句没说出口的邀请。'),
+      P('要不再走一遍？北屋的示波器、南屋的配电箱……那里好像还留着什么。','q')
+    ],
+    choices:()=>[
+      {label:'回去，把没查的地方查完', to:'start'},
+      {label:'算了，先抱着灯回去睡', to:'end_thanks', ghost:true}
+    ]
+  },
+
+  end_thanks:{
+    kicker:'FIN', title:'晚安，小工程师',
+    body:()=>{
+      const n = state.clues.size;
+      const arr=[
+        P('你抱着那盏猫形小夜灯，穿过黑着的走廊。'),
+        P('身后的工坊安静下来，只有窗外的风还在绕着屋檐打转。'),
+        P('这一夜你收集了 ' + n + ' 条线索。' + (n>=CLUE_TOTAL ? '每一条都对得上，严丝合缝——像个工程师该有的样子。' : '不过有些角落，还留着没走完的路。'),'small')
+      ];
+      if(n>=CLUE_TOTAL){
+        arr.push(P('还有，谢谢你还肯往下查。','q'));
+      }
+      return arr;
+    },
+    choices:()=>[
+      {label:'再来一夜', to:'start', ghost:true}
+    ]
+  }
+};
+
+/* ---------- 渲染 ---------- */
+let idx = 0;
+function render(id){
+  const sc = scenes[id];
+  if(!sc) return;
+  if(sc.onEnter) sc.onEnter();
+
+  document.getElementById('kicker').textContent = sc.kicker;
+  document.getElementById('title').textContent = sc.title;
+  document.getElementById('clueCount').textContent = state.clues.size;
+
+  const body = document.getElementById('body');
+  body.innerHTML = sc.body().join('');
+  body.classList.remove('fade'); void body.offsetWidth; body.classList.add('fade');
+
+  const box = document.getElementById('choices');
+  box.innerHTML = '';
+  const list = sc.choices();
+  list.forEach((c,i)=>{
+    const b = document.createElement('button');
+    if(c.ghost) b.className = 'ghost';
+    b.innerHTML = `<span class="num">${i+1}</span><span>${c.label}</span>`;
+    b.onclick = ()=>render(c.to);
+    box.appendChild(b);
+  });
+  idx = 0;
+  window.__list = list;
+}
+
+document.addEventListener('keydown', e=>{
+  const n = parseInt(e.key,10);
+  if(n>=1 && window.__list && window.__list[n-1]) render(window.__list[n-1].to);
+});
+
+render('start');
+</script>
+</body>
+</html>
