@@ -122,6 +122,13 @@
   @keyframes drop{from{opacity:0;transform:translateY(-22px) scale(.97)}to{opacity:1;transform:none}}
   @keyframes lift{to{opacity:0;transform:translateY(-14px) scale(.98)}}
 
+  /* 科技树 */
+  .branch{margin-bottom:16px}
+  .bname{font-size:11px;letter-spacing:.28em;color:var(--amber2);margin-bottom:9px;padding-left:2px}
+  .branch .item{margin-bottom:8px}
+  .item.owned{border-color:#3c4a35;background:#181d16}
+  .item.owned .name{color:#a8c99a}
+
   .foot{text-align:center;font-size:10.5px;color:#574c3f;letter-spacing:.1em;margin-top:6px}
   .reset{
     display:block;margin:14px auto 0;background:none;border:none;
@@ -156,6 +163,7 @@
     <button data-tab="shop" class="on">工坊</button>
     <button data-tab="log">日志</button>
     <button data-tab="stats">账本</button>
+    <button data-tab="tech">科技</button>
     <button data-tab="rebirth">转生</button>
   </div>
 
@@ -166,6 +174,10 @@
 
   <div class="panel" id="tab-log" style="display:none">
     <div class="log" id="logBox"></div>
+  </div>
+
+  <div class="panel" id="tab-tech" style="display:none">
+    <div id="techBox"></div>
   </div>
 
   <div class="panel" id="tab-rebirth" style="display:none">
@@ -204,8 +216,23 @@ const ACHIEVEMENTS = [
   {id:'a7', name:'第九条命', kind:'lives', need:9,        say:'九条命都用完了，工坊还在转。妈妈觉得这已经不算猫了。'}
 ];
 
+const TECH = [
+  {id:'hand',  branch:'捕捞',   name:'稳手',     cost:3,  req:null,   desc:'手更稳了，点击产出 +50%'},
+  {id:'crit',  branch:'捕捞',   name:'暴击',     cost:8,  req:'hand', desc:'8% 的概率，一下抵八下'},
+  {id:'combo', branch:'捕捞',   name:'连击',     cost:20, req:'crit', desc:'连着点，每一层 +5%，最多叠十层'},
+
+  {id:'gear',  branch:'自动化', name:'齿轮',     cost:3,  req:null,   desc:'自动产出 +50%'},
+  {id:'lamp',  branch:'自动化', name:'长明',     cost:8,  req:'gear', desc:'离线收益上限从 8 小时提到 24 小时'},
+  {id:'syn',   branch:'自动化', name:'协同',     cost:20, req:'lamp', desc:'每建一座工坊，自动产出再 +5%'},
+
+  {id:'memory',branch:'本能',   name:'记得',     cost:5,  req:null,   desc:'转生带回来的鱼骨 +30%'},
+  {id:'vein',  branch:'本能',   name:'留一点',   cost:12, req:'memory', desc:'转生时留下 10% 的小鱼干（最多三万）'},
+  {id:'origin',branch:'本能',   name:'起点',     cost:20, req:'vein', desc:'每次转生开局自带 5000 条，每根鱼骨再加 200'}
+];
+
 const state = {
   fish: 0, total: 0, lifeTotal: 0, bones: 0, lives: 0, clicks: 0, clicksPower: 1, autoRate: 0,
+  tech: [], combo: 0, lastClick: 0, crits: 0,
   bought: {}, ach: [], log: [], last: Date.now(), born: Date.now()
 };
 
@@ -230,6 +257,14 @@ function pushLog(text, important){
 }
 
 /* ====================== 计算 ====================== */
+function hasTech(id){ return state.tech.indexOf(id) >= 0; }
+
+function totalLevels(){
+  let n = 0;
+  for(const k in state.bought) n += state.bought[k] || 0;
+  return n;
+}
+
 function recalc(){
   let click = 1, auto = 0;
   for(const u of UPGRADES){
@@ -238,9 +273,11 @@ function recalc(){
     if(u.kind === 'click') click += u.val * lv;
     else auto += u.val * lv;
   }
-  const boneBonus = 1 + state.bones * 0.10;
-  state.clicksPower = click * boneBonus;
-  state.autoRate = auto * boneBonus;
+  if(hasTech('hand')) click *= 1.5;
+  if(hasTech('gear')) auto *= 1.5;
+  if(hasTech('syn'))  auto *= 1 + 0.05 * totalLevels();
+  state.clicksPower = click;
+  state.autoRate = auto;
 }
 
 function priceOf(u){
@@ -269,13 +306,15 @@ function load(){
 function render(){
   $('fish').textContent = fmt(state.fish);
   $('rate').textContent = '每秒 ' + fmt(state.autoRate) + ' 条';
-  $('catchSub').textContent = '一次 +' + fmt(state.clicksPower) + ' 条';
+  $('catchSub').textContent = '一次 +' + fmt(state.clicksPower) + ' 条' +
+    (hasTech('combo') && state.combo > 1 ? ' · 连击 ×' + state.combo : '') +
+    (hasTech('crit') ? ' · 暴击 8%' : '');
 
   // 鱼骨
   const bl = $('bonesLine');
   if(state.bones > 0 || state.lives > 0){
     bl.style.display = '';
-    bl.textContent = '鱼骨 ' + state.bones + ' · 永久加成 +' + (state.bones*10) + '%' +
+    bl.textContent = '鱼骨 ' + state.bones + ' 根' +
       (state.lives ? ' · 第 ' + (state.lives+1) + ' 条命' : '');
   } else bl.style.display = 'none';
 
@@ -310,6 +349,25 @@ function render(){
 
   $('shopHint').textContent = anyBuyable ? '有能买的东西了，妈妈帮你记着' : (anyShown ? '再攒一攒，别急着全花光' : '先攒点小鱼干，工坊才开得动');
 
+  // 科技
+  const tb = $('techBox');
+  tb.innerHTML = ['捕捞','自动化','本能'].map(br=>{
+    const nodes = TECH.filter(t=>t.branch===br);
+    return '<div class="branch"><div class="bname">'+br+'</div>' + nodes.map(t=>{
+      const got = hasTech(t.id);
+      const reqOk = !t.req || hasTech(t.req);
+      const can = !got && reqOk && state.bones >= t.cost;
+      const reqName = t.req ? (TECH.find(x=>x.id===t.req)||{}).name : '';
+      return `<div class="item ${got?'owned':''} ${can?'buyable':''} ${(!reqOk&&!got)?'locked':''}">
+        <div class="info">
+          <div class="name">${t.name}${got?' <span style="font-size:11px">已点亮</span>':''}</div>
+          <div class="desc">${t.desc}${(!reqOk&&!got)?`<br><span style="color:#6b5c4a">需先点亮「${reqName}」</span>`:''}</div>
+        </div>
+        ${got?'':`<button ${can?'':'disabled'} data-tech="${t.id}">${t.cost} 骨</button>`}
+      </div>`;
+    }).join('') + '</div>';
+  }).join('') + `<div class="foot">手上 ${state.bones} 根鱼骨 · 点亮后永久生效，转生不会清掉</div>`;
+
   // 转生
   const gainBones = bonesGain();
   const rb = $('rebirthBox');
@@ -325,7 +383,7 @@ function render(){
     rb.innerHTML = `
       <div style="font-size:12.5px;line-height:2;color:#c8bba8">
         本世代累计 <b style="color:#e0a458">${num(state.lifeTotal)}</b> 条。<br>
-        放下这一条命，可以带走 <b style="color:#e0a458">${gainBones}</b> 根鱼骨（永久 +${gainBones*10}%）。<br>
+        放下这一条命，可以带走 <b style="color:#e0a458">${gainBones}</b> 根鱼骨${hasTech('memory')?'（含「记得」加成）':''}。<br>
         <span style="color:#9b8f7e">小鱼干、工坊、升级都会清空。日志和成就留着。</span>
       </div>
       <button class="catch" id="doRebirth" style="margin-top:14px">
@@ -351,7 +409,7 @@ function render(){
     <div>累计捞出 <b>${num(state.total)}</b> 条</div>
     <div>亲手捞了 <b>${num(state.clicks)}</b> 次</div>
     <div>每秒产出 <b>${fmt(state.autoRate)}</b> 条</div>
-    <div>鱼骨 <b>${state.bones}</b> 根（永久 +${state.bones*10}%）</div>
+    <div>鱼骨 <b>${state.bones}</b> 根（已点亮科技 ${state.tech.length} / ${TECH.length}）</div>
     <div>第 <b>${state.lives+1}</b> 条命</div>
     <div>已解锁成就 <b>${state.ach.length}</b> / ${ACHIEVEMENTS.length}</div>
     <div>经营时长 <span>${mins >= 60 ? Math.floor(mins/60)+' 小时 '+(mins%60)+' 分钟' : mins+' 分钟'}</span></div>`;
@@ -425,7 +483,8 @@ function checkAch(){
 }
 
 function bonesGain(){
-  return Math.floor(Math.pow(state.lifeTotal / 1e6, 0.5) * 5);
+  const base = Math.pow(state.lifeTotal / 1e6, 0.5) * 5;
+  return Math.floor(base * (hasTech('memory') ? 1.3 : 1));
 }
 
 function doRebirth(){
@@ -435,13 +494,27 @@ function doRebirth(){
 
   state.bones += g;
   state.lives += 1;
-  state.fish = 0; state.total = 0; state.lifeTotal = 0; state.clicks = 0;
+  const keep = hasTech('vein') ? Math.min(state.fish * 0.1, 30000) : 0;
+  state.fish = keep; state.total = 0; state.lifeTotal = 0; state.clicks = 0;
   state.bought = {};
+  if(hasTech('origin')) state.fish += 5000 + 200 * state.bones;
   recalc(); checkAch();
-  pushLog('第 ' + state.lives + ' 条命用完了。带回来 ' + g + ' 根鱼骨，永久加成 +' + (state.bones*10) + '%。', true);
+  pushLog('第 ' + state.lives + ' 条命用完了。带回来 ' + g + ' 根鱼骨。', true);
   if(state.lives === 1) pushLog('猫有九条命。小猫这才用掉第一条，慢慢来。', true);
   if(state.lives === 8) pushLog('最后一条命了。妈妈在边上看着，别乱花。', true);
   if(state.lives >= 9) pushLog('九条命都用完了——工坊还在转。妈妈觉得这已经不算猫了。', true);
+  render(); save();
+}
+
+function buyTech(id){
+  const t = TECH.find(x=>x.id===id);
+  if(!t || hasTech(id)) return;
+  if(t.req && !hasTech(t.req)) return;
+  if(state.bones < t.cost) return;
+  state.bones -= t.cost;
+  state.tech.push(id);
+  recalc(); checkAch();
+  pushLog('点亮科技「' + t.name + '」：' + t.desc + '。', true);
   render(); save();
 }
 
@@ -480,9 +553,22 @@ function floatText(btn, txt){
 
 /* ====================== 事件 ====================== */
 $('catch').addEventListener('click', function(){
-  const g = state.clicksPower;
+  const now = Date.now();
+  if(hasTech('combo')){
+    state.combo = (now - state.lastClick < 1200) ? Math.min(state.combo + 1, 10) : 1;
+  } else {
+    state.combo = 1;
+  }
+  state.lastClick = now;
+
+  let g = state.clicksPower * (1 + 0.05 * (state.combo - 1));
+  let crit = false;
+  if(hasTech('crit') && Math.random() < 0.08){ g *= 8; crit = true; state.crits++; }
+
   gain(g); state.clicks++;
-  floatText(this, '+'+fmt(g));
+  floatText(this, crit ? '暴击 +' + fmt(g) : '+' + fmt(g));
+  $('catchSub').textContent = '一次 +' + fmt(state.clicksPower) + ' 条' +
+    (hasTech('combo') && state.combo > 1 ? ' · 连击 ×' + state.combo : '');
   render();
 });
 
@@ -491,11 +577,16 @@ $('shopList').addEventListener('click', e=>{
   if(b) buy(b.dataset.buy);
 });
 
+$('techBox').addEventListener('click', e=>{
+  const b = e.target.closest('[data-tech]');
+  if(b) buyTech(b.dataset.tech);
+});
+
 document.querySelectorAll('.tabs button').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
-    ['shop','log','stats','rebirth'].forEach(t=>{
+    ['shop','log','stats','tech','rebirth'].forEach(t=>{
       $('tab-'+t).style.display = (t === b.dataset.tab) ? '' : 'none';
     });
     render();
@@ -516,7 +607,8 @@ recalc();
 (function offline(){
   const gap = (Date.now() - (state.last || Date.now())) / 1000;
   if(state.autoRate > 0 && gap > 30){
-    const capped = Math.min(gap, 8*3600);
+    const capH = hasTech('lamp') ? 24 : 8;
+    const capped = Math.min(gap, capH*3600);
     const earned = state.autoRate * capped;
     state.fish += earned; state.total += earned; state.lifeTotal += earned;
     const h = Math.floor(capped/3600), m = Math.round((capped%3600)/60);
