@@ -17,6 +17,17 @@ def pick(pattern, text, default=""):
     return html.unescape(m.group(1).strip()) if m else default
 
 
+def extras():
+    """不在本目录、但想摆进柜子里的东西，写在 extras.json 里。"""
+    path = os.path.join(HERE, "extras.json")
+    if not os.path.exists(path):
+        return []
+    import json
+
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def scan():
     games = []
     for name in sorted(os.listdir(HERE)):
@@ -28,7 +39,7 @@ def scan():
         desc = pick(r'<meta\s+name="description"\s+content="(.*?)"', src)
         tag = pick(r'<meta\s+name="tag"\s+content="(.*?)"', src)
         games.append({"file": name, "title": title, "desc": desc, "tag": tag})
-    return games
+    return games + extras()
 
 
 def render(games):
@@ -97,6 +108,7 @@ def render(games):
 
 if __name__ == "__main__":
     games = scan()
+    games.sort(key=lambda g: g.get("order", 99))
     out = os.path.join(HERE, "index.html")
     with open(out, "w", encoding="utf-8") as f:
         f.write(render(games))
