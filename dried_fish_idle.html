@@ -195,11 +195,13 @@ const UPGRADES = [
 ];
 
 const ACHIEVEMENTS = [
-  {id:'a1', name:'第一桶鱼', need:50,      say:'小猫捞到了第一条产线的本钱。'},
-  {id:'a2', name:'小作坊',   need:500,     say:'工坊里终于有齿轮转动的声音了。'},
-  {id:'a3', name:'上轨道',   need:5000,    say:'账本开始自己往上走，妈妈很满意。'},
-  {id:'a4', name:'工业革命', need:100000,  say:'这已经不算作坊了，小猫。'},
-  {id:'a5', name:'永动',     need:5000000, say:'永动机不存在——但小猫的工坊，看起来挺像。'}
+  {id:'a1', name:'第一桶鱼', kind:'total', need:50,       say:'小猫捞到了第一条产线的本钱。'},
+  {id:'a2', name:'小作坊',   kind:'total', need:500,      say:'工坊里终于有齿轮转动的声音了。'},
+  {id:'a3', name:'上轨道',   kind:'total', need:5000,     say:'账本开始自己往上走，妈妈很满意。'},
+  {id:'a4', name:'工业革命', kind:'total', need:100000,   say:'这已经不算作坊了，小猫。'},
+  {id:'a5', name:'勤快的手', kind:'click', need:500,      say:'五百次。小猫的爪子该磨出茧了。'},
+  {id:'a6', name:'永动',     kind:'rate',  need:1000,     say:'每秒一千条。永动机不存在，但小猫这条产线，看着挺像。'},
+  {id:'a7', name:'第九条命', kind:'lives', need:9,        say:'九条命都用完了，工坊还在转。妈妈觉得这已经不算猫了。'}
 ];
 
 const state = {
@@ -352,9 +354,9 @@ function render(){
 
   $('achBox').innerHTML = ACHIEVEMENTS.map(a=>{
     const got = state.ach.includes(a.id);
-    return `<div class="badge ${got?'got':''}" title="累计 ${num(a.need)} 条">
+    return `<div class="badge ${got?'got':''}" title="${achLabel(a)}">
       ${got?'✦ ':'· '}${a.name}
-      <span style="opacity:.6;font-size:10.5px">· ${fmt(a.need)}</span>
+      <span style="opacity:.6;font-size:10.5px">· ${achLabel(a)}</span>
     </div>`;
   }).join('');
 }
@@ -391,9 +393,25 @@ function drainToast(){
   }, 2600);
 }
 
+function achValue(a){
+  if(a.kind === 'total') return state.total;
+  if(a.kind === 'rate')  return state.autoRate;
+  if(a.kind === 'click') return state.clicks;
+  if(a.kind === 'lives') return state.lives;
+  return 0;
+}
+
+function achLabel(a){
+  if(a.kind === 'total') return '累计 ' + fmt(a.need);
+  if(a.kind === 'rate')  return '每秒 ' + fmt(a.need);
+  if(a.kind === 'click') return '亲手捞 ' + fmt(a.need) + ' 次';
+  if(a.kind === 'lives') return '转生 ' + a.need + ' 次';
+  return fmt(a.need);
+}
+
 function checkAch(){
   for(const a of ACHIEVEMENTS){
-    if(!state.ach.includes(a.id) && state.total >= a.need){
+    if(!state.ach.includes(a.id) && achValue(a) >= a.need){
       state.ach.push(a.id);
       pushLog('成就解锁 · ' + a.name + '：' + a.say, true);
       showToast(a);
@@ -414,7 +432,7 @@ function doRebirth(){
   state.lives += 1;
   state.fish = 0; state.total = 0; state.lifeTotal = 0; state.clicks = 0;
   state.bought = {};
-  recalc();
+  recalc(); checkAch();
   pushLog('第 ' + state.lives + ' 条命用完了。带回来 ' + g + ' 根鱼骨，永久加成 +' + (state.bones*10) + '%。', true);
   if(state.lives === 1) pushLog('猫有九条命。小猫这才用掉第一条，慢慢来。', true);
   if(state.lives === 8) pushLog('最后一条命了。妈妈在边上看着，别乱花。', true);
@@ -429,7 +447,7 @@ function buy(id){
   if(state.fish < price) return;
   state.fish -= price;
   state.bought[id] = (state.bought[id]||0) + 1;
-  recalc();
+  recalc(); checkAch();
 
   const lines = {
     rod:'妈妈又给鱼竿缠了一圈线，稳当多了。',
