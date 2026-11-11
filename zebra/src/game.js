@@ -81,21 +81,7 @@ function startGame(selected) {
   document.getElementById("checkBtn").disabled = false;
   document.getElementById("giveUpBtn").disabled = false;
 
-  const cl = document.getElementById("clues");
-  cl.innerHTML = "";
-  p.clues.forEach((t) => {
-    const li = document.createElement("li"),
-      label = document.createElement("label"),
-      cb = document.createElement("input"),
-      text = document.createElement("span");
-    cb.type = "checkbox";
-    cb.setAttribute("aria-label", "标记这条线索已完成");
-    text.textContent = t;
-    cb.onchange = () => label.classList.toggle("crossed", cb.checked);
-    label.append(cb, text);
-    li.appendChild(label);
-    cl.appendChild(li);
-  });
+  renderClues();
 
   renderGrid();
   startTimer();
@@ -103,6 +89,7 @@ function startGame(selected) {
 }
 
 function renderGrid() {
+  updateClues();
   const p = S.cur,
     tb = document.getElementById("grid");
   tb.innerHTML = "";

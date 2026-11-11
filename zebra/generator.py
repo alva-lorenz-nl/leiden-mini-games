@@ -110,7 +110,9 @@ def clue_to_text(clue):
     k, c1, v1, *rest = clue
     a = subject(c1, v1)
     if k == "pos":
-        return f"{a}在从左数第{rest[0]}个位置。"
+        position = rest[0]
+        label = f"第{position}" if position <= 3 else f"倒数第{6 - position}"
+        return f"{a}在{label}个位置。"
     c2, v2 = rest
     b = subject(c2, v2)
     if k == "left":

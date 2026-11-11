@@ -18,6 +18,7 @@ function hydrate(p, theme, diff) {
     categories: cats,
     clue_count: p.n,
     clues: p.c,
+    rawClues: p.r,
     question: p.q,
     answer: p.a,
     solution: p.s,

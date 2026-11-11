@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 
 from z3 import IntVal, is_true, simplify, substitute
-from generator import THEMES, make_solver_for, clue_to_constraint, unique_solution
+from generator import THEMES, make_solver_for, clue_to_constraint, unique_solution, clue_to_text
 
 ROOT = Path(__file__).resolve().parent
-MODULES = ['core', 'records', 'game', 'sync', 'modes', 'events']
+MODULES = ['core', 'records', 'clues', 'game', 'sync', 'modes', 'events']
 
 
 def read_json(name):
@@ -30,7 +30,7 @@ def validate(puzzle):
 
 def compact(p, daily=False):
     item = dict(id=p['id'] if daily else 'v2-' + p['id'],
-                k=list(p['categories']), n=p['clue_count'], c=p['clues'],
+                k=list(p['categories']), n=p['clue_count'], c=[clue_to_text(c) for c in p['raw_clues']], r=p['raw_clues'],
                 q=p['question'], a=p['answer'], s=p['solution'])
     if daily:
         item.update(date=p['date'], theme=p['theme_key'], diff=p['difficulty'])

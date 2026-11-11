@@ -58,9 +58,42 @@ mode("free");
 assert(!d.getElementById("freeFilters").classList.contains("hidden"));
 click("startBtn");
 assert(d.querySelectorAll("select.cell").length >= 20);
-const cb = d.querySelector("#clues input");
-cb.click();
-assert(cb.parentElement.classList.contains("crossed"));
+assert(d.querySelectorAll("#clues li.pending").length > 0);
+for (const c in w.ZEBRA.S.cur.solution)
+  w.ZEBRA.S.assign[c] = Array.from(w.ZEBRA.S.cur.solution[c]);
+w.updateClues();
+assert.equal(
+  d.querySelectorAll("#clues li.satisfied").length,
+  w.ZEBRA.S.cur.clue_count,
+);
+const assignments = {
+  A: ["a", null, null, null, null],
+  B: [null, "b", null, null, null],
+};
+assert.equal(
+  w.clueState(["next", "A", "a", "B", "b"], assignments),
+  "satisfied",
+);
+assert.equal(
+  w.clueState(["same", "A", "a", "B", "b"], assignments),
+  "conflict",
+);
+assert.equal(
+  w.clueState(["left", "B", "b", "A", "a"], assignments),
+  "conflict",
+);
+assert.equal(w.clueState(["pos", "A", "a", 2], assignments), "conflict");
+assert.equal(w.clueState(["pos", "A", "a", 1], assignments), "satisfied");
+assignments.B[1] = null;
+assert.equal(w.clueState(["next", "A", "a", "B", "b"], assignments), "pending");
+assignments.B[1] = "other";
+assert.equal(
+  w.clueState(["next", "A", "a", "B", "b"], assignments),
+  "conflict",
+);
+assert.equal(w.clueState(["pos", "B", "b", 2], assignments), "conflict");
+assignments.B[1] = null;
+assert.equal(w.clueState(["pos", "B", "b", 2], assignments), "pending");
 click("backBtn");
 assert.equal(d.querySelectorAll("#achievements .stat").length, 6);
 mode("story");

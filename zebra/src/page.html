@@ -96,7 +96,15 @@
 
         <div class="card" style="margin-top: 14px">
           <div class="label">线索</div>
-          <ol class="clues" id="clues"></ol>
+          <p class="intro">线索随填表自动更新：✓ 满足 · ✕ 冲突 · □ 待确定</p>
+          <div
+            class="clue-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="线索列表，可上下滚动"
+          >
+            <ol class="clues" id="clues"></ol>
+          </div>
         </div>
       </section>
 

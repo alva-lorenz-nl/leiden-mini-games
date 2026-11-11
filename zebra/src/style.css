@@ -295,20 +295,6 @@ select.cell {
   white-space: normal;
   color-scheme: dark;
 }
-.clues label {
-  cursor: pointer;
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-.clues input {
-  accent-color: var(--good);
-}
-.clues .crossed span {
-  text-decoration: line-through;
-  color: var(--dim);
-  opacity: 0.65;
-}
 #puzzleList {
   max-height: 350px;
   overflow: auto;
@@ -326,4 +312,30 @@ select.cell {
 }
 .table-scroll {
   overflow-x: auto;
+}
+
+.clue-scroll {
+  max-height: min(42vh, 360px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding-right: 10px;
+}
+.clue-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+}
+.clues .clue-status {
+  display: inline-block;
+  width: 1.6em;
+  text-decoration: none;
+}
+.clues .satisfied .clue-text {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+.clues .satisfied .clue-status {
+  color: #73d99a;
+}
+.clues .conflict {
+  color: #ff777f;
 }
