@@ -126,26 +126,37 @@ click("backBtn");
 assert.equal(d.querySelectorAll("#achievements .stat").length, 6);
 mode("story");
 const chapterCount = w.eval("CHAPTERS.length");
+assert.equal(chapterCount,19);
+// Every event is accessible without completing another event.
+d.querySelectorAll('#chapters button')[4].click();
+assert.equal(d.querySelectorAll('#storyStages button:disabled').length,3);
+click('startBtn');click('giveUpBtn');click('backBtn');
+assert.equal(d.querySelectorAll('#storyStages button:disabled').length,3);
+const catFilter=Array.from(d.querySelectorAll('#tagRow button')).find(b=>b.textContent==='小猫');catFilter.click();
+assert(Array.from(d.querySelectorAll('#chapters button')).every(b=>b.title.includes('小猫')));
+d.querySelector('#tagRow button').click();d.querySelector('#chapters button').click();
+
 assert(chapterCount > 4);
 assert.equal(
   d.querySelectorAll("#chapters button").length,
   chapterCount,
 );
-assert.equal(d.querySelectorAll("#chapters button:disabled").length, chapterCount - 1);
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, 0);
 click("startBtn");
 win();
 assert(w.ZEBRA.REC.story.includes(0));
 assert(d.querySelector("#storyBox .ending").textContent.includes("呼噜声"));
 assert(!d.getElementById("storyBox").classList.contains("hidden"));
 click("backBtn");
-assert.equal(d.querySelectorAll("#chapters button:disabled").length, chapterCount - 2);
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, 0);
 for (let i = 1; i < chapterCount; i++) {
   d.querySelectorAll("#chapters button")[i].click();
   click("startBtn");
   win();
+  while(d.getElementById("nextStageBtn")){click("nextStageBtn");win();}
   click("backBtn");
 }
-assert.equal(w.ZEBRA.REC.story.length, chapterCount);
+assert(w.eval("CHAPTERS.every(storyDone)"));
 mode("daily");
 click("startBtn");
 let id = w.ZEBRA.S.cur.id;
@@ -169,7 +180,7 @@ assert.equal(w.ZEBRA.REC.story, undefined);
 click("importBtn");
 d.getElementById("syncText").value = code;
 click("syncDo");
-assert.equal(w.ZEBRA.REC.story.length, chapterCount);
+assert(w.eval("CHAPTERS.every(storyDone)"));
 assert.equal(w.ZEBRA.REC.daily.length, 1);
 mode("free");
 click("startBtn");
@@ -190,6 +201,6 @@ assert(
   !d.getElementById("gameMsg").textContent.includes(w.ZEBRA.S.cur.question),
 );
 console.log(
-  "PASS: story chapters (13), daily stability, six achievements, sync roundtrip and revealed-answer exclusion",
+  "PASS: independent stories and stage progression, daily stability, six achievements, sync roundtrip and revealed-answer exclusion",
 );
 dom.window.close();

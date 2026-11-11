@@ -72,7 +72,8 @@ def build():
         bank['daily'].append(compact(p, daily=True))
     story = read_json('story.json')
     for chapter in story:
-        validate_story(chapter)
+        for stage in chapter["stages"]:
+            validate_story(stage)
     bank['story'] = story
     source = ROOT / 'src'
     html = (source / 'page.html').read_text()

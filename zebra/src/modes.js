@@ -1,4 +1,14 @@
 const CHAPTERS = BANK.story || [];
+let stage = 0;
+function stageDone(ch, j) {
+  return (
+    (REC.wins || []).includes(ch.stages[j].puzzle?.id) ||
+    (ch.legacyIndex != null && (REC.story || []).includes(ch.legacyIndex))
+  );
+}
+function storyDone(ch) {
+  return ch.stages.every((_, j) => stageDone(ch, j));
+}
 THEME_NAMES.story = "故事模式";
 
 /* 标签的中文名 */
@@ -46,7 +56,7 @@ function renderModes() {
     .forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
   document.getElementById("modeInfo").textContent =
     mode === "story"
-      ? `共 ${CHAPTERS.length} 章故事，解开当前章节即可解锁下一章；看答案不算通关。可用标签挑选想读的故事线。`
+      ? `共 ${CHAPTERS.length} 个独立故事，自由选择，互不影响。故事内按阶段推进；看答案不算通关。`
       : mode === "daily"
         ? dayKey() +
           " · 每日生成新题，往期题目可在下方补做。" +
@@ -54,27 +64,59 @@ function renderModes() {
             ? " 今日已完成，可重玩。"
             : " 今日尚未完成。")
         : "按筛选条件随机抽取未做题；也可打开题目列表自主选择。左右均以屏幕从左到右为准；“左边”可以不相邻。";
+  document.getElementById("storyStages")?.remove();
   const box = document.getElementById("chapters");
   box.innerHTML = "";
   const tagBox = document.getElementById("storyTags");
   if (tagBox) tagBox.classList.toggle("hidden", mode !== "story");
   renderTagRow();
-  if (mode === "story")
-    CHAPTERS.forEach((ch, i) => {
-      const tags = ch.tags || [];
-      if (S.tag !== "all" && !tags.includes(S.tag)) return;
+  const visible = CHAPTERS.map((ch, i) => ({ ch, i })).filter(
+    ({ ch }) => S.tag === "all" || (ch.tags || []).includes(S.tag),
+  );
+  if (!visible.some((x) => x.i === chapter) && visible.length) {
+    chapter = visible[0].i;
+    stage = 0;
+  }
+  if (mode === "story") {
+    visible.forEach(({ ch, i }) => {
       const b = document.createElement("button");
       b.className = "btn" + (chapter === i ? " on" : "");
-      b.textContent = (story.includes(i) ? "✓ " : "") + ch.title;
-      b.disabled = i > 0 && !story.includes(i - 1);
-      b.title = tags.map((t) => TAG_NAMES[t] || t).join(" · ");
+      b.textContent =
+        (storyDone(ch) ? "✓ " : "") +
+        ch.title +
+        " · " +
+        ch.stages.filter((_, j) => stageDone(ch, j)).length +
+        "/" +
+        ch.stages.length;
+      b.title = (ch.tags || []).map((t) => TAG_NAMES[t] || t).join(" · ");
       b.onclick = () => {
         chapter = i;
+        stage = Math.max(
+          0,
+          ch.stages.findIndex((_, j) => !stageDone(ch, j)),
+        );
         renderModes();
       };
       box.appendChild(b);
     });
-  if (chapter > 0 && !story.includes(chapter - 1)) chapter = 0;
+    const panel = document.createElement("div");
+    panel.id = "storyStages";
+    const ch = CHAPTERS[chapter];
+    if (ch)
+      ch.stages.forEach((st, j) => {
+        const b = document.createElement("button");
+        b.className = "btn" + (stage === j ? " on" : "");
+        b.textContent =
+          (stageDone(ch, j) ? "✓ " : "") + "阶段 " + (j + 1) + " · " + st.title;
+        b.disabled = j > 0 && !stageDone(ch, j - 1);
+        b.onclick = () => {
+          stage = j;
+          renderModes();
+        };
+        panel.appendChild(b);
+      });
+    box.after(panel);
+  }
   document
     .getElementById("freeFilters")
     .classList.toggle("hidden", mode !== "free");
@@ -96,8 +138,8 @@ function renderModes() {
     ["七日手记", "累计完成7天每日挑战", daily.length >= 7],
     [
       "故事收藏家",
-      `完成全部 ${CHAPTERS.length} 章故事`,
-      story.length >= CHAPTERS.length,
+      `完成全部 ${CHAPTERS.length} 个故事`,
+      CHAPTERS.every(storyDone),
     ],
   ];
   const ach = document.getElementById("achievements");

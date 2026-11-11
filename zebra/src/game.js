@@ -32,7 +32,7 @@ function renderChoices() {
 
 function pickPuzzle() {
   if (mode === "story") {
-    const ch = CHAPTERS[chapter];
+    const ch = CHAPTERS[chapter]?.stages[stage];
     if (!ch) return null;
     if (ch.src)
       return hydrate(
@@ -40,7 +40,10 @@ function pickPuzzle() {
         ch.src.theme,
         ch.src.diff,
       );
-    return hydrateStory(ch, chapter);
+    return hydrateStory(
+      { ...ch, title: CHAPTERS[chapter].title + " · " + ch.title },
+      chapter,
+    );
   }
   if (mode === "daily") {
     const item = BANK.daily.find((p) => p.date === dayKey());
@@ -65,6 +68,7 @@ function startGame(selected) {
   S.cur = p;
   S.mode = mode;
   S.chapter = chapter;
+  S.stage = stage;
   S.day = p.date || dayKey();
   S.recorded = false;
   S.undoStack = [];
@@ -85,7 +89,8 @@ function startGame(selected) {
     `${S.mode === "story" ? p.theme : THEME_NAMES[p.theme_key] || p.theme} · ${DIFF_NAMES[p.difficulty] || p.difficulty} · ${p.clue_count} 条线索`;
   document.getElementById("intro").textContent =
     (S.mode === "story"
-      ? CHAPTERS[S.chapter].intro + " "
+      ? (CHAPTERS[S.chapter].stages[S.stage].intro ||
+          CHAPTERS[S.chapter].intro) + " "
       : S.mode === "daily"
         ? S.day + " 每日挑战（北京时间）。 "
         : "") + p.intro;
@@ -263,15 +268,33 @@ function record(sec, ok) {
   S.recorded = true;
   REC.story = REC.story || [];
   REC.daily = REC.daily || [];
-  if (ok && S.mode === "story" && !REC.story.includes(S.chapter))
+  if (
+    ok &&
+    S.mode === "story" &&
+    CHAPTERS[S.chapter].stages.length === 1 &&
+    !REC.story.includes(S.chapter)
+  )
     REC.story.push(S.chapter);
   if (ok && S.mode === "daily" && !REC.daily.includes(S.day))
     REC.daily.push(S.day);
   if (ok && S.mode === "story") {
-    const ch = CHAPTERS[S.chapter];
+    const ch = CHAPTERS[S.chapter].stages[S.stage];
     const p0 = S.cur;
     const ending = (p0.ending || ch.ending || "").trim();
     renderStoryArchive(p0.fragments || [], ending);
+    if (S.stage + 1 < CHAPTERS[S.chapter].stages.length) {
+      const next = document.createElement("button");
+      next.id = "nextStageBtn";
+      next.className = "btn primary";
+      next.textContent = "继续下一阶段 →";
+      next.onclick = () => {
+        chapter = S.chapter;
+        stage = S.stage + 1;
+        mode = "story";
+        startGame();
+      };
+      document.getElementById("storyBox").appendChild(next);
+    }
   }
 
   const p = S.cur;
