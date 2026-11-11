@@ -75,7 +75,8 @@ function puzzleTitle(p) {
 function puzzleIntro(p) {
   if (S.mode === "story") {
     const ch = CHAPTERS[S.chapter];
-    return (ch.stages[S.stage].intro || ch.intro) + " " + p.intro;
+    const stageIntro = ch.stages[S.stage].intro;
+    return p.intro + (stageIntro ? " " + stageIntro : "");
   }
   if (S.mode === "daily") return S.day + " 每日挑战（北京时间）。 " + p.intro;
   return p.intro;

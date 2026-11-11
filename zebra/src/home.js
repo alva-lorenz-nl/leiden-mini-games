@@ -24,10 +24,15 @@ function renderChoices() {
 
   const dr = $("diffRow");
   dr.replaceChildren();
-  Object.keys({ all: "不限难度", ...DIFF_NAMES }).forEach((k) => {
+  const bankDiffs = new Set(Object.keys(PUZ).map((key) => key.split("_")[1]));
+  const diffOptions = { all: "不限难度" };
+  Object.keys(DIFF_NAMES)
+    .filter((d) => bankDiffs.has(d))
+    .forEach((d) => (diffOptions[d] = DIFF_NAMES[d]));
+  Object.keys(diffOptions).forEach((k) => {
     dr.appendChild(
       button(
-        k === "all" ? "不限难度" : DIFF_NAMES[k],
+        diffOptions[k],
         () => {
           S.diff = k;
           localStorage.setItem("zebra_diff", k);

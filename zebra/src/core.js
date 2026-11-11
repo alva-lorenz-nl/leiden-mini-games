@@ -4,7 +4,7 @@ const META = BANK.meta,
 
 const THEME_NAMES = {};
 Object.keys(META).forEach((k) => (THEME_NAMES[k] = META[k].title));
-const DIFF_NAMES = { easy: "简单", normal: "普通", hard: "困难" };
+const DIFF_NAMES = { easy: "简单", normal: "普通", medium: "中等", hard: "困难" };
 
 /* 把精简题库还原成页面用的结构 */
 function hydrate(p, theme, diff) {
