@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "node tests/ui.cjs",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "prettier": "3.8.1"
+  }
+}

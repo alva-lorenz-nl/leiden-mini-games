@@ -1,0 +1,111 @@
+const fs = require("fs"),
+  assert = require("assert");
+const { JSDOM } = require("jsdom");
+const html = fs.readFileSync(
+  require("path").join(__dirname, "../../zebra_puzzle.html"),
+  "utf8",
+);
+const dom = new JSDOM(html, {
+  runScripts: "dangerously",
+  url: "https://alva-lorenz.top/minigames/zebra_puzzle.html",
+  beforeParse(w) {
+    w.TextEncoder = TextEncoder;
+    w.TextDecoder = TextDecoder;
+    w.scrollTo = () => {};
+    w.alert = () => {};
+    w.confirm = () => true;
+  },
+});
+const w = dom.window,
+  d = w.document;
+function click(id) {
+  d.getElementById(id).click();
+}
+function mode(m) {
+  d.querySelector('[data-mode="' + m + '"]').click();
+}
+function win() {
+  const s = w.ZEBRA.S;
+  for (const c in s.cur.solution) s.assign[c] = Array.from(s.cur.solution[c]);
+  click("checkBtn");
+  assert(s.solved);
+}
+mode("story");
+assert(d.getElementById("freeFilters").classList.contains("hidden"));
+mode("daily");
+assert(d.getElementById("freeFilters").classList.contains("hidden"));
+const bank = w.eval("BANK");
+assert(bank.daily.length > 0);
+const today = w.eval("dayKey()");
+assert(bank.daily.some((p) => p.date === today));
+assert.equal(
+  d.querySelectorAll("#dailyArchive button").length,
+  bank.daily.filter((p) => p.date <= today).length,
+);
+// Simulate a later day: future puzzles become history and completion uses selected date.
+const realDay = w.dayKey;
+w.dayKey = () => bank.daily.at(-1).date;
+w.renderModes();
+const historic = bank.daily[0];
+d.querySelectorAll("#dailyArchive button")[bank.daily.length - 1].click();
+assert.equal(w.ZEBRA.S.day, historic.date);
+win();
+assert(w.ZEBRA.REC.daily.includes(historic.date));
+click("backBtn");
+w.dayKey = realDay;
+w.ZEBRA.REC.daily = [];
+mode("free");
+assert(!d.getElementById("freeFilters").classList.contains("hidden"));
+click("startBtn");
+assert(d.querySelectorAll("select.cell").length >= 20);
+const cb = d.querySelector("#clues input");
+cb.click();
+assert(cb.parentElement.classList.contains("crossed"));
+click("backBtn");
+assert.equal(d.querySelectorAll("#achievements .stat").length, 6);
+mode("story");
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, 3);
+click("startBtn");
+win();
+assert(w.ZEBRA.REC.story.includes(0));
+assert(d.getElementById("gameMsg").textContent.includes("呼噜声"));
+click("backBtn");
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, 2);
+for (let i = 1; i < 4; i++) {
+  d.querySelectorAll("#chapters button")[i].click();
+  click("startBtn");
+  win();
+  click("backBtn");
+}
+assert.equal(w.ZEBRA.REC.story.length, 4);
+mode("daily");
+click("startBtn");
+let id = w.ZEBRA.S.cur.id;
+click("backBtn");
+click("startBtn");
+assert.equal(w.ZEBRA.S.cur.id, id);
+win();
+assert.equal(w.ZEBRA.REC.daily.length, 1);
+click("backBtn");
+click("exportBtn");
+const code = d.getElementById("syncText").value;
+click("clearBtn");
+assert.equal(w.ZEBRA.REC.story, undefined);
+click("importBtn");
+d.getElementById("syncText").value = code;
+click("syncDo");
+assert.equal(w.ZEBRA.REC.story.length, 4);
+assert.equal(w.ZEBRA.REC.daily.length, 1);
+mode("free");
+click("startBtn");
+click("giveUpBtn");
+const n = Object.values(w.ZEBRA.REC.solved).reduce((a, v) => a + v.n, 0);
+click("checkBtn");
+assert.equal(
+  Object.values(w.ZEBRA.REC.solved).reduce((a, v) => a + v.n, 0),
+  n,
+);
+console.log(
+  "PASS: four chapter progression, daily stability, six achievements, sync roundtrip and revealed-answer exclusion",
+);
+dom.window.close();
