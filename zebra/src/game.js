@@ -60,6 +60,7 @@ function startGame(selected) {
   S.chapter = chapter;
   S.day = p.date || dayKey();
   S.recorded = false;
+  S.undoStack = [];
   S.assign = {};
   Object.keys(p.categories).forEach(
     (c) => (S.assign[c] = new Array(5).fill(null)),
@@ -90,6 +91,7 @@ function startGame(selected) {
 
 function renderGrid() {
   updateClues();
+  updateEditButtons();
   const p = S.cur,
     tb = document.getElementById("grid");
   tb.innerHTML = "";
@@ -142,7 +144,9 @@ function renderGrid() {
 }
 
 function setCell(cat, idx, v) {
-  if (S.solved) return;
+  if (S.solved || S.assign[cat][idx] === v) return;
+  S.undoStack.push(copyAssignments());
+  clearEditMessage();
   // 同一类别里同一个值只能出现一次，若重复则清掉原来那格
   if (v) {
     const old = S.assign[cat].indexOf(v);
@@ -202,6 +206,7 @@ function check() {
   }
   // 全对
   S.solved = true;
+  updateEditButtons();
   stopTimer();
   document.getElementById("checkBtn").disabled = true;
   document.getElementById("giveUpBtn").disabled = true;
@@ -222,6 +227,7 @@ function giveUp() {
     return;
   const p = S.cur;
   S.solved = true;
+  updateEditButtons();
   stopTimer();
   Object.keys(p.categories).forEach((cat) => {
     S.assign[cat] = p.solution[cat].slice();
@@ -276,4 +282,42 @@ function record(sec, ok) {
   REC.history = REC.history.slice(0, 60);
   saveRec(REC);
   renderStats();
+}
+
+// Capture the whole board so moving a duplicate value is one undoable action.
+function copyAssignments() {
+  return Object.fromEntries(
+    Object.entries(S.assign).map(([cat, row]) => [cat, row.slice()]),
+  );
+}
+function clearEditMessage() {
+  const msg = document.getElementById("gameMsg");
+  msg.textContent = "";
+  msg.className = "msg";
+}
+function updateEditButtons() {
+  document.getElementById("undoBtn").disabled =
+    S.solved || !S.undoStack?.length;
+  document.getElementById("resetBtn").disabled =
+    S.solved || !Object.values(S.assign).some((row) => row.some(Boolean));
+}
+function undoMove() {
+  if (S.solved || !S.undoStack.length) return;
+  S.assign = S.undoStack.pop();
+  clearEditMessage();
+  renderGrid();
+}
+function resetBoard() {
+  if (S.solved || !Object.values(S.assign).some((row) => row.some(Boolean)))
+    return;
+  if (
+    !confirm(
+      "确定清空本题的所有填写吗？计时继续，已保存的档案不受影响；清空后可以撤回。",
+    )
+  )
+    return;
+  S.undoStack.push(copyAssignments());
+  Object.keys(S.assign).forEach((cat) => S.assign[cat].fill(null));
+  clearEditMessage();
+  renderGrid();
 }

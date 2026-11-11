@@ -1,3 +1,5 @@
+document.getElementById("undoBtn").onclick = undoMove;
+document.getElementById("resetBtn").onclick = resetBoard;
 document.getElementById("listBtn").onclick = () => {
   renderList();
   document.getElementById("puzzleList").classList.toggle("hidden");

@@ -30,6 +30,34 @@ function win() {
   click("checkBtn");
   assert(s.solved);
 }
+click("startBtn");
+const editState = w.ZEBRA.S;
+const cat = Object.keys(editState.assign)[0],
+  val = editState.cur.categories[cat][0];
+assert(d.getElementById("undoBtn").disabled);
+w.setCell(cat, 0, val);
+w.setCell(cat, 1, val);
+assert.equal(editState.assign[cat][0], null);
+click("undoBtn");
+assert.equal(editState.assign[cat][0], val);
+assert.equal(editState.assign[cat][1], null);
+const timerStart = editState.t0;
+w.confirm = () => false;
+click("resetBtn");
+assert.equal(editState.assign[cat][0], val);
+w.confirm = () => true;
+click("resetBtn");
+assert(editState.assign[cat].every((v) => v === null));
+assert.equal(editState.t0, timerStart);
+click("undoBtn");
+assert.equal(editState.assign[cat][0], val);
+click("undoBtn");
+assert(editState.assign[cat].every((v) => v === null));
+assert(d.getElementById("undoBtn").disabled);
+click("giveUpBtn");
+assert(d.getElementById("undoBtn").disabled);
+assert(d.getElementById("resetBtn").disabled);
+click("backBtn");
 mode("story");
 assert(d.getElementById("freeFilters").classList.contains("hidden"));
 mode("daily");
