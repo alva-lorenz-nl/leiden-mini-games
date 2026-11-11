@@ -30,6 +30,16 @@ function win() {
   click("checkBtn");
   assert(s.solved);
 }
+assert(!d.getElementById("themeRow").textContent.includes("故事模式"));
+w.eval('S.theme = "story"; renderChoices();');
+assert.equal(w.ZEBRA.S.theme, "all");
+w.eval('S.tag = "deleted-tag"; renderModes();');
+assert.equal(w.ZEBRA.S.tag, "all");
+for (const bad of ['null', '[]', '{}', '{"done":null,"solved":null,"history":null}']) {
+  w.localStorage.setItem('zebra_records',bad);
+  const loaded=w.loadRec();assert(Array.isArray(loaded.done));assert(Array.isArray(loaded.history));assert(loaded.solved);
+}
+w.localStorage.removeItem('zebra_records');
 click("startBtn");
 const editState = w.ZEBRA.S;
 const cat = Object.keys(editState.assign)[0],
@@ -177,6 +187,9 @@ assert(exported.w.length > 0);
 
 click("clearBtn");
 assert.equal(w.ZEBRA.REC.story, undefined);
+w.eval('chapter=4;stage=3;mode="story";renderModes();');
+assert.equal(w.eval('stage'),0);
+assert(w.pickPuzzle());
 click("importBtn");
 d.getElementById("syncText").value = code;
 click("syncDo");

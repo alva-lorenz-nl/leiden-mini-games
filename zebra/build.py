@@ -7,7 +7,10 @@ from z3 import IntVal, is_true, simplify, substitute
 from generator import THEMES, make_solver_for, clue_to_constraint, unique_solution, clue_to_text
 
 ROOT = Path(__file__).resolve().parent
-MODULES = ['core', 'records', 'clues', 'game', 'sync', 'modes', 'events']
+MODULES = [
+    'core', 'dom', 'records', 'clues', 'story', 'session',
+    'board', 'home', 'achievements', 'modes', 'sync', 'events',
+]
 
 
 def read_json(name):

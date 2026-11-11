@@ -417,3 +417,23 @@ select.cell {
 #storyTags .row {
   margin-top: 4px;
 }
+
+.stage-heading {
+  flex-basis: 100%;
+  margin: 14px 0 4px;
+  font-weight: 600;
+}
+#storyStages {
+  margin-bottom: 14px;
+}
+
+.table-hint {
+  display: none;
+  font-size: 12px;
+  color: var(--dim);
+}
+@media (max-width: 700px) {
+  .table-hint {
+    display: block;
+  }
+}

@@ -86,7 +86,15 @@
             <div class="timer" id="timer">00:00</div>
           </div>
           <div class="intro" id="intro"></div>
-          <div class="table-scroll"><table id="grid"></table></div>
+          <p class="table-hint">表格可左右滑动，查看全部位置。</p>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="推理表格，可左右滚动"
+          >
+            <table id="grid"></table>
+          </div>
           <div class="q" id="question"></div>
           <div id="storyBox" class="story-box hidden"></div>
           <div class="foot">

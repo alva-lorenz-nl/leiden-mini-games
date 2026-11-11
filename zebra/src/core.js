@@ -1,3 +1,4 @@
+/* 题库解压、名称表与全局会话状态 */
 const META = BANK.meta,
   PUZ = BANK.puzzles;
 
@@ -48,6 +49,7 @@ function hydrateStory(ch, i) {
   };
 }
 
+/* 页面级状态：模式选择、当前题、填表、计时 */
 const S = {
   theme: localStorage.getItem("zebra_theme") || "cat",
   diff: localStorage.getItem("zebra_diff") || "easy",
@@ -60,3 +62,7 @@ const S = {
   elapsed: 0,
   solved: false,
 };
+
+let mode = "free", // free | story | daily
+  chapter = 0, // 故事模式下选中的章节
+  stage = 0; // 故事模式下选中的阶段
