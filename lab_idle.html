@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>永动轮实验室日常 · 小猫监督官</title>
+<meta name="tag" content="放置 · 养成">
+<meta name="description" content="九十年代的车库实验室，两个人和一只猫。灵感与稳定性在两条曲线上拉扯，攒够了就重启一次。">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#ece3d6; --dim:#9b8f7e; --amber:#e0a458; --amber2:#c9863c;
+    --bg:#11100e; --panel:#1a1714; --line:#2f2822; --ok:#8fbf7f; --bad:#c96a5a;
+  }
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1100px 620px at 50% -10%, #26201a 0%, #11100e 62%), var(--bg);
+    color:var(--ink);
+    font-family:"Songti SC","STSong","Noto Serif SC",serif;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:14px;min-height:100%;
+  }
+  .wrap{width:100%;max-width:560px;padding-bottom:36px}
+
+  header{text-align:center;margin-bottom:12px}
+  .kicker{font-size:10.5px;letter-spacing:.32em;color:var(--amber2);margin-bottom:6px}
+  h1{font-size:19px;font-weight:600;letter-spacing:.06em}
+  h1 small{display:block;font-size:11px;color:var(--dim);letter-spacing:.14em;margin-top:5px;font-weight:400}
+
+  .panel{
+    background:linear-gradient(180deg,#1d1a16,#16130f);
+    border:1px solid var(--line);border-radius:13px;
+    padding:14px;margin-bottom:11px;
+    box-shadow:0 18px 44px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative;
+  }
+
+  /* 场景 */
+  .scene{padding:0;overflow:hidden;position:relative;background:#0d0c0b}
+  .scene canvas{width:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+  .scene .cap{
+    position:absolute;left:0;right:0;bottom:0;padding:16px 12px 8px;
+    background:linear-gradient(180deg,rgba(13,12,11,0),rgba(13,12,11,.86));
+    font-size:11.5px;letter-spacing:.1em;color:#cbb99e;display:flex;
+    justify-content:space-between;align-items:flex-end;gap:8px;
+  }
+  .scene .cap b{font-weight:600;color:var(--amber);font-size:12.5px;letter-spacing:.08em}
+  .scene .cap i{font-style:normal;color:#7d6a52;font-size:10.5px}
+  .tierbar{position:absolute;top:0;left:0;right:0;height:2px;background:rgba(0,0,0,.4)}
+  .tierbar span{display:block;height:100%;background:linear-gradient(90deg,#8a6a3a,#e0a458);width:0;transition:width .4s}
+
+  /* 资源 */
+  .res{display:flex;align-items:baseline;justify-content:center;gap:9px;padding:2px 0}
+  .res .num{font-size:27px;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .res .unit{font-size:11.5px;color:var(--dim);letter-spacing:.08em}
+  .rate{text-align:center;font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:.06em}
+  .rate b{color:#b79a6a;font-weight:400}
+
+  /* 稳定性 */
+  .stab{margin-top:12px}
+  .stab .lab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);letter-spacing:.1em;margin-bottom:5px}
+  .stab .lab b{color:#b7a88e;font-weight:400;font-variant-numeric:tabular-nums}
+  .bar{height:7px;border-radius:4px;background:#241f1a;overflow:hidden;border:1px solid #2b241e;position:relative}
+  .bar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#4a6a52,#8fbf7f);transition:width .25s,background .4s}
+  .bar.warn span{background:linear-gradient(90deg,#7a5a2a,#e0a458)}
+  .bar.danger span{background:linear-gradient(90deg,#6a3a30,#c96a5a)}
+  .heat{text-align:right;font-size:10px;color:#6f6152;margin-top:4px;letter-spacing:.06em}
+
+  /* 小猫技能 */
+  .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .ab{
+    position:relative;overflow:hidden;
+    padding:10px 6px 9px;border-radius:10px;border:1px solid #3a2f24;
+    background:linear-gradient(180deg,#2a2219,#1d1813);
+    color:#e8dcc8;font-family:inherit;font-size:12px;letter-spacing:.02em;
+    cursor:pointer;transition:.15s;text-align:center;line-height:1.45;
+  }
+  .ab small{display:block;font-size:9.5px;color:#8d7d66;letter-spacing:.04em;margin-top:3px}
+  .ab:hover:not(:disabled){border-color:#6a5236;background:linear-gradient(180deg,#3a2d1f,#241c15)}
+  .ab:active:not(:disabled){transform:translateY(1px)}
+  .ab:disabled{cursor:default;opacity:.55}
+  .ab .cd{
+    position:absolute;left:0;bottom:0;height:100%;width:0;
+    background:rgba(0,0,0,.45);pointer-events:none;transition:width .2s linear;
+  }
+  .ab b{font-weight:600;color:#f0d8b0;font-size:12.5px;white-space:nowrap}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tabs button{
+    flex:1;min-width:64px;padding:9px 4px;border-radius:9px;
+    border:1px solid var(--line);background:#191512;color:#9b8f7e;
+    font-family:inherit;font-size:12px;letter-spacing:.08em;cursor:pointer;transition:.15s;
+  }
+  .tabs button.on{background:linear-gradient(180deg,#33281c,#241c15);color:var(--amber);border-color:#5c4630}
+
+  /* 升级列表 */
+  .row{
+    display:flex;align-items:center;gap:11px;padding:10px 0;
+    border-bottom:1px solid #241f1a;
+  }
+  .row:last-child{border-bottom:none}
+  .row .info{flex:1;min-width:0}
+  .row .nm{font-size:13.5px;letter-spacing:.04em;color:#e6dcc9}
+  .row .nm em{font-style:normal;font-size:10px;color:#7d6a52;margin-left:6px;letter-spacing:.06em}
+  .row .ds{font-size:10.5px;color:#8a7d6a;margin-top:3px;letter-spacing:.03em;line-height:1.6}
+  .row .ds .up{color:#8fbf7f}
+  .row .ds .dn{color:#c96a5a}
+  .row .buy{
+    flex:0 0 auto;min-width:88px;padding:9px 10px;border-radius:9px;
+    border:1px solid #4a3a29;background:linear-gradient(180deg,#3a2d1f,#241c15);
+    color:#f0e2cc;font-family:inherit;font-size:12px;letter-spacing:.04em;
+    cursor:pointer;transition:.13s;font-variant-numeric:tabular-nums;
+  }
+  .row .buy small{display:block;font-size:9.5px;color:#a8927a;margin-top:2px}
+  .row .buy:disabled{opacity:.42;cursor:default}
+  .row .buy:hover:not(:disabled){border-color:var(--amber);background:linear-gradient(180deg,#48371f,#2b2118)}
+  .row .buy:active:not(:disabled){transform:translateY(1px)}
+  .row.max .buy{border-color:#3a3f30;color:#8fbf7f}
+
+  .sec{font-size:10.5px;letter-spacing:.22em;color:#7d6a52;margin:14px 0 4px;padding-top:10px;border-top:1px solid #241f1a}
+  .sec:first-child{margin-top:0;padding-top:0;border-top:none}
+
+  /* 收藏 */
+  .item{
+    display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #241f1a;
+    cursor:pointer;
+  }
+  .item:last-child{border-bottom:none}
+  .item .ico{
+    flex:0 0 34px;height:34px;border-radius:7px;display:grid;place-items:center;
+    background:#241f1a;border:1px solid #322a22;font-size:15px;color:#6a5a45;
+  }
+  .item.open .ico{background:linear-gradient(180deg,#3a2d1f,#241c15);border-color:#5c4630;color:var(--amber)}
+  .item .tx{flex:1;min-width:0}
+  .item .tn{font-size:13px;color:#8a7d6a;letter-spacing:.03em}
+  .item.open .tn{color:#e6dcc9}
+  .item .td{font-size:10.5px;color:#6f6152;margin-top:3px;line-height:1.6}
+  .item .note{
+    display:none;margin-top:9px;padding:9px 11px;border-left:2px solid #5c4630;
+    background:#191512;border-radius:0 7px 7px 0;
+    font-size:11px;line-height:1.85;color:#a99a84;
+  }
+  .item .note p+p{margin-top:7px}
+  .item .note b{color:#c9b28c;font-weight:400}
+  .item.show .note{display:block}
+
+  /* 重生 */
+  .rebirth .big{text-align:center;padding:6px 0 12px}
+  .rebirth .frag{font-size:30px;color:#c9a0d0;font-variant-numeric:tabular-nums}
+  .rebirth .big small{display:block;font-size:10.5px;color:var(--dim);letter-spacing:.14em;margin-top:4px}
+  .rebirth p{font-size:11.5px;line-height:1.95;color:#8a7d6a;letter-spacing:.02em}
+  .rebirth p+p{margin-top:7px}
+  .rebirth .btn{
+    width:100%;margin-top:13px;padding:15px;border-radius:11px;
+    border:1px solid #5a4a6a;background:linear-gradient(180deg,#33283a,#241c28);
+    color:#e8d8f0;font-family:inherit;font-size:14px;letter-spacing:.1em;cursor:pointer;transition:.15s;
+  }
+  .rebirth .btn:hover:not(:disabled){border-color:#8a6aa0}
+  .rebirth .btn:disabled{opacity:.45;cursor:default}
+  .rebirth .btn small{display:block;font-size:10.5px;color:#9a8aa8;margin-top:5px;letter-spacing:.06em}
+
+  /* 日志 */
+  .log{max-height:340px;overflow-y:auto;font-size:11.5px;line-height:1.9;color:#8a7d6a}
+  .log p{padding:5px 0;border-bottom:1px solid #201b17;letter-spacing:.02em}
+  .log p:last-child{border-bottom:none}
+  .log time{color:#5f5546;margin-right:8px;font-variant-numeric:tabular-nums}
+  .log .hot{color:#c9a06a}
+
+  /* 事件卡 */
+  .event{
+    position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);
+    width:min(520px,calc(100% - 28px));z-index:60;
+    background:linear-gradient(180deg,#241d16,#1a1512);
+    border:1px solid #5c4630;border-radius:13px;padding:14px;
+    box-shadow:0 24px 60px -20px #000;
+    opacity:0;pointer-events:none;transition:.3s;
+  }
+  .event.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  .event .k{font-size:9.5px;letter-spacing:.24em;color:var(--amber2);margin-bottom:6px}
+  .event .t{font-size:14px;color:#e6dcc9;letter-spacing:.04em;margin-bottom:7px}
+  .event .d{font-size:11.5px;line-height:1.85;color:#9b8f7e;margin-bottom:11px}
+  .event .opts{display:grid;gap:7px}
+  .event .opts button{
+    text-align:left;padding:10px 12px;border-radius:9px;border:1px solid #3a2f24;
+    background:#201a15;color:#d8cbb8;font-family:inherit;font-size:11.5px;line-height:1.65;
+    cursor:pointer;transition:.15s;letter-spacing:.02em;
+  }
+  .event .opts button:hover{border-color:var(--amber);background:#2a2219}
+  .event .opts button b{color:#f0d8b0;font-weight:600;margin-right:5px}
+
+  .toast{
+    position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(14px);
+    background:#241d16;border:1px solid #5c4630;border-radius:9px;
+    padding:9px 15px;font-size:12px;color:#e8dcc8;letter-spacing:.05em;
+    opacity:0;pointer-events:none;transition:.25s;z-index:70;
+    box-shadow:0 14px 34px -16px #000;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .foot{text-align:center;font-size:10px;color:#5f5546;letter-spacing:.1em;margin-top:6px}
+  .reset{
+    width:100%;margin-top:12px;padding:9px;border-radius:9px;border:1px solid #2f2822;
+    background:transparent;color:#5f5546;font-family:inherit;font-size:10.5px;
+    letter-spacing:.1em;cursor:pointer;
+  }
+  .reset:hover{color:#8a7d6a;border-color:#3a2f24}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">PERPETUAL WHEEL · GARAGE</div>
+    <h1>永动轮实验室日常<small>小猫监督官与两位合伙人</small></h1>
+  </header>
+
+  <div class="panel scene">
+    <canvas id="scene" width="192" height="108"></canvas>
+    <div class="tierbar"><span id="tierFill"></span></div>
+    <div class="cap"><span><b id="sceneName">车库 · 一盏白炽灯</b><br><i id="sceneDesc">两只折叠桌，一箱草稿纸，还有一只还没决定跟谁睡的猫。</i></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="res">
+      <span class="num" id="ip">0</span>
+      <span class="unit">灵感算力</span>
+    </div>
+    <div class="rate" id="rateLine">每秒 <b>0</b> · 稳定性系数 ×1.00</div>
+
+    <div class="stab">
+      <div class="lab"><span>系统稳定性</span><b id="stabVal">100%</b></div>
+      <div class="bar" id="stabBar"><span id="stabFill"></span></div>
+      <div class="heat" id="heatLine">发热 0.8 / 散热 1.0 · 净 +0.2</div>
+    </div>
+
+    <div class="cats">
+      <button class="ab" id="ab1"><b>踩键盘</b><small>立刻 20 秒产出</small><div class="cd"></div></button>
+      <button class="ab" id="ab2"><b>呼噜声</b><small>稳定性 +22</small><div class="cd"></div></button>
+      <button class="ab" id="ab3"><b>尾巴扫屏</b><small>20 秒 ×2.5</small><div class="cd"></div></button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="shop" class="on">工位</button>
+    <button data-tab="shelf">收藏室</button>
+    <button data-tab="re">重启</button>
+    <button data-tab="log">日志</button>
+  </div>
+
+  <div class="panel" id="tab-shop">
+    <div id="shopList"></div>
+    <div class="foot" id="shopHint">两个人在同一间屋子里，做着互相拆台的事。</div>
+  </div>
+
+  <div class="panel" id="tab-shelf" style="display:none">
+    <div id="shelfList"></div>
+  </div>
+
+  <div class="panel rebirth" id="tab-re" style="display:none">
+    <div class="big">
+      <div class="frag" id="fragTotal">0</div>
+      <small>记忆碎片 · 每片 +5% 全局产出</small>
+    </div>
+    <p>重启会把车库里的一切清空：算力、设备、两个人的状态。留下的只有记忆碎片，和架子上那些旧东西。</p>
+    <p id="reInfo"></p>
+    <button class="btn" id="reBtn">重启这个夜晚<small id="reSub">还差一点</small></button>
+    <button class="reset" id="wipe">清空全部存档，从头开始</button>
+  </div>
+
+  <div class="panel" id="tab-log" style="display:none">
+    <div class="log" id="logBox"></div>
+  </div>
+
+</div>
+
+<div class="event" id="event">
+  <div class="k">INTERLUDE</div>
+  <div class="t" id="evTitle"></div>
+  <div class="d" id="evDesc"></div>
+  <div class="opts" id="evOpts"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   永动轮实验室日常 · 小猫监督官
+   纯放置：灵感算力（产出）/ 系统稳定性（效率系数）
+   重生：记忆碎片永久加成
+   ============================================================ */
+
+const SAVE_KEY = 'leiden_lab_idle_v1';
+
+/* ---------- 数据 ---------- */
+// 赫尔曼：抬高产出，同时抬高发热
+const HER = [
+  {id:'h1', name:'草稿纸堆',      desc:'写满又划掉的算法草稿',        cost:12,       g:1.12, val:0.5,    heat:1},
+  {id:'h2', name:'算法笔记',      desc:'页边全是问号的那种笔记',      cost:90,       g:1.13, val:3,      heat:1},
+  {id:'h3', name:'白板推演',      desc:'一整面墙的箭头和方框',        cost:800,      g:1.13, val:16,     heat:1, scene:1},
+  {id:'h4', name:'并行实验机',    desc:'八条流水线一起跑，很吵',      cost:7500,     g:1.13, val:95,     heat:1},
+  {id:'h5', name:'数据集群',      desc:'夜里听起来像在下雨',          cost:72000,    g:1.13, val:560,    heat:1, scene:2},
+  {id:'h6', name:'神经网格',      desc:'没人完全说得清它怎么想的',    cost:700000,   g:1.13, val:3400,   heat:1},
+  {id:'h7', name:'自演化内核',    desc:'它开始自己改自己的注释了',    cost:10000000, g:1.15, val:21000,  heat:1},
+  {id:'h8', name:'永动轮雏形',    desc:'名字比东西本身响得多',        cost:300000000,g:1.15, val:130000, heat:1},
+];
+// 阿尔瓦：抬高散热（稳定性回升）
+const ALV = [
+  {id:'a1', name:'恒温电烙铁',    desc:'焊点终于不再发灰了',          cost:25,       g:1.14, val:2.0},
+  {id:'a2', name:'稳压电源',      desc:'电压表指针不再乱跳',          cost:240,      g:1.14, val:7, scene:1},
+  {id:'a3', name:'屏蔽机柜',      desc:'把噪声关在铁皮里面',          cost:2400,     g:1.14, val:25},
+  {id:'a4', name:'精密电桥',      desc:'测到小数点后第四位为止',      cost:24000,    g:1.14, val:85, scene:2},
+  {id:'a5', name:'冷却回路',      desc:'铜管绕着机箱爬了一圈',        cost:240000,   g:1.14, val:300},
+  {id:'a6', name:'全屋供电',      desc:'从此再也不用抢插座',          cost:2400000,  g:1.14, val:1100},
+];
+// 小猫：全局倍率
+const CAT = [
+  {id:'b1', name:'猫窝放在机柜旁', desc:'它自己选的，没人敢挪',   cost:5000,     g:2.40, val:1.10, max:30, scene:3},
+  {id:'b2', name:'猫爪印章认证',   desc:'盖过章的文件才算通过',   cost:120000,   g:2.60, val:1.16, max:25, scene:4},
+  {id:'b3', name:'首席监督官铭牌', desc:'钉在门框上，比公司牌子早', cost:500000000,g:3.00, val:1.26, max:20, scene:5},
+];
+
+// 场景阶段（由已购设备解锁，取历史最高）
+const SCENES = [
+  {name:'车库 · 一盏白炽灯', desc:'两只折叠桌，一箱草稿纸，还有一只还没决定跟谁睡的猫。'},
+  {name:'车库 · 有了示波器', desc:'波形在绿屏上跳，白板上第一次写满了东西。'},
+  {name:'阁楼 · 扩建之后',   desc:'斜屋顶下多了书架，下雨时听得更清楚。'},
+  {name:'机房 · 一排机柜',   desc:'风扇声盖过了说话声，猫睡在机柜顶上。'},
+  {name:'写字楼 · 十七层',   desc:'落地窗，黄昏，城市在脚下亮起来。'},
+  {name:'永动轮总部',        desc:'夜里从很远处就能看见那块牌子。'},
+];
+
+// 收藏室
+const ITEMS = [
+  {id:'i1', need:1e4, icon:'烙', name:'修补了三次的旧电烙铁',
+   a:'大学三年级送给他的，手柄上的胶布是我缠的。',
+   h:'某人总把它随手搁在草稿纸上，差点烧穿三篇毕业论文。'},
+  {id:'i2', need:1e5, icon:'契', name:'被猫爪踩过印章的初版企划书',
+   a:'红色初审章盖得很正，右下角那枚粉色爪印是后来才有的。',
+   h:'我说过那份企划书可以留着，他说太丢人。结果一直在他抽屉里。'},
+  {id:'i3', need:1e6, icon:'表', name:'双人熬夜轮班时刻表',
+   a:'我写的部分在左边，字比较小。',
+   h:'今天算法突破了！——底下有人批示：但你算错了一个收敛极值，重做。'},
+  {id:'i4', need:1e7, icon:'据', name:'带蕾丝花边的第一笔分红收据',
+   a:'蕾丝花边不是我加的。',
+   h:'那天买了一整箱金枪鱼罐头、一罐维也纳咖啡豆，还有一块怀表。罐头是给猫的。'},
+  {id:'i5', need:1e8, icon:'稿', name:'第一次通过验收的算法草稿',
+   a:'第七版。前六版都在纸箱里。',
+   h:'他把第七版裱起来的时候，我说这有点过了。他说不过。'},
+  {id:'i6', need:1e9, icon:'波', name:'被拆开的示波器',
+   a:'拆完装回去多出两颗螺丝，至今不知道是哪儿的。',
+   h:'别问了，是我拆的。它现在还能用，这就够了。'},
+  {id:'i7', need:1e10, icon:'条', name:'一张写着「对不起」的便签',
+   a:'便签是我写的。没送出去。',
+   h:'我在他抽屉里见过。日期是分家那年。我没提，他也没提。'},
+  {id:'i8', need:1e12, icon:'钥', name:'车库的备用钥匙',
+   a:'钥匙一直在我这儿。',
+   h:'搬走那天他没还我。我也没要。'},
+];
+
+// 事件
+const EVENTS = [
+  {
+    title:'阿姆斯特丹风投宴会的邀请函',
+    desc:'赫尔曼换上了那件带绿色内衬的定制西装，站在门口整理袖口。车已经在楼下等着了。',
+    opts:[
+      {label:'放他去社交', sub:'立刻获得 90 秒产出，稳定性 −18',
+       run:()=>{ gain(rate()*90); addStab(-18); log('他带回了投资人的名片，也带回了一身烟味。','hot'); }},
+      {label:'小猫咬住他的蕾丝领饰', sub:'稳定性 +25，60 秒内产出 ×1.6',
+       run:()=>{ addStab(25); buff(1.6,60); log('领饰被咬出一个洞。他坐下来，给猫梳了半小时毛。','hot'); }},
+    ]
+  },
+  {
+    title:'七月雷雨夜的跳闸',
+    desc:'电闸冒出一串火花，屋里全黑了。雨水顺着窗缝渗进来，机箱的风扇声一下停住。',
+    opts:[
+      {label:'摸黑抢修配电箱', sub:'稳定性 +30，消耗 15% 算力',
+       run:()=>{ spend(0.15); addStab(30); log('绝缘胶带缠了三圈，灯回来了。','hot'); }},
+      {label:'先抱住猫，等雨小一点', sub:'稳定性 −25，立刻获得 120 秒产出',
+       run:()=>{ addStab(-25); gain(rate()*120); log('猫在怀里发抖。等雨停的时候，算法居然跑通了。','hot'); }},
+    ]
+  },
+  {
+    title:'谁动了我的黑咖啡',
+    desc:'冲好的浓缩不见了，桌上只剩一只空杯。旁边那盒高档红茶包也被拆得乱七八糟。',
+    opts:[
+      {label:'让小猫跳进空纸箱', sub:'稳定性 +15，45 秒内产出 ×1.3',
+       run:()=>{ addStab(15); buff(1.3,45); log('纸箱里只剩一条尾巴在动。两个人都笑了，各扣五点怒气。','hot'); }},
+      {label:'让他们自己吵完', sub:'30 秒内产出 ×2，之后稳定性 −10',
+       run:()=>{ buff(2,30); setTimeout(()=>{addStab(-10);},30000); log('白板上出现了两行不同笔迹的互相指责。','hot'); }},
+    ]
+  },
+];
+
+/* ---------- 状态 ---------- */
+const S = {
+  ip:0, run:0, all:0,           // 当前算力 / 本轮累计 / 历史累计
+  stab:100,
+  lv:{},                        // 设备等级
+  frag:0,                       // 记忆碎片
+  scene:0,                      // 已解锁最高场景
+  items:[],                     // 已解锁收藏
+  buffs:[],                     // {m, until}
+  cd:{ab1:0, ab2:0, ab3:0},
+  evtAt: 0, evtOpen:false,
+  log:[], born:Date.now(), last:Date.now(),
+};
+
+/* ---------- 工具 ---------- */
+const $ = id => document.getElementById(id);
+
+const UNITS = [[1e20,'垓'],[1e16,'京'],[1e12,'兆'],[1e8,'亿'],[1e4,'万']];
+function fmt(n){
+  if(!isFinite(n)) return '∞';
+  if(n < 1000){
+    if(n < 10) return (Math.round(n*10)/10).toString().replace(/\.0$/,'');
+    return Math.round(n).toString();
+  }
+  for(const [v,s] of UNITS){
+    if(n >= v){
+      let x = n/v;
+      let t = x >= 100 ? Math.round(x).toString() : (Math.round(x*100)/100).toString();
+      return t + s;
+    }
+  }
+  return Math.round(n).toString();
+}
+function now(){ return Date.now(); }
+
+function log(text, cls){
+  S.log.unshift({t:now(), text, cls:cls||''});
+  if(S.log.length > 80) S.log.pop();
+  renderLog();
+}
+let toastTimer=null;
+function toast(text){
+  const el=$('toast');
+  el.textContent=text; el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('on'), 1800);
+}
+
+/* ---------- 计算 ---------- */
+function lv(id){ return S.lv[id] || 0; }
+
+function herRate(){
+  let r = 0.5;
+  for(const u of HER) r += u.val * lv(u.id);
+  return r;
+}
+function alvaRate(){
+  let r = 1.0;
+  for(const u of ALV) r += u.val * lv(u.id);
+  return r;
+}
+function catMult(){
+  let m = 1;
+  for(const u of CAT) m *= Math.pow(u.val, lv(u.id));
+  return m;
+}
+function heat(){ return 0.8 + herRate() * 0.010; }
+
+function buffMult(){
+  let m = 1;
+  const t = now();
+  for(const b of S.buffs) if(b.until > t) m *= b.m;
+  return m;
+}
+function stabFactor(){ return 0.30 + 0.70 * (S.stab/100); }
+
+function rate(){
+  return herRate() * stabFactor() * catMult() * (1 + 0.05*S.frag) * buffMult();
+}
+
+function priceOf(u){ return Math.ceil(u.cost * Math.pow(u.g, lv(u.id))); }
+
+/* ---------- 操作 ---------- */
+function gain(n){ S.ip += n; S.run += n; S.all += n; }
+
+function spend(frac){
+  const n = S.ip * frac;
+  S.ip -= n; S.run -= n; S.all -= n;
+  if(S.ip < 0) S.ip = 0;
+  return n;
+}
+
+function addStab(d){
+  S.stab = Math.max(0, Math.min(100, S.stab + d));
+}
+
+function buff(m, sec){
+  S.buffs.push({m, until: now() + sec*1000});
+}
+
+function buy(id){
+  const u = [...HER, ...ALV, ...CAT].find(x => x.id === id);
+  if(!u) return;
+  const c = priceOf(u);
+  if(S.ip < c) return;
+  if(u.max && lv(id) >= u.max) return;
+  S.ip -= c;
+  S.lv[id] = lv(id) + 1;
+  if(u.scene && u.scene > S.scene){
+    S.scene = u.scene;
+    log('场景变了：' + SCENES[S.scene].name, 'hot');
+    toast('新场景 · ' + SCENES[S.scene].name);
+    drawScene();
+  }
+  renderShop();
+  renderSceneCaption();
+  save();
+}
+
+/* ---------- 存档 ---------- */
+function save(){
+  S.last = now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || typeof d !== 'object') return false;
+    for(const k of ['ip','run','all','stab','frag','scene','born','last'])
+      if(typeof d[k] === 'number') S[k] = d[k];
+    if(d.lv && typeof d.lv === 'object') S.lv = d.lv;
+    if(Array.isArray(d.items)) S.items = d.items;
+    if(Array.isArray(d.log)) S.log = d.log.slice(0,80);
+    if(Array.isArray(d.buffs)) S.buffs = d.buffs.filter(b=>b && b.until > now());
+    S.stab = Math.max(0, Math.min(100, S.stab));
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- 离线收益 ---------- */
+function offline(){
+  if(!S.last) return;
+  const dt = Math.min(8*3600, (now() - S.last)/1000);
+  if(dt < 60) return;
+  const r = rate();
+  if(r <= 0) return;
+  const got = r * dt * 0.5;
+  gain(got);
+  addStab(-dt * 0.002); // 无人值守，稳定性略降
+  log('离开了 ' + Math.round(dt/60) + ' 分钟，实验室自己跑了 ' + fmt(got) + ' 灵感算力。', 'hot');
+}
+
+/* ============================================================
+   像素场景
+   ============================================================ */
+const W=192, H=108;
+const sceneCv = $('scene');
+const sctx = sceneCv.getContext('2d');
+sctx.imageSmoothingEnabled = false;
+
+const off = document.createElement('canvas');
+off.width=W; off.height=H;
+const octx = off.getContext('2d');
+octx.imageSmoothingEnabled = false;
+
+let anim = [];   // 动画元素
+
+function R(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(x|0,y|0,w|0,h|0); }
+function line(g,x0,y0,x1,y1,c){
+  g.fillStyle=c;
+  let dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+  let sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx-dy;
+  let x=x0, y=y0;
+  for(let i=0;i<400;i++){
+    g.fillRect(x|0,y|0,1,1);
+    if(x===x1 && y===y1) break;
+    const e2=err*2;
+    if(e2 > -dy){ err-=dy; x+=sx; }
+    if(e2 < dx){ err+=dx; y+=sy; }
+  }
+}
+function glow(g,cx,cy,r,c1,c2){
+  const lg=g.createRadialGradient(cx,cy,2,cx,cy,r);
+  lg.addColorStop(0,c1); lg.addColorStop(1,c2);
+  g.fillStyle=lg; g.fillRect(cx-r,cy-r,r*2,r*2);
+}
+function vig(g,a){
+  const vg=g.createRadialGradient(96,56,34,96,56,124);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,'+a+')');
+  g.fillStyle=vg; g.fillRect(0,0,W,H);
+}
+
+/* 猫（会甩尾巴） */
+function cat(g,x,y,scale){
+  const s = scale||1;
+  R(g,x,y+2*s,11*s,6*s,'#e8e2d8');
+  R(g,x+1*s,y,3*s,3*s,'#e8e2d8');
+  R(g,x+8*s,y,3*s,3*s,'#e8e2d8');
+  R(g,x+1.5*s,y,1*s,1*s,'#c8a0a0');
+  R(g,x+8.5*s,y,1*s,1*s,'#c8a0a0');
+  R(g,x+2.5*s,y+2.5*s,1*s,1*s,'#2a2429');
+  R(g,x+6.5*s,y+2.5*s,1*s,1*s,'#2a2429');
+  // 尾巴
+  anim.push({type:'tail', x:x+11*s, y:y+5*s, s:s});
+}
+
+/* 场景 0/1：车库 */
+function drawGarage(g, detail){
+  R(g,0,0,W,H,'#141217');
+  R(g,0,0,W,80,'#2b2529');
+  for(let y=4;y<80;y+=7){
+    for(let x=(y%14===4?0:7);x<W;x+=14) R(g,x,y,12,1,'#322b30');
+  }
+  R(g,0,80,W,H-80,'#1f1b1e');
+  R(g,0,80,W,1,'#3b3339');
+  for(let x=-20;x<W;x+=30)
+    for(let y=82;y<H;y+=6) R(g,x+Math.round((y-80)*.6),y,1,1,'#282327');
+
+  // 窗
+  R(g,10,16,44,30,'#3d3229');
+  R(g,12,18,40,26,'#161f2c');
+  R(g,31,18,1,26,'#3d3229'); R(g,12,31,40,1,'#3d3229');
+  R(g,18,22,4,4,'#c8cfa8'); R(g,19,23,3,3,'#e6ecc4');
+  for(let i=0;i<10;i++) R(g,15+((i*7)%34),20+((i*11)%22),1,1,'#8a94a8');
+  R(g,8,46,48,2,'#4c3b2d');
+  R(g,10,50,34,2,'#4c3b2d');
+  for(let i=0;i<7;i++) R(g,12+i*4,44,3,6,i%2?'#6a5a45':'#7a4a3a');
+
+  // 电线
+  for(let i=0;i<3;i++){
+    R(g,58,10+i*3,44,1,'#3d3238');
+    R(g,100,10+i*3,1,6+i*4,'#3d3238');
+  }
+  // 钟
+  R(g,148,8,14,14,'#4c3b2d');
+  R(g,150,10,10,10,'#d8cfbb');
+  R(g,155,12,1,4,'#3b3339'); R(g,155,15,3,1,'#3b3339');
+  // 门
+  R(g,148,26,38,54,'#3b2f26');
+  R(g,150,28,34,50,'#4a3b2e');
+  R(g,150,28,34,1,'#5c4a38');
+  R(g,180,50,3,3,'#c9a227');
+  // 灯
+  R(g,94,0,1,16,'#4a4038');
+  R(g,90,16,10,3,'#6a5a48');
+  R(g,93,19,4,4,'#ffe9b0');
+  anim.push({type:'bulb', x:95, y:21});
+  glow(g,95,24,52,'rgba(255,214,140,.22)','rgba(255,214,140,0)');
+
+  // 左桌
+  R(g,12,62,74,4,'#5a4535'); R(g,12,62,74,1,'#6e5442');
+  R(g,16,66,3,15,'#4a3a2c'); R(g,80,66,3,15,'#4a3a2c');
+  R(g,20,56,26,6,'#2e6b4f'); R(g,20,56,26,1,'#3d8a65');
+  R(g,24,58,4,2,'#c9a227'); R(g,32,57,2,3,'#b04a3a'); R(g,40,58,3,2,'#8ac0e0');
+  R(g,52,58,12,2,'#7a6a55'); R(g,62,57,8,3,'#4a4a52');
+  R(g,48,53,10,5,'#c9a227'); R(g,50,54,6,3,'#3b3339');
+  R(g,22,48,16,6,'#d8cfbb'); R(g,24,50,12,1,'#a89e88'); R(g,24,52,9,1,'#a89e88');
+
+  // 右桌
+  R(g,108,62,64,4,'#5a4535'); R(g,108,62,64,1,'#6e5442');
+  R(g,112,66,3,15,'#4a3a2c'); R(g,166,66,3,15,'#4a3a2c');
+  R(g,146,58,20,4,'#3a3a40');
+  for(let i=0;i<6;i++) R(g,147+i*3,59,2,1,'#6a6a72');
+  R(g,120,54,20,8,'#d8cfbb'); R(g,120,54,20,1,'#e6ddc9');
+  for(let i=0;i<4;i++) R(g,122,56+i*1.5,15,1,'#a89e88');
+  R(g,142,56,5,5,'#d8cfbb'); R(g,147,57,2,2,'#d8cfbb'); R(g,143,57,3,1,'#4a2f22');
+
+  // 纸箱
+  R(g,84,72,16,10,'#8a6a45'); R(g,84,72,16,1,'#a07c52'); R(g,88,76,8,1,'#6a5235');
+  R(g,88,66,12,7,'#8a6a45'); R(g,88,66,12,1,'#a07c52');
+
+  if(detail){
+    R(g,86,52,24,9,'#3a3a42'); R(g,86,52,24,1,'#4a4a54');
+    R(g,88,54,15,6,'#0e2a1e');
+    anim.push({type:'wave', x:89, y:56, w:14});
+    R(g,105,55,3,3,'#c9a227'); R(g,105,59,1,1,'#e04a4a');
+    R(g,58,22,46,24,'#dcdcd2'); R(g,58,22,46,1,'#b0b0a6');
+    for(let i=0;i<5;i++) R(g,62,26+i*3,10+i*6,1,'#5a5a72');
+    R(g,62,41,18,1,'#b04a3a'); R(g,84,41,14,1,'#3a6a8a');
+    R(g,58,46,46,2,'#8a8a82');
+    R(g,64,45,4,1,'#3a3a42'); R(g,72,45,4,1,'#b04a3a');
+    R(g,112,16,26,20,'#3b3339');
+    R(g,113,17,24,18,'#c9a227');
+    R(g,116,21,18,2,'#3b3339'); R(g,116,25,13,1,'#3b3339');
+    R(g,116,28,16,1,'#3b3339'); R(g,116,31,8,1,'#3b3339');
+  }
+  cat(g,150,76,1);
+  vig(g,.55);
+}
+
+/* 场景 2：阁楼 */
+function drawAttic(g){
+  R(g,0,0,W,H,'#141218');
+  R(g,0,0,W,84,'#2c2620');
+  // 斜屋顶
+  g.fillStyle='#241f1b';
+  g.beginPath(); g.moveTo(0,36); g.lineTo(96,6); g.lineTo(96,36); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(192,36); g.lineTo(96,6); g.lineTo(96,36); g.closePath(); g.fill();
+  // 瓦纹
+  for(let i=1;i<7;i++){
+    const t=i/7;
+    R(g,0,36-(30)*t,96*(1-t),1,'#2e2822');
+    R(g,96+96*t,36-30*t,96*(1-t),1,'#2e2822');
+  }
+  // 屋梁
+  line(g,0,36,96,6,'#3a3028'); line(g,96,6,192,36,'#3a3028');
+  line(g,0,36,96,6,'#3a3028'); line(g,96,7,192,37,'#3a3028');
+  R(g,0,34,W,3,'#3a3028');
+  // 天窗
+  R(g,72,2,48,18,'#3a3028');
+  R(g,74,4,44,14,'#141e2e');
+  R(g,80,7,2,2,'#e6ecc4'); R(g,92,9,1,1,'#c8cfa8');
+  R(g,108,6,1,1,'#c8cfa8'); R(g,100,14,1,1,'#8a94a8');
+  R(g,96,4,1,14,'#3a3028');
+  // 地面
+  R(g,0,84,W,H-84,'#241f1b');
+  R(g,0,84,W,1,'#3a3028');
+  for(let x=0;x<W;x+=18) R(g,x,86,1,H-86,'#2c2620');
+  // 书架
+  R(g,4,46,34,38,'#4a3a2c'); R(g,4,46,34,1,'#5c4a38');
+  for(let i=0;i<3;i++){
+    R(g,6,57+i*11,30,2,'#3a2d22');
+    for(let b=0;b<10;b++){
+      const cols=['#7a4a3a','#4a5a7a','#6a6a4a','#8a6a45','#5a4a6a','#8a4a4a'];
+      R(g,7+b*3,49+i*11,2,8,cols[(b+i)%6]);
+    }
+  }
+  // 长桌
+  R(g,48,70,102,4,'#5a4535'); R(g,48,70,102,1,'#6e5442');
+  R(g,54,74,3,13,'#4a3a2c'); R(g,140,74,3,13,'#4a3a2c');
+  // 示波器
+  R(g,56,60,24,10,'#3a3a42'); R(g,56,60,24,1,'#4a4a54');
+  R(g,58,62,15,6,'#0e2a1e');
+  anim.push({type:'wave', x:59, y:64, w:14});
+  R(g,75,63,3,3,'#c9a227');
+  // 电路板
+  R(g,86,64,20,6,'#2e6b4f');
+  R(g,90,66,4,2,'#c9a227'); R(g,98,65,2,3,'#b04a3a');
+  // 机箱
+  R(g,112,58,24,12,'#2a3038'); R(g,112,58,24,1,'#3a424e');
+  for(let i=0;i<3;i++) R(g,115,61+i*3,18,2,'#1e242c');
+  for(let i=0;i<4;i++) anim.push({type:'led', x:117+i*4, y:61, c:(i%2?'#5fe0a0':'#e0a458')});
+  // 椅
+  R(g,90,74,12,3,'#4a3a2c'); R(g,91,77,2,9,'#4a3a2c'); R(g,100,77,2,9,'#4a3a2c');
+  // 纸箱
+  R(g,158,64,22,24,'#8a6a45'); R(g,158,64,22,1,'#a07c52'); R(g,162,74,14,1,'#6a5235');
+  R(g,162,54,16,10,'#8a6a45'); R(g,162,54,16,1,'#a07c52');
+  // 电缆
+  for(let i=0;i<12;i++) R(g,44+i*6,86+Math.round(Math.sin(i*.7)*2),6,1,'#3a3038');
+  cat(g,146,64,1);
+  glow(g,110,52,70,'rgba(255,200,120,.16)','rgba(255,200,120,0)');
+  vig(g,.58);
+}
+
+/* 场景 3：机房 */
+function drawServer(g){
+  R(g,0,0,W,H,'#0b0f14');
+  R(g,0,0,W,86,'#141d26');
+  for(let x=0;x<W;x+=32) R(g,x,0,1,86,'#182430');
+  R(g,0,86,W,H-86,'#0e161e');
+  for(let x=0;x<W;x+=16) R(g,x,88,1,H-88,'#141d26');
+  for(let y=88;y<H;y+=8) R(g,0,y,W,1,'#141d26');
+  // 走线槽
+  R(g,0,10,W,4,'#1e2a34'); R(g,0,10,W,1,'#2a3a46');
+  for(let i=0;i<9;i++) R(g,8+i*22,6,2,5,'#26343f');
+  // 机架 x4
+  for(let r=0;r<4;r++){
+    const x=6+r*47, w=40;
+    R(g,x,20,w,66,'#1a242e');
+    R(g,x,20,w,1,'#2e3e4c');
+    for(let i=0;i<10;i++){
+      R(g,x+3,24+i*6,w-6,4,'#222f3a');
+      R(g,x+4,25+i*6,16,2,'#1a242c');
+      for(let d=0;d<3;d++)
+        anim.push({type:'led', x:x+28+d*3, y:25+i*6, c:(d===0?'#5fe0a0':d===1?'#e0a458':'#5fa0e0'), skip:(i*7+r*5+d*3)%5===0});
+    }
+  }
+  R(g,6,86,180,3,'#1a242e');
+  cat(g,140,12,1);
+  glow(g,96,52,80,'rgba(95,224,160,.13)','rgba(95,224,160,0)');
+  glow(g,96,52,60,'rgba(95,160,224,.08)','rgba(95,160,224,0)');
+  vig(g,.62);
+}
+
+/* 场景 4：写字楼 */
+function drawOffice(g){
+  const sky=g.createLinearGradient(0,0,0,108);
+  sky.addColorStop(0,'#3a2a4a'); sky.addColorStop(.4,'#8a4a4a');
+  sky.addColorStop(.7,'#d0824a'); sky.addColorStop(1,'#e8b06a');
+  g.fillStyle=sky; g.fillRect(0,0,W,H);
+  for(let i=0;i<3;i++) R(g,20+i*60,20+i*7,30,2,'rgba(255,200,170,.18)');
+  for(let i=0;i<15;i++){
+    const w=9+((i*7)%13), h=16+((i*13)%32);
+    R(g,i*13,84-h,w,h,'#2a2230');
+    for(let wy=84-h+3;wy<82;wy+=5)
+      for(let wx=i*13+2;wx<i*13+w-2;wx+=4)
+        if((wx+wy+i)%3===0) R(g,wx,wy,2,2,'#e0a458');
+  }
+  R(g,0,0,W,9,'#241c22'); R(g,0,99,W,9,'#241c22');
+  for(let x=0;x<W;x+=48) R(g,x,0,5,108,'#241c22');
+  R(g,0,88,W,4,'#2e2429');
+  // 桌
+  R(g,16,88,72,4,'#3a2f26'); R(g,16,88,72,1,'#4a3b2e');
+  R(g,20,92,3,12,'#2e2429'); R(g,82,92,3,12,'#2e2429');
+  R(g,28,66,36,22,'#14141a'); R(g,30,68,32,18,'#16202a');
+  anim.push({type:'code', x:32, y:70, w:30});
+  R(g,44,88,6,2,'#2a2a30');
+  R(g,32,84,26,3,'#3a3a40');
+  R(g,66,80,5,6,'#d8cfbb'); R(g,71,81,2,2,'#d8cfbb');
+  // 白板
+  R(g,120,56,58,30,'#e2e0d6'); R(g,120,56,58,1,'#b8b6ac');
+  for(let i=0;i<5;i++) R(g,124,60+i*4,14+i*7,1,'#6a6a80');
+  R(g,124,80,20,1,'#b04a3a');
+  cat(g,94,82,1);
+  vig(g,.45);
+}
+
+/* 场景 5：总部 */
+function drawTower(g){
+  const sky=g.createLinearGradient(0,0,0,108);
+  sky.addColorStop(0,'#0b1220'); sky.addColorStop(.55,'#16202f'); sky.addColorStop(1,'#26303f');
+  g.fillStyle=sky; g.fillRect(0,0,W,H);
+  for(let i=0;i<60;i++){
+    const x=(i*37)%W, y=(i*23)%54;
+    R(g,x,y,1,1,i%6===0?'#dfe6bd':(i%3?'#7a86a0':'#4a5670'));
+  }
+  R(g,158,14,7,7,'#dfe6c0'); R(g,159,15,6,6,'#eef4d0');
+  R(g,0,72,40,36,'#121a26');
+  R(g,44,60,36,48,'#16202c');
+  R(g,148,66,44,42,'#121a26');
+  for(let i=0;i<40;i++){
+    const x=4+((i*11)%36), y=76+((i*7)%28);
+    R(g,x,y,2,2,(i%3===0)?'#c9a227':'#22303e');
+  }
+  for(let i=0;i<26;i++){
+    const x=150+((i*13)%40), y=70+((i*9)%34);
+    R(g,x,y,2,2,(i%4===0)?'#c9a227':'#22303e');
+  }
+  R(g,66,18,60,90,'#1c2634');
+  R(g,66,18,60,2,'#3a4a5e');
+  R(g,66,18,2,90,'#28344a');
+  for(let y=24;y<106;y+=6){
+    for(let x=70;x<124;x+=6){
+      const lit=((x*7+y*3)%5)<3;
+      R(g,x,y,4,4,lit?'#e0c070':'#222c3a');
+      if(lit && (x+y)%18===0) anim.push({type:'win', x, y});
+    }
+  }
+  // 顶牌
+  R(g,82,8,28,10,'#e8e2d8');
+  R(g,86,11,3,3,'#2a3448'); R(g,95,11,3,3,'#2a3448'); R(g,104,11,3,3,'#2a3448');
+  R(g,84,6,24,2,'#3a4a5e');
+  R(g,95,1,1,5,'#4a5a6e');
+  anim.push({type:'beacon', x:94, y:0});
+  glow(g,96,106,60,'rgba(224,192,112,.22)','rgba(224,192,112,0)');
+  vig(g,.5);
+}
+
+function drawScene(){
+  anim = [];
+  octx.clearRect(0,0,W,H);
+  const t = S.scene;
+  if(t === 0) drawGarage(octx,false);
+  else if(t === 1) drawGarage(octx,true);
+  else if(t === 2) drawAttic(octx);
+  else if(t === 3) drawServer(octx);
+  else if(t === 4) drawOffice(octx);
+  else drawTower(octx);
+}
+
+/* 每帧：底图 + 动画 */
+function paintScene(tms){
+  sctx.clearRect(0,0,W,H);
+  sctx.drawImage(off,0,0);
+  const t = tms/1000;
+  for(const a of anim){
+    if(a.type === 'tail'){
+      const ang = Math.sin(t*2.2)*1.6;
+      for(let i=0;i<5;i++){
+        const yy = a.y - i*0.8 + Math.sin(t*2.2 + i*.5)*0.9;
+        sctx.fillStyle = '#d8d2c8';
+        sctx.fillRect((a.x + ang*(i*0.5))|0, yy|0, 1, 1);
+      }
+    } else if(a.type === 'bulb'){
+      const f = 0.82 + Math.sin(t*3.1)*0.05 + Math.sin(t*11)*0.03;
+      sctx.globalAlpha = 1;
+      glow(sctx, a.x, a.y+3, 40, 'rgba(255,214,140,'+(0.10*f)+')', 'rgba(255,214,140,0)');
+    } else if(a.type === 'wave'){
+      for(let i=0;i<a.w;i++){
+        const v = Math.sin(t*3 + i*.8)*1.6;
+        sctx.fillStyle = '#5fe0a0';
+        sctx.fillRect(a.x+i, (a.y + Math.round(v))|0, 1, 1);
+      }
+    } else if(a.type === 'led'){
+      if(a.skip) continue;
+      const on = (Math.sin(t*2 + (a.x+a.y)*0.7) > -0.3);
+      sctx.fillStyle = on ? a.c : '#16202a';
+      sctx.fillRect(a.x, a.y, 2, 2);
+    } else if(a.type === 'code'){
+      for(let i=0;i<7;i++){
+        const w = 8 + ((i*7 + Math.floor(t*1.5))%3)*5;
+        sctx.fillStyle = 'rgba(95,224,160,'+(0.55+0.3*Math.sin(t*2+i))+')';
+        sctx.fillRect(a.x, a.y+i*2, Math.min(w, a.w), 1);
+      }
+    } else if(a.type === 'win'){
+      const on = Math.sin(t*1.4 + a.x*0.3) > -0.2;
+      if(!on){ sctx.fillStyle='#222c3a'; sctx.fillRect(a.x,a.y,4,4); }
+    } else if(a.type === 'beacon'){
+      const on = Math.sin(t*2.4) > 0;
+      sctx.fillStyle = on ? '#ff5a4a' : '#5a2a26';
+      sctx.fillRect(a.x, a.y, 3, 2);
+      if(on) glow(sctx, a.x+1, a.y+1, 16, 'rgba(255,90,74,.22)', 'rgba(255,90,74,0)');
+    }
+  }
+  sctx.globalAlpha = 1;
+}
+
+/* ============================================================
+   UI 渲染
+   ============================================================ */
+let shopRefs = [];
+function renderShop(){
+  const box = $('shopList');
+  box.replaceChildren();
+  shopRefs = [];
+
+  function addSection(title){
+    const d = document.createElement('div');
+    d.className = 'sec'; d.textContent = title;
+    box.appendChild(d);
+  }
+  function addRow(u, kind){
+    const row = document.createElement('div');
+    row.className = 'row';
+    const info = document.createElement('div');
+    info.className = 'info';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = u.name;
+    const em = document.createElement('em');
+    em.textContent = '';
+    nm.appendChild(em);
+    const ds = document.createElement('div');
+    ds.className = 'ds';
+    ds.textContent = u.desc;
+    info.append(nm, ds);
+    const btn = document.createElement('button');
+    btn.className = 'buy';
+    btn.innerHTML = '<span>0</span><small>Lv.0</small>';
+    btn.onclick = () => buy(u.id);
+    row.append(info, btn);
+    box.appendChild(row);
+    shopRefs.push({u, row, btn, nm, em, ds, kind});
+  }
+
+  addSection('赫尔曼 · 算法与灵感');
+  for(const u of HER) addRow(u,'her');
+  addSection('阿尔瓦 · 电路与稳定');
+  for(const u of ALV) addRow(u,'alv');
+  addSection('小猫 · 全局加成');
+  for(const u of CAT) addRow(u,'cat');
+
+  updateShop();
+}
+
+function updateShop(){
+  for(const r of shopRefs){
+    const u = r.u, c = priceOf(u), L = lv(u.id);
+    const maxed = u.max && L >= u.max;
+    r.btn.querySelector('span').textContent = maxed ? '已满级' : fmt(c);
+    r.btn.querySelector('small').textContent = 'Lv.' + L + (u.max ? '/' + u.max : '');
+    r.btn.disabled = maxed || S.ip < c;
+    r.row.classList.toggle('max', !!maxed);
+    if(r.kind === 'her'){
+      r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">+' + fmt(u.val*1) + ' 产出</span> <span class="dn" style="white-space:nowrap">+发热</span>';
+    } else if(r.kind === 'alv'){
+      r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">+' + fmt(u.val) + ' 散热</span>';
+    } else {
+      r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">×' + u.val + '</span>';
+    }
+  }
+}
+
+const TRIG = {1:['h3','a2'], 2:['h5','a4'], 3:['b1'], 4:['b2'], 5:['b3']};
+
+function renderSceneCaption(){
+  const s = SCENES[S.scene];
+  $('sceneName').textContent = s.name;
+  $('sceneDesc').textContent = s.desc;
+  const fill = $('tierFill');
+  const next = TRIG[S.scene+1];
+  if(!next){ fill.style.width = '100%'; return; }
+  const all = [...HER, ...ALV, ...CAT];
+  let need = Infinity;
+  for(const id of next){
+    const u = all.find(x => x.id === id);
+    if(u) need = Math.min(need, priceOf(u));
+  }
+  if(!isFinite(need)){ fill.style.width = '0'; return; }
+  fill.style.width = Math.min(100, S.ip/need*100) + '%';
+}
+
+function renderLog(){
+  const box = $('logBox');
+  if(!box) return;
+  box.replaceChildren();
+  for(const e of S.log.slice(0,60)){
+    const p = document.createElement('p');
+    const tm = document.createElement('time');
+    const d = new Date(e.t);
+    tm.textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    p.appendChild(tm);
+    const sp = document.createElement('span');
+    if(e.cls) sp.className = e.cls;
+    sp.textContent = e.text;
+    p.appendChild(sp);
+    box.appendChild(p);
+  }
+}
+
+function renderShelf(){
+  const box = $('shelfList');
+  box.replaceChildren();
+  for(const it of ITEMS){
+    const open = S.items.includes(it.id);
+    const d = document.createElement('div');
+    d.className = 'item' + (open ? ' open' : '');
+    const ico = document.createElement('div');
+    ico.className = 'ico';
+    ico.textContent = open ? it.icon : '·';
+    const tx = document.createElement('div');
+    tx.className = 'tx';
+    const tn = document.createElement('div');
+    tn.className = 'tn';
+    tn.textContent = open ? it.name : '？？？';
+    const td = document.createElement('div');
+    td.className = 'td';
+    td.textContent = open ? '点开看看批注' : '累计 ' + fmt(it.need) + ' 算力后解锁';
+    tx.append(tn, td);
+    if(open){
+      const note = document.createElement('div');
+      note.className = 'note';
+      note.innerHTML = '<p><b>阿尔瓦：</b>' + it.a + '</p><p><b>赫尔曼：</b>' + it.h + '</p>';
+      tx.appendChild(note);
+      d.onclick = () => d.classList.toggle('show');
+    }
+    d.append(ico, tx);
+    box.appendChild(d);
+  }
+}
+
+function renderRebirth(){
+  const gainFrag = Math.floor(Math.sqrt(Math.max(0, S.run) / 1e6));
+  $('fragTotal').textContent = S.frag;
+  $('reInfo').innerHTML = '本轮已累积 ' + fmt(S.run) + ' 算力，' +
+    (gainFrag > 0 ? '重启可获得 <b style="color:#c9a0d0">' + gainFrag + '</b> 片记忆碎片。'
+                  : '还需要 ' + fmt(Math.max(0, 1e6 - S.run)) + ' 算力才能留下第一片记忆。');
+  const btn = $('reBtn');
+  btn.disabled = gainFrag <= 0;
+  $('reSub').textContent = gainFrag > 0 ? ('换取 ' + gainFrag + ' 片 · 全局 +' + (gainFrag*5) + '%') : '还差一点';
+}
+
+/* 事件 */
+let evTimer = 0, evCur = null;
+function scheduleEvent(){
+  evTimer = now() + (110 + Math.random()*70) * 1000;
+}
+function openEvent(){
+  if(S.evtOpen) return;
+  evCur = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  $('evTitle').textContent = evCur.title;
+  $('evDesc').textContent = evCur.desc;
+  const opts = $('evOpts');
+  opts.replaceChildren();
+  evCur.opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<b>' + (i+1) + '</b>' + o.label + '<br><span style="color:#8a7d6a;font-size:10.5px">' + o.sub + '</span>';
+    b.onclick = () => resolveEvent(i);
+    opts.appendChild(b);
+  });
+  $('event').classList.add('on');
+  S.evtOpen = true;
+}
+function resolveEvent(i){
+  if(!S.evtOpen) return;
+  S.evtOpen = false;
+  $('event').classList.remove('on');
+  const o = evCur.opts[i];
+  if(o && o.run) o.run();
+  scheduleEvent();
+  save();
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+let lastT = performance.now();
+let acc = 0, uiAcc = 0;
+
+function tick(dt){
+  // 稳定性
+  const net = alvaRate() - heat();
+  S.stab = Math.max(0, Math.min(100, S.stab + net*dt));
+
+  // 产出
+  const r = rate();
+  if(r > 0) gain(r * dt);
+
+  // buff 清理
+  if(S.buffs.length){
+    const t = now();
+    S.buffs = S.buffs.filter(b => b.until > t);
+  }
+
+  // 技能冷却
+  for(const k in S.cd) if(S.cd[k] > 0) S.cd[k] = Math.max(0, S.cd[k] - dt);
+
+  // 收藏解锁
+  for(const it of ITEMS){
+    if(!S.items.includes(it.id) && S.all >= it.need){
+      S.items.push(it.id);
+      log('收藏室多了一件东西：' + it.name, 'hot');
+      toast('解锁 · ' + it.name);
+      renderShelf();
+    }
+  }
+
+  // 事件
+  if(!S.evtOpen && now() > evTimer && S.run > 5000) openEvent();
+}
+
+function renderUI(){
+  $('ip').textContent = fmt(S.ip);
+  const r = rate();
+  $('rateLine').innerHTML = '每秒 <b>' + fmt(r) + '</b> · 稳定性系数 ×' + stabFactor().toFixed(2) +
+    (buffMult() > 1 ? ' · 加成 ×' + buffMult().toFixed(2) : '');
+  const pct = S.stab;
+  $('stabVal').textContent = Math.round(pct) + '%';
+  const bar = $('stabBar');
+  $('stabFill').style.width = pct + '%';
+  bar.className = 'bar' + (pct < 20 ? ' danger' : pct < 45 ? ' warn' : '');
+  const net = alvaRate() - heat();
+  $('heatLine').textContent = '发热 ' + heat().toFixed(1) + ' / 散热 ' + alvaRate().toFixed(1) +
+    ' · 净 ' + (net >= 0 ? '+' : '') + net.toFixed(1);
+
+  // 技能
+  const cdMax = {ab1:12, ab2:40, ab3:70};
+  for(const k in cdMax){
+    const b = $(k);
+    const left = S.cd[k];
+    b.disabled = left > 0;
+    b.querySelector('.cd').style.width = (left/cdMax[k]*100) + '%';
+    const sub = b.querySelector('small');
+    if(left > 0) sub.textContent = Math.ceil(left) + ' 秒';
+    else sub.textContent = k==='ab1' ? '立刻 20 秒产出' : k==='ab2' ? '稳定性 +22' : '20 秒 ×2.5';
+  }
+
+  updateShop();
+  renderSceneCaption();
+  if($('tab-re').style.display !== 'none') renderRebirth();
+}
+
+function loop(tms){
+  const dt = Math.min(0.5, (tms - lastT)/1000);
+  lastT = tms;
+  tick(dt);
+  paintScene(tms);
+  uiAcc += dt;
+  if(uiAcc > 0.1){ uiAcc = 0; renderUI(); }
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   交互
+   ============================================================ */
+function doAbility(k){
+  if(S.cd[k] > 0) return;
+  if(k === 'ab1'){
+    const g = Math.max(10, rate()*20);
+    gain(g);
+    addStab(-8);
+    S.cd[k] = 12;
+    toast('+' + fmt(g) + ' 灵感算力');
+  } else if(k === 'ab2'){
+    addStab(22);
+    S.cd[k] = 40;
+    toast('稳定性 +22');
+  } else if(k === 'ab3'){
+    buff(2.5, 20);
+    S.cd[k] = 70;
+    toast('20 秒内产出 ×2.5');
+  }
+}
+
+function switchTab(name){
+  for(const b of document.querySelectorAll('.tabs button'))
+    b.classList.toggle('on', b.dataset.tab === name);
+  for(const t of ['shop','shelf','re','log'])
+    $('tab-' + t).style.display = (t === name ? '' : 'none');
+  if(name === 'shelf') renderShelf();
+  if(name === 're') renderRebirth();
+  if(name === 'log') renderLog();
+}
+
+function prestige(){
+  const gainFrag = Math.floor(Math.sqrt(Math.max(0, S.run) / 1e6));
+  if(gainFrag <= 0) return;
+  if(!confirm('重启这个夜晚？\n\n你将失去车库里的一切，换取 ' + gainFrag + ' 片记忆碎片（全局 +' + gainFrag*5 + '%）。')) return;
+  S.frag += gainFrag;
+  S.ip = 0; S.run = 0; S.stab = 100; S.lv = {}; S.buffs = [];
+  S.cd = {ab1:0,ab2:0,ab3:0};
+  log('又一次重启。灯灭了，又亮起来，桌子还是那两张。', 'hot');
+  toast('获得 ' + gainFrag + ' 片记忆碎片');
+  renderShop(); renderRebirth(); renderSceneCaption();
+  save();
+}
+
+/* 启动 */
+(function init(){
+  const had = load();
+  drawScene();
+  renderSceneCaption();
+  renderShop();
+  renderShelf();
+  renderLog();
+  renderRebirth();
+
+  if(had){
+    offline();
+  } else {
+    log('莱顿，九十年代初。两个人租下了一间车库，还有一只不知道从哪来的猫。');
+  }
+  scheduleEvent();
+
+  $('ab1').onclick = () => doAbility('ab1');
+  $('ab2').onclick = () => doAbility('ab2');
+  $('ab3').onclick = () => doAbility('ab3');
+  for(const b of document.querySelectorAll('.tabs button'))
+    b.onclick = () => switchTab(b.dataset.tab);
+  $('reBtn').onclick = prestige;
+  $('wipe').onclick = () => {
+    if(!confirm('确定清空全部存档？记忆碎片和收藏室也会一起消失。')) return;
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    location.reload();
+  };
+
+  setInterval(save, 5000);
+  window.addEventListener('beforeunload', save);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
