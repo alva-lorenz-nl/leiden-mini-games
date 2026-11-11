@@ -71,7 +71,7 @@ def make_solver_for(theme, cats):
             var = Int(f"{c}_{v}")
             var_of[c][v] = var
             vs.append(var)
-            s.add(var >= 1, var <= 5)
+            s.add(var >= 1, var <= len(theme["cats"][c]))
         s.add(Distinct(vs))
     return s, var_of
 

@@ -33,7 +33,14 @@ function renderChoices() {
 function pickPuzzle() {
   if (mode === "story") {
     const ch = CHAPTERS[chapter];
-    return hydrate(PUZ[ch.theme + "_" + ch.diff][ch.index], ch.theme, ch.diff);
+    if (!ch) return null;
+    if (ch.src)
+      return hydrate(
+        PUZ[ch.src.theme + "_" + ch.src.diff][ch.src.index],
+        ch.src.theme,
+        ch.src.diff,
+      );
+    return hydrateStory(ch, chapter);
   }
   if (mode === "daily") {
     const item = BANK.daily.find((p) => p.date === dayKey());
@@ -62,14 +69,20 @@ function startGame(selected) {
   S.recorded = false;
   S.undoStack = [];
   S.assign = {};
+  S.n = p.categories[Object.keys(p.categories)[0]].length;
   Object.keys(p.categories).forEach(
-    (c) => (S.assign[c] = new Array(5).fill(null)),
+    (c) => (S.assign[c] = new Array(S.n).fill(null)),
   );
   S.solved = false;
+  const storyBox = document.getElementById("storyBox");
+  if (storyBox) {
+    storyBox.classList.add("hidden");
+    storyBox.replaceChildren();
+  }
   document.getElementById("home").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
   document.getElementById("gameTitle").textContent =
-    `${THEME_NAMES[p.theme_key] || p.theme} · ${DIFF_NAMES[p.difficulty] || p.difficulty} · ${p.clue_count} 条线索`;
+    `${S.mode === "story" ? p.theme : THEME_NAMES[p.theme_key] || p.theme} · ${DIFF_NAMES[p.difficulty] || p.difficulty} · ${p.clue_count} 条线索`;
   document.getElementById("intro").textContent =
     (S.mode === "story"
       ? CHAPTERS[S.chapter].intro + " "
@@ -97,9 +110,9 @@ function renderGrid() {
   tb.innerHTML = "";
   const head = document.createElement("tr");
   head.appendChild(document.createElement("th"));
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= S.n; i++) {
     const th = document.createElement("th");
-    th.textContent = "第" + i + "位";
+    th.textContent = p.colLabels ? p.colLabels[i - 1] : "第" + i + "位";
     head.appendChild(th);
   }
   tb.appendChild(head);
@@ -110,7 +123,7 @@ function renderGrid() {
     rh.className = "rowh";
     rh.textContent = cat;
     tr.appendChild(rh);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < S.n; i++) {
       const td = document.createElement("td");
       const b = document.createElement("select");
       b.className = "cell";
@@ -134,7 +147,7 @@ function renderGrid() {
         setCell(cat, i, b.value || null);
         document
           .querySelectorAll("select.cell")
-          [Object.keys(p.categories).indexOf(cat) * 5 + i].focus();
+          [Object.keys(p.categories).indexOf(cat) * S.n + i].focus();
       };
       td.appendChild(b);
       tr.appendChild(td);
@@ -254,9 +267,12 @@ function record(sec, ok) {
     REC.story.push(S.chapter);
   if (ok && S.mode === "daily" && !REC.daily.includes(S.day))
     REC.daily.push(S.day);
-  if (ok && S.mode === "story")
-    document.getElementById("gameMsg").textContent +=
-      " " + CHAPTERS[S.chapter].ending;
+  if (ok && S.mode === "story") {
+    const ch = CHAPTERS[S.chapter];
+    const p0 = S.cur;
+    const ending = (p0.ending || ch.ending || "").trim();
+    renderStoryArchive(p0.fragments || [], ending);
+  }
 
   const p = S.cur;
   const d = p.difficulty;
@@ -320,4 +336,38 @@ function resetBoard() {
   Object.keys(S.assign).forEach((cat) => S.assign[cat].fill(null));
   clearEditMessage();
   renderGrid();
+}
+
+/* 通关后展开故事档案：分段剧情 + 收尾小剧场 */
+function renderStoryArchive(fragments, ending) {
+  const box = document.getElementById("storyBox");
+  if (!box) return;
+  box.replaceChildren();
+  box.classList.remove("hidden");
+  if (fragments.length) {
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = "案件档案 · 逐层揭开";
+    box.appendChild(label);
+    fragments.forEach((f) => {
+      const item = document.createElement("p");
+      item.className = "frag";
+      const t = document.createElement("b");
+      t.textContent = f.title + "　";
+      item.append(t, document.createTextNode(f.text));
+      box.appendChild(item);
+    });
+  }
+  if (ending) {
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = "收尾小剧场";
+    box.appendChild(label);
+    const p = document.createElement("p");
+    p.className = "ending";
+    p.textContent = ending;
+    box.appendChild(p);
+  }
+  if (box.scrollIntoView)
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }

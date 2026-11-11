@@ -383,3 +383,37 @@ select.cell {
 .q {
   background: linear-gradient(90deg, rgba(224, 164, 88, 0.055), transparent);
 }
+
+/* 故事档案 */
+.story-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid #3a2f24;
+  border-radius: 10px;
+  background: #1c1712;
+}
+.story-box .label {
+  margin-top: 10px;
+}
+.story-box .label:first-child {
+  margin-top: 0;
+}
+.story-box .frag {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.85;
+  color: var(--dim);
+}
+.story-box .frag b {
+  color: var(--amber);
+  font-weight: 500;
+}
+.story-box .ending {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--amber);
+}
+#storyTags .row {
+  margin-top: 4px;
+}

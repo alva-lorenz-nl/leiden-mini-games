@@ -1,48 +1,43 @@
-const CHAPTERS = [
-  {
-    title: "第一章 · 窗边的邀请",
-    theme: "cat",
-    diff: "easy",
-    index: 0,
-    intro:
-      "清晨，我把五只猫的小碟子摆好，却忘了谁坐在哪儿。小雪球，帮我把午睡前的座次找回来吧。",
-    ending:
-      "你把最后一张名牌放好，窗边响起满足的呼噜声。我替你留了一块暖和的坐垫。",
-  },
-  {
-    title: "第二章 · 消失的毛线",
-    theme: "cat",
-    diff: "normal",
-    index: 1,
-    intro:
-      "午后的毛线滚到了走廊尽头。五只猫各忙各的，谁也没注意。我把它们留下的线索记在纸上，请你还原现场。",
-    ending:
-      "毛线终于绕回篮子里。我笑着收起笔记：原来每一只猫，都有自己的午后计划。",
-  },
-  {
-    title: "第三章 · 工坊来信",
-    theme: "alva",
-    diff: "normal",
-    index: 2,
-    intro:
-      "我翻开一份虚构的永动轮小剧场手稿：五间实验室的门牌全被摘下了。我们得在客人到来前还原房间安排。",
-    ending:
-      "门牌一一归位。赫尔曼终于找到会议室，手稿的下一页却夹着一张没有署名的便条。",
-  },
-  {
-    title: "第四章 · 灯亮以后",
-    theme: "alva",
-    diff: "hard",
-    index: 3,
-    intro:
-      "便条上只有一句话：灯亮之前，把每个人的位置找出来。这一次，连饮料也成了线索。",
-    ending:
-      "工坊的灯亮了。我把故事最后一页递给你：今日值班侦探，小雪球。谢谢你陪我走到这里。",
-  },
-];
+const CHAPTERS = BANK.story || [];
+THEME_NAMES.story = "故事模式";
+
+/* 标签的中文名 */
+const TAG_NAMES = {
+  cat: "小猫",
+  alva: "阿尔瓦",
+  herman: "赫尔曼叔叔",
+  luca: "卢卡",
+  本格: "本格推理",
+};
+
+function allTags() {
+  const set = new Set();
+  CHAPTERS.forEach((ch) => (ch.tags || []).forEach((t) => set.add(t)));
+  return [...set];
+}
+
 function dayKey() {
   return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
 }
+
+function renderTagRow() {
+  const box = document.getElementById("tagRow");
+  if (!box) return;
+  box.replaceChildren();
+  const tags = ["all", ...allTags()];
+  tags.forEach((t) => {
+    const b = document.createElement("button");
+    b.className = "btn" + (S.tag === t ? " on" : "");
+    b.textContent = t === "all" ? "全部故事" : TAG_NAMES[t] || t;
+    b.onclick = () => {
+      S.tag = t;
+      localStorage.setItem("zebra_tag", t);
+      renderModes();
+    };
+    box.appendChild(b);
+  });
+}
+
 function renderModes() {
   const story = REC.story || [],
     daily = REC.daily || [];
@@ -51,7 +46,7 @@ function renderModes() {
     .forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
   document.getElementById("modeInfo").textContent =
     mode === "story"
-      ? "四章小故事，解开当前章节即可解锁下一章；看答案不算通关。"
+      ? `共 ${CHAPTERS.length} 章故事，解开当前章节即可解锁下一章；看答案不算通关。可用标签挑选想读的故事线。`
       : mode === "daily"
         ? dayKey() +
           " · 每日生成新题，往期题目可在下方补做。" +
@@ -61,12 +56,18 @@ function renderModes() {
         : "按筛选条件随机抽取未做题；也可打开题目列表自主选择。左右均以屏幕从左到右为准；“左边”可以不相邻。";
   const box = document.getElementById("chapters");
   box.innerHTML = "";
+  const tagBox = document.getElementById("storyTags");
+  if (tagBox) tagBox.classList.toggle("hidden", mode !== "story");
+  renderTagRow();
   if (mode === "story")
     CHAPTERS.forEach((ch, i) => {
+      const tags = ch.tags || [];
+      if (S.tag !== "all" && !tags.includes(S.tag)) return;
       const b = document.createElement("button");
       b.className = "btn" + (chapter === i ? " on" : "");
       b.textContent = (story.includes(i) ? "✓ " : "") + ch.title;
       b.disabled = i > 0 && !story.includes(i - 1);
+      b.title = tags.map((t) => TAG_NAMES[t] || t).join(" · ");
       b.onclick = () => {
         chapter = i;
         renderModes();
@@ -93,7 +94,11 @@ function renderModes() {
     ["勇闯工坊", "完成一道困难题", (REC.solved.hard?.n || 0) > 0],
     ["每日赴约", "完成一次每日挑战", daily.length >= 1],
     ["七日手记", "累计完成7天每日挑战", daily.length >= 7],
-    ["故事收藏家", "完成全部四章", story.length >= 4],
+    [
+      "故事收藏家",
+      `完成全部 ${CHAPTERS.length} 章故事`,
+      story.length >= CHAPTERS.length,
+    ],
   ];
   const ach = document.getElementById("achievements");
   ach.innerHTML = "";

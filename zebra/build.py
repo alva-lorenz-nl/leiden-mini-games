@@ -28,6 +28,24 @@ def validate(puzzle):
         raise ValueError(f"Non-unique puzzle: {puzzle['id']}")
 
 
+def validate_story(chapter):
+    """校验自建故事章节：线索在解上成立，且解唯一。"""
+    if 'src' in chapter:
+        return
+    p = chapter['puzzle']
+    categories = list(p['k'])
+    solver, variables = make_solver_for({'cats': p['cats']}, categories)
+    values = [(variables[c][v], IntVal(i + 1))
+              for c, row in p['s'].items() for i, v in enumerate(row)]
+    for clue in p['r']:
+        expr = clue_to_constraint(clue, variables)
+        if not is_true(simplify(substitute(expr, *values))):
+            raise ValueError(f"Inconsistent story clue: {p['id']}: {clue}")
+        solver.add(expr)
+    if not unique_solution(solver, variables, categories):
+        raise ValueError(f"Non-unique story puzzle: {p['id']}")
+
+
 def compact(p, daily=False):
     item = dict(id=p['id'] if daily else 'v2-' + p['id'],
                 k=list(p['categories']), n=p['clue_count'], c=[clue_to_text(c) for c in p['raw_clues']], r=p['raw_clues'],
@@ -52,6 +70,10 @@ def build():
     for p in daily:
         validate(p)
         bank['daily'].append(compact(p, daily=True))
+    story = read_json('story.json')
+    for chapter in story:
+        validate_story(chapter)
+    bank['story'] = story
     source = ROOT / 'src'
     html = (source / 'page.html').read_text()
     html = html.replace('__CSS__', (source / 'style.css').read_text())

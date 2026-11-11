@@ -25,11 +25,36 @@ function hydrate(p, theme, diff) {
   };
 }
 
+/* 把故事章节的谜题还原成页面用的结构 */
+function hydrateStory(ch, i) {
+  const p = ch.puzzle;
+  return {
+    id: p.id,
+    theme_key: "story",
+    theme: ch.title,
+    chapterIndex: i,
+    intro: p.intro,
+    difficulty: p.diff,
+    categories: p.cats,
+    colLabels: p.cols || null,
+    clue_count: p.c.length,
+    clues: p.c,
+    rawClues: p.r,
+    question: p.q,
+    answer: p.a,
+    solution: p.s,
+    fragments: p.frag || [],
+    ending: p.end,
+  };
+}
+
 const S = {
   theme: localStorage.getItem("zebra_theme") || "cat",
   diff: localStorage.getItem("zebra_diff") || "easy",
+  tag: localStorage.getItem("zebra_tag") || "all",
+  n: 5,
   cur: null, // 当前题目
-  assign: null, // {类别: [null x5]}
+  assign: null, // {类别: [null x n]}
   t0: 0,
   timerId: null,
   elapsed: 0,

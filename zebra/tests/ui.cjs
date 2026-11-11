@@ -125,20 +125,27 @@ assert.equal(w.clueState(["pos", "B", "b", 2], assignments), "pending");
 click("backBtn");
 assert.equal(d.querySelectorAll("#achievements .stat").length, 6);
 mode("story");
-assert.equal(d.querySelectorAll("#chapters button:disabled").length, 3);
+const chapterCount = w.eval("CHAPTERS.length");
+assert(chapterCount > 4);
+assert.equal(
+  d.querySelectorAll("#chapters button").length,
+  chapterCount,
+);
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, chapterCount - 1);
 click("startBtn");
 win();
 assert(w.ZEBRA.REC.story.includes(0));
-assert(d.getElementById("gameMsg").textContent.includes("呼噜声"));
+assert(d.querySelector("#storyBox .ending").textContent.includes("呼噜声"));
+assert(!d.getElementById("storyBox").classList.contains("hidden"));
 click("backBtn");
-assert.equal(d.querySelectorAll("#chapters button:disabled").length, 2);
-for (let i = 1; i < 4; i++) {
+assert.equal(d.querySelectorAll("#chapters button:disabled").length, chapterCount - 2);
+for (let i = 1; i < chapterCount; i++) {
   d.querySelectorAll("#chapters button")[i].click();
   click("startBtn");
   win();
   click("backBtn");
 }
-assert.equal(w.ZEBRA.REC.story.length, 4);
+assert.equal(w.ZEBRA.REC.story.length, chapterCount);
 mode("daily");
 click("startBtn");
 let id = w.ZEBRA.S.cur.id;
@@ -162,7 +169,7 @@ assert.equal(w.ZEBRA.REC.story, undefined);
 click("importBtn");
 d.getElementById("syncText").value = code;
 click("syncDo");
-assert.equal(w.ZEBRA.REC.story.length, 4);
+assert.equal(w.ZEBRA.REC.story.length, chapterCount);
 assert.equal(w.ZEBRA.REC.daily.length, 1);
 mode("free");
 click("startBtn");
@@ -183,6 +190,6 @@ assert(
   !d.getElementById("gameMsg").textContent.includes(w.ZEBRA.S.cur.question),
 );
 console.log(
-  "PASS: four chapter progression, daily stability, six achievements, sync roundtrip and revealed-answer exclusion",
+  "PASS: story chapters (13), daily stability, six achievements, sync roundtrip and revealed-answer exclusion",
 );
 dom.window.close();
