@@ -319,10 +319,12 @@ select.cell {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-gutter: stable;
-  padding-right: 10px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #574434 transparent;
 }
 .clue-scroll:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--amber2);
 }
 .clues .clue-status {
   display: inline-block;
@@ -338,4 +340,46 @@ select.cell {
 }
 .clues .conflict {
   color: #ff777f;
+}
+
+.clue-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.clue-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.clue-scroll::-webkit-scrollbar-thumb {
+  background: #49392c;
+  border-radius: 8px;
+}
+.clue-scroll:hover::-webkit-scrollbar-thumb {
+  background: #6b5037;
+}
+.clue-scroll .clues {
+  margin-top: 2px;
+}
+.clues li {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(154, 139, 120, 0.09);
+}
+.clues li:last-child {
+  border-bottom: none;
+}
+.clues .satisfied .clue-status {
+  color: var(--good);
+}
+.clues .conflict {
+  color: #dd8677;
+}
+.card {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+.cell:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--amber2);
+  outline-offset: 2px;
+}
+.q {
+  background: linear-gradient(90deg, rgba(224, 164, 88, 0.055), transparent);
 }

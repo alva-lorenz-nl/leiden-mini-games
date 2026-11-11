@@ -206,7 +206,7 @@ function check() {
   document.getElementById("checkBtn").disabled = true;
   document.getElementById("giveUpBtn").disabled = true;
   msg.className = "msg ok";
-  msg.textContent = `全对！用时 ${fmt(S.elapsed)}。${p.question} —— 答案是「${p.answer.value}」。`;
+  msg.textContent = `全对！用时 ${fmt(S.elapsed)}。答案是「${p.answer.value}」。`;
   document.querySelectorAll(".cell").forEach((b) => {
     b.classList.add("right");
     b.disabled = true;
@@ -216,6 +216,10 @@ function check() {
 
 function giveUp() {
   if (S.solved) return;
+  if (
+    !confirm("确定查看答案吗？本题将标记为已做，本次不计通关，也不会解锁成就。")
+  )
+    return;
   const p = S.cur;
   S.solved = true;
   stopTimer();
@@ -231,7 +235,7 @@ function giveUp() {
   document.getElementById("giveUpBtn").disabled = true;
   const msg = document.getElementById("gameMsg");
   msg.className = "msg";
-  msg.textContent = `答案是：${p.answer.value}。${p.question}`;
+  msg.textContent = `答案是：${p.answer.value}。`;
   record(S.elapsed, false);
 }
 

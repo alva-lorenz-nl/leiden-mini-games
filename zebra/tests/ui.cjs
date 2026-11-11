@@ -120,8 +120,15 @@ assert.equal(w.ZEBRA.S.cur.id, id);
 win();
 assert.equal(w.ZEBRA.REC.daily.length, 1);
 click("backBtn");
+// New progress format excludes history but retains aggregate achievements.
 click("exportBtn");
 const code = d.getElementById("syncText").value;
+assert(code.startsWith("ZBR3-"));
+const encoded = code.slice(5, code.lastIndexOf("-"));
+const exported = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
+assert(!("history" in exported));
+assert(exported.w.length > 0);
+
 click("clearBtn");
 assert.equal(w.ZEBRA.REC.story, undefined);
 click("importBtn");
@@ -131,12 +138,21 @@ assert.equal(w.ZEBRA.REC.story.length, 4);
 assert.equal(w.ZEBRA.REC.daily.length, 1);
 mode("free");
 click("startBtn");
+const doneBefore = w.ZEBRA.REC.done.length;
+w.confirm = () => false;
+click("giveUpBtn");
+assert(!w.ZEBRA.S.solved);
+assert.equal(w.ZEBRA.REC.done.length, doneBefore);
+w.confirm = () => true;
 click("giveUpBtn");
 const n = Object.values(w.ZEBRA.REC.solved).reduce((a, v) => a + v.n, 0);
 click("checkBtn");
 assert.equal(
   Object.values(w.ZEBRA.REC.solved).reduce((a, v) => a + v.n, 0),
   n,
+);
+assert(
+  !d.getElementById("gameMsg").textContent.includes(w.ZEBRA.S.cur.question),
 );
 console.log(
   "PASS: four chapter progression, daily stability, six achievements, sync roundtrip and revealed-answer exclusion",

@@ -18,13 +18,21 @@ function checksum(s) {
 }
 
 function doExport() {
-  const payload = JSON.stringify({ ...REC, v: 2 });
+  // Store progress only; achievements are derived from these fields.
+  const payload = JSON.stringify({
+    v: 3,
+    d: [...new Set(REC.done || [])],
+    w: [...new Set(REC.wins || [])],
+    s: [...new Set(REC.story || [])],
+    y: [...new Set(REC.daily || [])],
+    t: REC.solved || {},
+  });
   const body = b64enc(payload);
-  const code = "ZBR1-" + body + "-" + checksum(body);
+  const code = "ZBR3-" + body + "-" + checksum(body);
   const box = document.getElementById("syncBox");
   box.classList.remove("hidden");
   document.getElementById("syncLabel").textContent =
-    "同步码（复制到别的设备粘贴导入）";
+    "本地进度码 · 包含题目、成就进度与统计，不含游玩流水，不上传服务器";
   document.getElementById("syncText").value = code;
   document.getElementById("syncText").select();
   try {
@@ -42,7 +50,7 @@ function doImport() {
 function syncConfirm() {
   const txt = document.getElementById("syncText").value.trim();
   if (!txt) return;
-  if (txt.startsWith("ZBR1-")) {
+  if (txt.startsWith("ZBR1-") || txt.startsWith("ZBR3-")) {
     const body = txt.slice(5);
     const cut = body.lastIndexOf("-");
     if (cut < 0) return alert("同步码不完整。");
@@ -52,12 +60,42 @@ function syncConfirm() {
       return alert("同步码校验失败，可能复制时漏了字符。");
     try {
       const data = JSON.parse(b64dec(payload));
-      REC.solved = data.solved || {};
-      REC.done = data.done || [];
-      REC.history = data.history || [];
-      REC.story = data.story || [];
-      REC.daily = data.daily || [];
-      REC.wins = data.wins || [];
+      const compact = data.v === 3;
+      const strings = (value) => {
+        if (!Array.isArray(value) || value.some((x) => typeof x !== "string"))
+          throw new Error("Invalid progress");
+        return [...new Set(value)];
+      };
+      const story = compact ? data.s : data.story || [];
+      if (
+        !Array.isArray(story) ||
+        story.some((x) => !Number.isInteger(x) || x < 0 || x >= CHAPTERS.length)
+      )
+        throw new Error("Invalid story");
+      const stats = (compact ? data.t : data.solved) || {};
+      const solved = {};
+      for (const key of Object.keys(DIFF_NAMES)) {
+        if (!stats[key]) continue;
+        const { n, best, total } = stats[key];
+        if (
+          !Number.isInteger(n) ||
+          n < 0 ||
+          !Number.isFinite(total) ||
+          total < 0 ||
+          !(best === null || (Number.isFinite(best) && best >= 0))
+        )
+          throw new Error("Invalid stats");
+        solved[key] = { n, best, total };
+      }
+      const next = {
+        solved,
+        done: strings((compact ? data.d : data.done) || []),
+        wins: strings((compact ? data.w : data.wins) || []),
+        story: [...new Set(story)],
+        daily: strings((compact ? data.y : data.daily) || []),
+        history: compact ? [] : Array.isArray(data.history) ? data.history : [],
+      };
+      REC = next;
       saveRec(REC);
       renderStats();
       document.getElementById("syncBox").classList.add("hidden");

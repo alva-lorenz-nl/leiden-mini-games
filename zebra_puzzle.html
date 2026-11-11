@@ -331,10 +331,12 @@ select.cell {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-gutter: stable;
-  padding-right: 10px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #574434 transparent;
 }
 .clue-scroll:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--amber2);
 }
 .clues .clue-status {
   display: inline-block;
@@ -350,6 +352,48 @@ select.cell {
 }
 .clues .conflict {
   color: #ff777f;
+}
+
+.clue-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.clue-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.clue-scroll::-webkit-scrollbar-thumb {
+  background: #49392c;
+  border-radius: 8px;
+}
+.clue-scroll:hover::-webkit-scrollbar-thumb {
+  background: #6b5037;
+}
+.clue-scroll .clues {
+  margin-top: 2px;
+}
+.clues li {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(154, 139, 120, 0.09);
+}
+.clues li:last-child {
+  border-bottom: none;
+}
+.clues .satisfied .clue-status {
+  color: var(--good);
+}
+.clues .conflict {
+  color: #dd8677;
+}
+.card {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+.cell:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--amber2);
+  outline-offset: 2px;
+}
+.q {
+  background: linear-gradient(90deg, rgba(224, 164, 88, 0.055), transparent);
 }
 
     </style>
@@ -820,7 +864,7 @@ function check() {
   document.getElementById("checkBtn").disabled = true;
   document.getElementById("giveUpBtn").disabled = true;
   msg.className = "msg ok";
-  msg.textContent = `全对！用时 ${fmt(S.elapsed)}。${p.question} —— 答案是「${p.answer.value}」。`;
+  msg.textContent = `全对！用时 ${fmt(S.elapsed)}。答案是「${p.answer.value}」。`;
   document.querySelectorAll(".cell").forEach((b) => {
     b.classList.add("right");
     b.disabled = true;
@@ -830,6 +874,10 @@ function check() {
 
 function giveUp() {
   if (S.solved) return;
+  if (
+    !confirm("确定查看答案吗？本题将标记为已做，本次不计通关，也不会解锁成就。")
+  )
+    return;
   const p = S.cur;
   S.solved = true;
   stopTimer();
@@ -845,7 +893,7 @@ function giveUp() {
   document.getElementById("giveUpBtn").disabled = true;
   const msg = document.getElementById("gameMsg");
   msg.className = "msg";
-  msg.textContent = `答案是：${p.answer.value}。${p.question}`;
+  msg.textContent = `答案是：${p.answer.value}。`;
   record(S.elapsed, false);
 }
 
@@ -908,13 +956,21 @@ function checksum(s) {
 }
 
 function doExport() {
-  const payload = JSON.stringify({ ...REC, v: 2 });
+  // Store progress only; achievements are derived from these fields.
+  const payload = JSON.stringify({
+    v: 3,
+    d: [...new Set(REC.done || [])],
+    w: [...new Set(REC.wins || [])],
+    s: [...new Set(REC.story || [])],
+    y: [...new Set(REC.daily || [])],
+    t: REC.solved || {},
+  });
   const body = b64enc(payload);
-  const code = "ZBR1-" + body + "-" + checksum(body);
+  const code = "ZBR3-" + body + "-" + checksum(body);
   const box = document.getElementById("syncBox");
   box.classList.remove("hidden");
   document.getElementById("syncLabel").textContent =
-    "同步码（复制到别的设备粘贴导入）";
+    "本地进度码 · 包含题目、成就进度与统计，不含游玩流水，不上传服务器";
   document.getElementById("syncText").value = code;
   document.getElementById("syncText").select();
   try {
@@ -932,7 +988,7 @@ function doImport() {
 function syncConfirm() {
   const txt = document.getElementById("syncText").value.trim();
   if (!txt) return;
-  if (txt.startsWith("ZBR1-")) {
+  if (txt.startsWith("ZBR1-") || txt.startsWith("ZBR3-")) {
     const body = txt.slice(5);
     const cut = body.lastIndexOf("-");
     if (cut < 0) return alert("同步码不完整。");
@@ -942,12 +998,42 @@ function syncConfirm() {
       return alert("同步码校验失败，可能复制时漏了字符。");
     try {
       const data = JSON.parse(b64dec(payload));
-      REC.solved = data.solved || {};
-      REC.done = data.done || [];
-      REC.history = data.history || [];
-      REC.story = data.story || [];
-      REC.daily = data.daily || [];
-      REC.wins = data.wins || [];
+      const compact = data.v === 3;
+      const strings = (value) => {
+        if (!Array.isArray(value) || value.some((x) => typeof x !== "string"))
+          throw new Error("Invalid progress");
+        return [...new Set(value)];
+      };
+      const story = compact ? data.s : data.story || [];
+      if (
+        !Array.isArray(story) ||
+        story.some((x) => !Number.isInteger(x) || x < 0 || x >= CHAPTERS.length)
+      )
+        throw new Error("Invalid story");
+      const stats = (compact ? data.t : data.solved) || {};
+      const solved = {};
+      for (const key of Object.keys(DIFF_NAMES)) {
+        if (!stats[key]) continue;
+        const { n, best, total } = stats[key];
+        if (
+          !Number.isInteger(n) ||
+          n < 0 ||
+          !Number.isFinite(total) ||
+          total < 0 ||
+          !(best === null || (Number.isFinite(best) && best >= 0))
+        )
+          throw new Error("Invalid stats");
+        solved[key] = { n, best, total };
+      }
+      const next = {
+        solved,
+        done: strings((compact ? data.d : data.done) || []),
+        wins: strings((compact ? data.w : data.wins) || []),
+        story: [...new Set(story)],
+        daily: strings((compact ? data.y : data.daily) || []),
+        history: compact ? [] : Array.isArray(data.history) ? data.history : [],
+      };
+      REC = next;
       saveRec(REC);
       renderStats();
       document.getElementById("syncBox").classList.add("hidden");
