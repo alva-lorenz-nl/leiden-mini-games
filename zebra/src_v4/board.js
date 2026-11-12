@@ -4,7 +4,6 @@
 function renderGrid() {
   updateClues();
   updateEditButtons();
-  renderQuestion();
   const p = S.cur,
     tb = $("grid");
   tb.replaceChildren();
@@ -36,32 +35,6 @@ function renderGrid() {
     }
     tb.appendChild(tr);
   });
-}
-
-/* 追问条：棋盘上方的一条小问题，答案槽会随填表自动对上 */
-function renderQuestion() {
-  const box = $("question");
-  if (!box) return;
-  const p = S.cur;
-  box.replaceChildren();
-  box.appendChild(el("span", "q-tag", "追问"));
-  box.appendChild(el("span", "q-text", p.question));
-
-  const slot = el("span", "q-slot");
-  const val = p.answer.value;
-  const cat = Object.keys(p.categories).find((c) =>
-    p.categories[c].includes(val),
-  );
-  const row = (cat && S.assign?.[cat]) || [];
-  const at = row.indexOf(val);
-  if (at >= 0) {
-    slot.className += " on";
-    slot.appendChild(el("b", null, val));
-    slot.appendChild(el("i", null, "第 " + (at + 1) + " 位"));
-  } else {
-    slot.textContent = "还空着";
-  }
-  box.appendChild(slot);
 }
 
 function cellButton(p, cat, i) {
@@ -330,7 +303,9 @@ function finishBoard(ok) {
   $("checkBtn").disabled = true;
   $("giveUpBtn").disabled = true;
   $("hintBtn").disabled = true;
-  if (ok)
+  if (ok && S.mode === "story")
+    setMessage("gameMsg", `全对！用时 ${fmt(S.elapsed)}。`, "ok");
+  else if (ok)
     setMessage(
       "gameMsg",
       `全对！用时 ${fmt(S.elapsed)}。答案是「${S.cur.answer.value}」。`,

@@ -206,15 +206,6 @@ td {
   color: #6b5a44;
   font-size: 11px;
 }
-.q {
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-left: 2px solid var(--amber2);
-  background: #221a13;
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  color: var(--amber);
-}
 .foot {
   display: flex;
   justify-content: space-between;
@@ -380,10 +371,6 @@ select.cell {
   outline: 2px solid var(--amber2);
   outline-offset: 2px;
 }
-.q {
-  background: linear-gradient(90deg, rgba(224, 164, 88, 0.055), transparent);
-}
-
 /* 故事档案 */
 .story-box {
   margin-top: 14px;
@@ -676,50 +663,45 @@ th.corner {
   box-shadow: 0 0 8px rgba(224, 164, 88, 0.35);
 }
 
-/* 追问条：问题在前，答案槽在后，填表时就地给出答案 */
-.q {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 14px 0 0;
-  padding: 11px 14px;
+/* 追问卡：通关后在剧情区里问一句，选对才放出这一层 */
+.ask {
+  border-left: 2px solid var(--amber2);
+  background: linear-gradient(90deg, rgba(224, 164, 88, 0.06), transparent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px 14px;
 }
-.q-tag {
-  flex: none;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--amber2);
-  border: 1px solid #4a3a2a;
-  border-radius: 999px;
-  padding: 2px 8px;
+.ask .label {
+  margin: 0;
 }
-.q-text {
-  font-size: 12.5px;
-  color: #cbbca6;
+.ask-text {
+  margin: 6px 0 10px;
+  font-size: 13.5px;
+  color: var(--amber);
   letter-spacing: 0.02em;
 }
-.q-slot {
-  margin-left: auto;
+.ask-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ask-opt {
+  min-width: 84px;
+}
+.ask-opt.wrong {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.ask-note {
+  margin: 10px 0 0;
   font-size: 11.5px;
   color: var(--dim);
-  letter-spacing: 0.06em;
-  border-bottom: 1px dashed #4a3a2a;
-  padding: 1px 4px;
+  letter-spacing: 0.04em;
 }
-.q-slot.on {
-  border-bottom-color: var(--good);
+.ask-note.ok {
   color: var(--good);
 }
-.q-slot b {
-  font-weight: 600;
-  color: var(--good);
-  margin-right: 6px;
-}
-.q-slot i {
-  font-style: normal;
-  font-size: 10px;
-  opacity: 0.8;
+.ask-note.bad {
+  color: #d08a7a;
 }
 
 /* 六列题：值更长，格子允许换行并缩一档 */

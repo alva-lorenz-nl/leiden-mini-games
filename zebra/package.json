@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/ui.cjs && node tests/ui_v4.cjs",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src"
+    "test": "node tests/ui_v4.cjs && node tests/ask.cjs && node tests/ui.cjs",
+    "format": "prettier --write src src_v4",
+    "format:check": "prettier --check src src_v4"
   },
   "devDependencies": {
     "jsdom": "26.1.0",

@@ -218,15 +218,6 @@ td {
   color: #6b5a44;
   font-size: 11px;
 }
-.q {
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-left: 2px solid var(--amber2);
-  background: #221a13;
-  border-radius: 0 8px 8px 0;
-  font-size: 13px;
-  color: var(--amber);
-}
 .foot {
   display: flex;
   justify-content: space-between;
@@ -392,10 +383,6 @@ select.cell {
   outline: 2px solid var(--amber2);
   outline-offset: 2px;
 }
-.q {
-  background: linear-gradient(90deg, rgba(224, 164, 88, 0.055), transparent);
-}
-
 /* 故事档案 */
 .story-box {
   margin-top: 14px;
@@ -688,50 +675,45 @@ th.corner {
   box-shadow: 0 0 8px rgba(224, 164, 88, 0.35);
 }
 
-/* 追问条：问题在前，答案槽在后，填表时就地给出答案 */
-.q {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 14px 0 0;
-  padding: 11px 14px;
+/* 追问卡：通关后在剧情区里问一句，选对才放出这一层 */
+.ask {
+  border-left: 2px solid var(--amber2);
+  background: linear-gradient(90deg, rgba(224, 164, 88, 0.06), transparent);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px 14px;
 }
-.q-tag {
-  flex: none;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--amber2);
-  border: 1px solid #4a3a2a;
-  border-radius: 999px;
-  padding: 2px 8px;
+.ask .label {
+  margin: 0;
 }
-.q-text {
-  font-size: 12.5px;
-  color: #cbbca6;
+.ask-text {
+  margin: 6px 0 10px;
+  font-size: 13.5px;
+  color: var(--amber);
   letter-spacing: 0.02em;
 }
-.q-slot {
-  margin-left: auto;
+.ask-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ask-opt {
+  min-width: 84px;
+}
+.ask-opt.wrong {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.ask-note {
+  margin: 10px 0 0;
   font-size: 11.5px;
   color: var(--dim);
-  letter-spacing: 0.06em;
-  border-bottom: 1px dashed #4a3a2a;
-  padding: 1px 4px;
+  letter-spacing: 0.04em;
 }
-.q-slot.on {
-  border-bottom-color: var(--good);
+.ask-note.ok {
   color: var(--good);
 }
-.q-slot b {
-  font-weight: 600;
-  color: var(--good);
-  margin-right: 6px;
-}
-.q-slot i {
-  font-style: normal;
-  font-size: 10px;
-  opacity: 0.8;
+.ask-note.bad {
+  color: #d08a7a;
 }
 
 /* 六列题：值更长，格子允许换行并缩一档 */
@@ -898,13 +880,16 @@ body::-webkit-scrollbar-thumb:hover {
               <div id="gameTitle">—</div>
             </div>
             <div class="gb-right">
-              <div class="chip"><span>线索</span><b id="clueProgress">0/0</b></div>
-              <div class="chip"><span>用时</span><b class="timer" id="timer">00:00</b></div>
+              <div class="chip">
+                <span>线索</span><b id="clueProgress">0/0</b>
+              </div>
+              <div class="chip">
+                <span>用时</span><b class="timer" id="timer">00:00</b>
+              </div>
             </div>
           </div>
           <div class="progress" aria-hidden="true"><i id="clueBar"></i></div>
           <p class="intro" id="intro"></p>
-          <div class="q" id="question"></div>
           <p class="table-hint">点格子选内容，线索会随填表自动更新。</p>
           <div
             class="table-scroll"
@@ -1805,6 +1790,89 @@ function renderStoryArchive(fragments, ending) {
     box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
+/* 追问的选项：正确答案加三个同类干扰项，顺序按题号固定 */
+function questionOptions(p) {
+  const val = p.answer && p.answer.value;
+  if (!val) return [];
+  const cat = Object.keys(p.categories).find((c) =>
+    p.categories[c].includes(val),
+  );
+  if (!cat) return [];
+  const others = p.categories[cat].filter((v) => v !== val);
+  if (!others.length) return [];
+  let seed = 0;
+  String(p.id)
+    .split("")
+    .forEach((ch) => {
+      seed = (seed * 31 + ch.charCodeAt(0)) % 100003;
+    });
+  const pool = others.slice();
+  for (let i = pool.length - 1; i > 0; i--) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    const j = seed % (i + 1);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const options = [val, ...pool.slice(0, 3)];
+  for (let i = options.length - 1; i > 0; i--) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    const j = seed % (i + 1);
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return options;
+}
+
+/* 追问：通关后由玩家自己选，选对了才把这一层的剧情放出来 */
+function renderQuestionGate(reveal) {
+  const box = $("storyBox");
+  const p = S.cur;
+  const options = questionOptions(p);
+  if (!options.length || !p.question) {
+    reveal();
+    return;
+  }
+  box.replaceChildren();
+  box.classList.remove("hidden");
+  const card = el("div", "ask");
+  card.appendChild(el("div", "label", "追问"));
+  card.appendChild(el("p", "ask-text", p.question));
+  const row = el("div", "ask-row");
+  const note = el("p", "ask-note", "选一个名字，看看当年到底是谁。");
+  let wrong = 0;
+  options.forEach((v) => {
+    const b = button(v, () => {
+      if (b.disabled) return;
+      if (v === p.answer.value) {
+        card.querySelectorAll("button").forEach((x) => {
+          x.disabled = true;
+        });
+        note.textContent = "答对了。";
+        note.className = "ask-note ok";
+        setTimeout(reveal, 320);
+        return;
+      }
+      wrong += 1;
+      b.disabled = true;
+      b.classList.add("wrong");
+      if (wrong >= 3) {
+        card.querySelectorAll("button").forEach((x) => {
+          x.disabled = true;
+        });
+        note.textContent = `三个都没猜中，答案是「${p.answer.value}」。`;
+        setTimeout(reveal, 900);
+        return;
+      }
+      note.textContent = "不是这个，再想想。";
+      note.className = "ask-note bad";
+    });
+    b.className = "btn ask-opt";
+    b.type = "button";
+    row.appendChild(b);
+  });
+  card.appendChild(row);
+  card.appendChild(note);
+  box.appendChild(card);
+}
+
 /* 通关当前阶段后，展示剧情并允许继续下一阶段 */
 function showStoryResult() {
   const ch = CHAPTERS[S.chapter];
@@ -1812,7 +1880,22 @@ function showStoryResult() {
   const stageData = ch.stages[S.stage];
   const p = S.cur;
   const ending = (p.ending || stageData.ending || "").trim();
-  renderStoryArchive(p.fragments || [], ending);
+  const reveal = () => {
+    renderStoryArchive(p.fragments || [], ending);
+    addNextStage();
+  };
+  if (S.solved) {
+    renderQuestionGate(reveal);
+    return;
+  }
+  reveal();
+}
+
+/* 有下一阶段时补一个入口 */
+function addNextStage() {
+  const ch = CHAPTERS[S.chapter];
+  if (!ch) return;
+  if (S.stage + 1 >= ch.stages.length) return;
   if (S.stage + 1 >= ch.stages.length) return;
   const next = button(
     "继续下一阶段 →",
@@ -1962,7 +2045,6 @@ function backHome() {
 function renderGrid() {
   updateClues();
   updateEditButtons();
-  renderQuestion();
   const p = S.cur,
     tb = $("grid");
   tb.replaceChildren();
@@ -1994,32 +2076,6 @@ function renderGrid() {
     }
     tb.appendChild(tr);
   });
-}
-
-/* 追问条：棋盘上方的一条小问题，答案槽会随填表自动对上 */
-function renderQuestion() {
-  const box = $("question");
-  if (!box) return;
-  const p = S.cur;
-  box.replaceChildren();
-  box.appendChild(el("span", "q-tag", "追问"));
-  box.appendChild(el("span", "q-text", p.question));
-
-  const slot = el("span", "q-slot");
-  const val = p.answer.value;
-  const cat = Object.keys(p.categories).find((c) =>
-    p.categories[c].includes(val),
-  );
-  const row = (cat && S.assign?.[cat]) || [];
-  const at = row.indexOf(val);
-  if (at >= 0) {
-    slot.className += " on";
-    slot.appendChild(el("b", null, val));
-    slot.appendChild(el("i", null, "第 " + (at + 1) + " 位"));
-  } else {
-    slot.textContent = "还空着";
-  }
-  box.appendChild(slot);
 }
 
 function cellButton(p, cat, i) {
@@ -2288,7 +2344,9 @@ function finishBoard(ok) {
   $("checkBtn").disabled = true;
   $("giveUpBtn").disabled = true;
   $("hintBtn").disabled = true;
-  if (ok)
+  if (ok && S.mode === "story")
+    setMessage("gameMsg", `全对！用时 ${fmt(S.elapsed)}。`, "ok");
+  else if (ok)
     setMessage(
       "gameMsg",
       `全对！用时 ${fmt(S.elapsed)}。答案是「${S.cur.answer.value}」。`,
