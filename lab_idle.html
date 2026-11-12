@@ -94,6 +94,15 @@
   }
   .tabs button.on{background:linear-gradient(180deg,#33281c,#241c15);color:var(--amber);border-color:#5c4630}
 
+  /* 工位子标签 */
+  .sub{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .sub button{
+    flex:1;min-width:52px;padding:6px 4px;border-radius:8px;
+    border:1px solid #2a241d;background:#141110;color:#8a7d6b;
+    font-family:inherit;font-size:11.5px;letter-spacing:.06em;cursor:pointer;transition:.15s;
+  }
+  .sub button.on{background:#241c15;color:var(--amber);border-color:#4a3a26}
+
   /* 升级列表 */
   .row{
     display:flex;align-items:center;gap:11px;padding:10px 0;
@@ -249,6 +258,12 @@
   </div>
 
   <div class="panel" id="tab-shop">
+    <div class="sub" id="shopSub">
+      <button data-g="all" class="on">全部</button>
+      <button data-g="her">赫尔曼</button>
+      <button data-g="alv">阿尔瓦</button>
+      <button data-g="cat">小猫</button>
+    </div>
     <div id="shopList"></div>
     <div class="foot" id="shopHint">两个人在同一间屋子里，做着互相拆台的事。</div>
   </div>
@@ -944,6 +959,7 @@ function paintScene(tms){
    UI 渲染
    ============================================================ */
 let shopRefs = [];
+let shopGroup = 'all';
 function renderShop(){
   const box = $('shopList');
   box.replaceChildren();
@@ -978,12 +994,19 @@ function renderShop(){
     shopRefs.push({u, row, btn, nm, em, ds, kind});
   }
 
-  addSection('赫尔曼 · 算法与灵感');
-  for(const u of HER) addRow(u,'her');
-  addSection('阿尔瓦 · 电路与稳定');
-  for(const u of ALV) addRow(u,'alv');
-  addSection('小猫 · 全局加成');
-  for(const u of CAT) addRow(u,'cat');
+  const g = shopGroup;
+  if(g === 'all' || g === 'her'){
+    addSection('赫尔曼 · 算法与灵感');
+    for(const u of HER) addRow(u,'her');
+  }
+  if(g === 'all' || g === 'alv'){
+    addSection('阿尔瓦 · 电路与稳定');
+    for(const u of ALV) addRow(u,'alv');
+  }
+  if(g === 'all' || g === 'cat'){
+    addSection('小猫 · 全局加成');
+    for(const u of CAT) addRow(u,'cat');
+  }
 
   updateShop();
 }
@@ -1262,6 +1285,13 @@ function prestige(){
   $('ab3').onclick = () => doAbility('ab3');
   for(const b of document.querySelectorAll('.tabs button'))
     b.onclick = () => switchTab(b.dataset.tab);
+  for(const b of document.querySelectorAll('#shopSub button'))
+    b.onclick = () => {
+      shopGroup = b.dataset.g;
+      for(const o of document.querySelectorAll('#shopSub button'))
+        o.classList.toggle('on', o === b);
+      renderShop();
+    };
   $('reBtn').onclick = prestige;
   $('wipe').onclick = () => {
     if(!confirm('确定清空全部存档？记忆碎片和收藏室也会一起消失。')) return;
