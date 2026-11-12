@@ -61,7 +61,6 @@ function startGame(selected) {
   toggleHidden("game", false);
   $("gameTitle").textContent = puzzleTitle(p);
   $("intro").textContent = puzzleIntro(p);
-  $("question").textContent = "追问：" + p.question;
   setMessage("gameMsg", "");
   $("checkBtn").disabled = false;
   $("giveUpBtn").disabled = false;
