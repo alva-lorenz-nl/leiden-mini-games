@@ -8,6 +8,8 @@ import os
 from pathlib import Path
 
 import build as base
+import generator_x as gx
+from z3 import IntVal, is_true, simplify, substitute
 
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / 'src_v4'
@@ -40,8 +42,57 @@ def make_bank():
     return bank, free, daily
 
 
+def validate_x(p):
+    """六列/加强题：用扩展生成器的求解器验一遍，线索在解上成立且解唯一。"""
+    theme = gx.ALL_THEMES[p["theme_key"]]
+    cats = list(p["categories"])
+    n = len(p["categories"][cats[0]])
+    solver, var_of = gx.make_solver(theme, cats, n)
+    values = [
+        (var_of[c][v], IntVal(i + 1))
+        for c, row in p["solution"].items()
+        for i, v in enumerate(row)
+    ]
+    for clue in p["raw_clues"]:
+        expr = gx.clue_constraint(clue, var_of)
+        if not is_true(simplify(substitute(expr, *values))):
+            raise ValueError(f"不一致的线索: {p['id']}: {clue}")
+        solver.add(expr)
+    if not gx.unique(solver, var_of, cats, n):
+        raise ValueError(f"解不唯一: {p['id']}")
+
+
+def compact_x(p):
+    return dict(
+        id=p["id"],
+        k=list(p["categories"]),
+        n=p["clue_count"],
+        c=p["clues"],
+        r=p["raw_clues"],
+        q=p["question"],
+        a=p["answer"],
+        s=p["solution"],
+    )
+
+
+def add_extra(bank):
+    extra = base.read_json("extra.json")
+    for key, puzzles in extra.items():
+        theme = key.split("_")[0]
+        first = puzzles[0]
+        meta = bank["meta"].setdefault(
+            theme, dict(title=first["theme"], intro=first["intro"], cats={})
+        )
+        meta["cats"].update(first["categories"])
+        for p in puzzles:
+            validate_x(p)
+        bank["puzzles"][key] = [compact_x(p) for p in puzzles]
+    return sum(len(v) for v in extra.values())
+
+
 def build():
     bank, free, daily = make_bank()
+    extra_count = add_extra(bank)
     html = (SOURCE / 'page.html').read_text()
     html = html.replace('__CSS__', (SOURCE / 'style.css').read_text())
     html = html.replace(
@@ -55,7 +106,7 @@ def build():
     os.replace(temporary, DEST)
     print(
         f'Built {DEST}: {sum(map(len, free.values()))} free, '
-        f'{len(daily)} daily puzzles validated.'
+        f'{len(daily)} daily + {extra_count} extended puzzles validated.'
     )
 
 

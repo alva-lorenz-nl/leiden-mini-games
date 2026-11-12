@@ -458,5 +458,5 @@ const GEN = (() => {
     return { ...p, date: dateKey };
   }
 
-  return { make, daily, countSolutions, hashSeed };
+  return { make, daily, countSolutions, hashSeed, themes: () => Object.keys(PHRASE) };
 })();

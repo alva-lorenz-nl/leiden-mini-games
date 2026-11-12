@@ -8,6 +8,7 @@ function renderGrid() {
   const p = S.cur,
     tb = $("grid");
   tb.replaceChildren();
+  tb.classList.toggle("dense", S.n >= 6);
 
   const head = document.createElement("tr");
   head.appendChild(el("th", "corner", ""));

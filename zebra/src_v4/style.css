@@ -721,3 +721,29 @@ th.corner {
   font-size: 10px;
   opacity: 0.8;
 }
+
+/* 六列题：值更长，格子允许换行并缩一档 */
+.cell {
+  white-space: normal;
+  line-height: 1.15;
+  text-align: center;
+  word-break: break-all;
+}
+table.dense .cell {
+  font-size: 11px;
+  padding: 0 2px;
+}
+@media (max-width: 550px) {
+  table.dense .cell {
+    font-size: 9px;
+    height: 46px;
+  }
+  table.dense th.rowh,
+  table.dense th.corner {
+    width: 40px;
+    font-size: 9px;
+  }
+  table.dense {
+    border-spacing: 2px;
+  }
+}

@@ -9,6 +9,8 @@ const DIFF_NAMES = {
   normal: "普通",
   medium: "中等",
   hard: "困难",
+  plus: "加强",
+  extreme: "极限·六列",
 };
 
 /* 把精简题库还原成页面用的结构 */

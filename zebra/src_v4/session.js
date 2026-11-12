@@ -22,11 +22,25 @@ function pickPuzzle() {
       : GEN.daily(dayKey());
   }
   /* 自由模式：现场生成一道新题，保证线索精简、解唯一、措辞通顺 */
-  const themes = S.theme === "all" ? Object.keys(META) : [S.theme];
+  const genThemes = GEN.themes();
+  const bankOnly =
+    (S.theme !== "all" && !genThemes.includes(S.theme)) ||
+    (S.diff !== "all" && !["easy", "normal", "hard"].includes(S.diff));
+  if (bankOnly) return pickFromBank();
+  const themes = S.theme === "all" ? genThemes : [S.theme];
   const diffs = S.diff === "all" ? ["easy", "normal", "hard"] : [S.diff];
   const themeKey = themes[Math.floor(Math.random() * themes.length)];
   const diff = diffs[Math.floor(Math.random() * diffs.length)];
   return GEN.make(themeKey, diff, Math.floor(Math.random() * 4294967296));
+}
+
+/* 六列题与加强题是预先算好的，直接按筛选条件从题库里抽未做的 */
+function pickFromBank() {
+  const all = filteredPuzzles();
+  const undone = all.filter((p) => !REC.done.includes(p.id));
+  const pool = undone.length ? undone : all;
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function startGame(selected) {

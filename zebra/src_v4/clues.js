@@ -3,36 +3,42 @@
  * Mark fulfilled only when the referenced values have actually been placed.
  */
 function clueState(clue, assignments) {
-  const [kind, category, value, otherCategory, otherValue] = clue;
-  function positions(cat, val) {
-    const row = assignments[cat];
-    const index = row.indexOf(val);
-    return index >= 0 ? [index + 1] : row.flatMap((v, i) => (v ? [] : [i + 1]));
-  }
-  const left = positions(category, value);
-  const placedLeft = assignments[category].includes(value);
+  const [kind, c1, v1, c2, v2, gap] = clue;
+  const rowOf = (c) => assignments[c] || [];
+  const positions = (c, v) => {
+    const row = rowOf(c);
+    const i = row.indexOf(v);
+    return i >= 0 ? [i + 1] : row.flatMap((x, j) => (x ? [] : [j + 1]));
+  };
+  const placed = (c, v) => rowOf(c).includes(v);
+
   if (kind === "pos") {
-    if (!left.includes(otherCategory)) return "conflict";
-    return placedLeft ? "satisfied" : "pending";
+    if (!positions(c1, v1).includes(c2)) return "conflict";
+    return placed(c1, v1) ? "satisfied" : "pending";
   }
-  const right = positions(otherCategory, otherValue);
+  if (kind === "not") {
+    if (placed(c1, v1)) return rowOf(c1).indexOf(v1) + 1 === c2 ? "conflict" : "satisfied";
+    return positions(c1, v1).some((x) => x !== c2) ? "pending" : "conflict";
+  }
+
   const relation = {
     same: (a, b) => a === b,
     next: (a, b) => b === a + 1,
+    nextleft: (a, b) => b === a + 1,
+    side: (a, b) => Math.abs(a - b) === 1,
     left: (a, b) => a < b,
+    right: (a, b) => a > b,
+    between: (a, b) => Math.abs(a - b) === gap + 1,
   }[kind];
   if (!relation) return "pending";
-  const possible = left.some((a) =>
-    right.some(
-      (b) =>
-        !(category === otherCategory && value !== otherValue && a === b) &&
-        relation(a, b),
+
+  const possible = positions(c1, v1).some((a) =>
+    positions(c2, v2).some(
+      (b) => !(c1 === c2 && v1 !== v2 && a === b) && relation(a, b),
     ),
   );
   if (!possible) return "conflict";
-  return placedLeft && assignments[otherCategory].includes(otherValue)
-    ? "satisfied"
-    : "pending";
+  return placed(c1, v1) && placed(c2, v2) ? "satisfied" : "pending";
 }
 
 function renderClues() {
