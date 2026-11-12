@@ -747,3 +747,66 @@ table.dense .cell {
     border-spacing: 2px;
   }
 }
+
+/* 做不了的选项：灰掉且点不动 */
+.btn.off,
+.btn:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+  border-color: #2f2620;
+  color: #7d7266;
+  box-shadow: none;
+}
+.btn.off:hover,
+.btn:disabled:hover {
+  border-color: #2f2620;
+  background: transparent;
+}
+.btn.on:disabled {
+  opacity: 0.5;
+}
+
+/* 滚动条也按馆里的木头色来 */
+#puzzleList,
+.clue-scroll,
+textarea,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #574434 transparent;
+}
+#puzzleList::-webkit-scrollbar,
+textarea::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+#puzzleList::-webkit-scrollbar-track,
+textarea::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+#puzzleList::-webkit-scrollbar-thumb,
+textarea::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4a3a2c, #3a2d23);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+#puzzleList::-webkit-scrollbar-thumb:hover,
+textarea::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6b5037, #4a3a2c);
+  background-clip: padding-box;
+}
+#puzzleList {
+  padding-right: 6px;
+  /* 上下淡出，暗示还能往下滚 */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+}

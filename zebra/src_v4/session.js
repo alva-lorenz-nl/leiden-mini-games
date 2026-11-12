@@ -52,6 +52,7 @@ function startGame(selected) {
         : "当前筛选下没有未做题了；请放宽条件，或从题目列表选择重玩。";
     return;
   }
+  setMessage("homeMsg", "");
   S.cur = p;
   S.mode = mode;
   S.chapter = chapter;

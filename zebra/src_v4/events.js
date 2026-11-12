@@ -4,6 +4,7 @@ function bindEvents() {
   $("resetBtn").onclick = resetBoard;
   $("hintBtn").onclick = hintCell;
   $("listBtn").onclick = () => {
+    if ($("listBtn").disabled) return;
     renderList();
     $("puzzleList").classList.toggle("hidden");
   };
@@ -11,7 +12,9 @@ function bindEvents() {
   document.querySelectorAll("[data-mode]").forEach((b) => {
     b.onclick = () => {
       mode = b.dataset.mode;
+      setMessage("homeMsg", "");
       renderModes();
+      updateStartState();
     };
   });
 
