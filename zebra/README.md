@@ -6,6 +6,8 @@
 
 生产页由 `src_v4/` 构建；`src/` 是上一版前端，只作对照与回归基线，构建产物为 `zebra_puzzle_legacy.html`，不再上线。
 
+试验页：https://alva-lorenz.top/minigames/zebra_puzzle_test.html 。改动先 `python3 build_v4.py --out ../zebra_puzzle_test.html` 发到这里看效果，确认后再 `python3 build_v4.py` 覆盖正式页；两页同一份源码，只差构建输出。
+
 ## 快速开始
 
 ```sh
