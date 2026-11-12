@@ -259,8 +259,7 @@
 
   <div class="panel" id="tab-shop">
     <div class="sub" id="shopSub">
-      <button data-g="all" class="on">全部</button>
-      <button data-g="her">赫尔曼</button>
+      <button data-g="her" class="on">赫尔曼</button>
       <button data-g="alv">阿尔瓦</button>
       <button data-g="cat">小猫</button>
     </div>
@@ -959,7 +958,7 @@ function paintScene(tms){
    UI 渲染
    ============================================================ */
 let shopRefs = [];
-let shopGroup = 'all';
+let shopGroup = 'her';
 function renderShop(){
   const box = $('shopList');
   box.replaceChildren();
