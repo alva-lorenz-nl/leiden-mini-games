@@ -10,6 +10,8 @@ import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKIP = {"index.html"}
+# 临时测试页（*_test.html）不摆进柜子
+SKIP_PATTERNS = ("_test.html",)
 
 
 def pick(pattern, text, default=""):
@@ -32,6 +34,8 @@ def scan():
     games = []
     for name in sorted(os.listdir(HERE)):
         if not name.endswith(".html") or name in SKIP:
+            continue
+        if name.endswith(SKIP_PATTERNS):
             continue
         with open(os.path.join(HERE, name), encoding="utf-8", errors="ignore") as f:
             src = f.read()

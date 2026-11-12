@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>莱顿逻辑馆 · 小猫斑马谜题</title>
+    <meta
+      name="description"
+      content="阿尔瓦写的逻辑谜题生成器，小猫专属的斑马游戏。三档难度、自动计时、档案可跨设备同步，每一题都保证唯一解。"
+    />
+    <meta name="tag" content="逻辑 · 推理" />
+    <style>
+      __CSS__
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="kicker">LEIDEN LOGIC ROOM</div>
+        <h1>小猫斑马谜题</h1>
+        <div class="sub">阿尔瓦写的逻辑生成器 · 每题唯一解</div>
+        <div class="rule"></div>
+      </header>
+
+      <!-- 首页 -->
+      <section id="home">
+        <div class="card">
+          <div class="label">玩法</div>
+          <div class="row">
+            <button class="btn on" data-mode="free">自由推理</button
+            ><button class="btn" data-mode="story">故事模式</button
+            ><button class="btn" data-mode="daily">每日挑战</button>
+          </div>
+          <p class="intro" id="modeInfo"></p>
+          <div id="chapters" class="row"></div>
+          <div id="storyTags" class="hidden">
+            <div class="label">故事标签</div>
+            <div class="row" id="tagRow"></div>
+          </div>
+          <div id="freeFilters">
+            <div class="label">主题</div>
+            <div class="row" id="themeRow"></div>
+            <div class="label">难度</div>
+            <div class="row" id="diffRow"></div>
+          </div>
+          <div id="dailyArchive" class="hidden"></div>
+          <div class="foot">
+            <div class="msg" id="homeMsg" role="status"></div>
+            <button class="btn" id="listBtn">题目列表</button
+            ><button class="btn primary" id="startBtn">随机未做题 →</button>
+          </div>
+        </div>
+
+        <div id="puzzleList" class="hidden"></div>
+        <div class="card" style="margin-top: 14px">
+          <div class="label">成就</div>
+          <div id="achievements" class="stats"></div>
+          <div class="label">档案</div>
+          <div class="stats" id="statBox"></div>
+          <div class="hist" id="histBox"></div>
+          <div class="foot">
+            <div class="row">
+              <button class="btn" id="exportBtn">导出同步码</button>
+              <button class="btn" id="importBtn">导入同步码</button>
+            </div>
+            <button class="btn" id="clearBtn">清空档案</button>
+          </div>
+          <div id="syncBox" class="hidden" style="margin-top: 12px">
+            <div class="label" id="syncLabel">
+              同步码（复制到别的设备粘贴导入）
+            </div>
+            <textarea id="syncText" spellcheck="false"></textarea>
+            <div class="row" style="margin-top: 8px">
+              <button class="btn" id="syncDo">确认</button>
+              <button class="btn" id="syncCancel">取消</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 谜题 -->
+      <section id="game" class="hidden">
+        <div class="card">
+          <div class="gamebar">
+            <div class="gb-left">
+              <div id="gameTitle">—</div>
+            </div>
+            <div class="gb-right">
+              <div class="chip"><span>线索</span><b id="clueProgress">0/0</b></div>
+              <div class="chip"><span>用时</span><b class="timer" id="timer">00:00</b></div>
+            </div>
+          </div>
+          <div class="progress" aria-hidden="true"><i id="clueBar"></i></div>
+          <p class="intro" id="intro"></p>
+          <p class="table-hint">点格子选内容，线索会随填表自动更新。</p>
+          <div
+            class="table-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="推理表格，可左右滚动"
+          >
+            <table id="grid"></table>
+          </div>
+          <div class="q" id="question"></div>
+          <div id="storyBox" class="story-box hidden"></div>
+          <div class="foot">
+            <div class="msg" id="gameMsg"></div>
+            <div class="row">
+              <button class="btn" id="undoBtn" disabled>撤回</button>
+              <button class="btn" id="resetBtn" disabled>清空</button>
+              <button class="btn" id="hintBtn">提示</button>
+              <button class="btn" id="giveUpBtn">看答案</button>
+              <button class="btn" id="backBtn">回首页</button>
+              <button class="btn primary" id="checkBtn">核对</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 14px">
+          <div class="label">线索</div>
+          <p class="intro">✓ 已满足 · ✕ 与填表冲突 · □ 待确定</p>
+          <div
+            class="clue-scroll"
+            tabindex="0"
+            role="region"
+            aria-label="线索列表，可上下滚动"
+          >
+            <ol class="clues" id="clues"></ol>
+          </div>
+        </div>
+      </section>
+
+      <footer>莱顿小游戏柜 · 慢慢做，慢慢加</footer>
+    </div>
+
+    <script>
+      const BANK = __BANK__;
+      __JS__;
+    </script>
+  </body>
+</html>
