@@ -586,18 +586,71 @@ function vig(g,a){
   g.fillStyle=vg; g.fillRect(0,0,W,H);
 }
 
-/* 猫（会甩尾巴） */
-function cat(g,x,y,scale){
-  const s = scale||1;
-  R(g,x,y+2*s,11*s,6*s,'#e8e2d8');
-  R(g,x+1*s,y,3*s,3*s,'#e8e2d8');
-  R(g,x+8*s,y,3*s,3*s,'#e8e2d8');
-  R(g,x+1.5*s,y,1*s,1*s,'#c8a0a0');
-  R(g,x+8.5*s,y,1*s,1*s,'#c8a0a0');
-  R(g,x+2.5*s,y+2.5*s,1*s,1*s,'#2a2429');
-  R(g,x+6.5*s,y+2.5*s,1*s,1*s,'#2a2429');
-  // 尾巴
-  anim.push({type:'tail', x:x+11*s, y:y+5*s, s:s});
+/* ---------- 猫：点阵 ---------- */
+const CAT_PAL = {o:'#1b1620', w:'#f6efe3', s:'#ddd0ba', e:'#1b1620', n:'#d98f8f'};
+
+const CAT_SIT = [
+"...oo......oo...",
+"..owwo....owwo..",
+".owwwwo..owwwwo.",
+".owwwwwoowwwwwwo",
+".owewwwwwwwewwwo",
+".owwwwwwwwwwwwo.",
+".owwwwwwwwwwwwo.",
+".owwwwnnnnwwwwo.",
+".owwwwwnnwwwwwo.",
+".owwwwwwwwwwwwo.",
+".owwwwwwwwwwwwo.",
+"..owwwwwwwwwwwo.",
+"..owwwwwwwwwwwo.",
+"...oooooooooo...",
+];
+const CAT_LOAF = [
+"....oooo........",
+"..oowwwwoo......",
+".owwwwwwwwooo...",
+".owewwwwwwwwwoo.",
+"owwwwwwwwwwwwwwo",
+"owwwwsssssswwwwo",
+".oooooooooooooo.",
+];
+const CAT_WALK = [
+"....oo............",
+"...owwo...........",
+"..owwwwo..........",
+"..owewwooooooo....",
+"..owwwwwwwwwwwo...",
+"..owwwwwwwwwwwwo..",
+"..owwwnnwwwwwwwo..",
+"...owwwwwwwwwwwwo.",
+"...owwwwwwwwwwwwo.",
+"....owwwwwwwwwwo..",
+"....oowwoowwoo....",
+".....oooooooo.....",
+];
+
+function stampCat(g, MAP, x, y, eyesClosed, sc){
+  const k = sc || 1;
+  for(let j=0;j<MAP.length;j++){
+    const row = MAP[j];
+    for(let i=0;i<row.length;i++){
+      const ch = row[i];
+      if(ch === '.') continue;
+      if(eyesClosed && ch === 'e'){ g.fillStyle = CAT_PAL.s; }
+      else g.fillStyle = CAT_PAL[ch] || '#f0f';
+      g.fillRect(x+i*k, y+j*k, k, k);
+    }
+  }
+}
+
+/* 放一只猫，并登记眨眼 / 尾巴 */
+function putCat(g, x, y, pose, sc){
+  const k = sc || 1;
+  const MAP = pose === 'loaf' ? CAT_LOAF : pose === 'walk' ? CAT_WALK : CAT_SIT;
+  stampCat(g, MAP, x, y, false, k);
+  anim.push({type:'cat', x, y, k, w:MAP[0].length*k, h:MAP.length*k, MAP, pose,
+             nextBlink: 1600 + Math.random()*3000, blinkUntil: 0,
+             tailPhase: Math.random()*6.28});
 }
 
 /* 场景 0/1：车库 */
@@ -680,7 +733,7 @@ function drawGarage(g, detail){
     R(g,116,21,18,2,'#3b3339'); R(g,116,25,13,1,'#3b3339');
     R(g,116,28,16,1,'#3b3339'); R(g,116,31,8,1,'#3b3339');
   }
-  cat(g,150,76,1);
+  putCat(g,158,66,'sit',1);
   vig(g,.55);
 }
 
@@ -743,7 +796,7 @@ function drawAttic(g){
   R(g,162,54,16,10,'#8a6a45'); R(g,162,54,16,1,'#a07c52');
   // 电缆
   for(let i=0;i<12;i++) R(g,44+i*6,86+Math.round(Math.sin(i*.7)*2),6,1,'#3a3038');
-  cat(g,146,64,1);
+  putCat(g,146,56,'sit',1);
   glow(g,110,52,70,'rgba(255,200,120,.16)','rgba(255,200,120,0)');
   vig(g,.58);
 }
@@ -772,7 +825,7 @@ function drawServer(g){
     }
   }
   R(g,6,86,180,3,'#1a242e');
-  cat(g,140,12,1);
+  putCat(g,140,14,'loaf',1);
   glow(g,96,52,80,'rgba(95,224,160,.13)','rgba(95,224,160,0)');
   glow(g,96,52,60,'rgba(95,160,224,.08)','rgba(95,160,224,0)');
   vig(g,.62);
@@ -807,7 +860,7 @@ function drawOffice(g){
   R(g,120,56,58,30,'#e2e0d6'); R(g,120,56,58,1,'#b8b6ac');
   for(let i=0;i<5;i++) R(g,124,60+i*4,14+i*7,1,'#6a6a80');
   R(g,124,80,20,1,'#b04a3a');
-  cat(g,94,82,1);
+  putCat(g,88,74,'sit',1);
   vig(g,.45);
 }
 
@@ -870,13 +923,21 @@ function paintScene(tms){
   sctx.drawImage(off,0,0);
   const t = tms/1000;
   for(const a of anim){
-    if(a.type === 'tail'){
-      const ang = Math.sin(t*2.2)*1.6;
-      for(let i=0;i<5;i++){
-        const yy = a.y - i*0.8 + Math.sin(t*2.2 + i*.5)*0.9;
-        sctx.fillStyle = '#d8d2c8';
-        sctx.fillRect((a.x + ang*(i*0.5))|0, yy|0, 1, 1);
+    if(a.type === 'cat'){
+      const tt = tms;
+      if(tt > a.nextBlink){ a.blinkUntil = tt + 130; a.nextBlink = tt + 2200 + Math.random()*4200; }
+      const closed = tt < a.blinkUntil;
+      stampCat(sctx, a.MAP, a.x, a.y, closed, a.k);
+      // 尾巴：坐/走时在身侧摆动
+      const sw = Math.sin(t*2.0 + a.tailPhase);
+      const bx = a.x + a.w - 1, by = a.y + a.h - 2;
+      for(let i=1;i<=3;i++){
+        const tx = bx + i;
+        const ty = by + Math.round(sw * i * 0.5);
+        sctx.fillStyle = i === 3 ? '#e6dccb' : CAT_PAL.w;
+        sctx.fillRect(tx, ty, 1, 1);
       }
+      sctx.fillStyle = CAT_PAL.w;
     } else if(a.type === 'bulb'){
       const f = 0.82 + Math.sin(t*3.1)*0.05 + Math.sin(t*11)*0.03;
       sctx.globalAlpha = 1;

@@ -91,7 +91,7 @@ function renderModes() {
   toggleHidden("freeFilters", mode !== "free");
   renderDailyArchive();
   toggleHidden("listBtn", mode !== "free");
-  $("startBtn").textContent = mode === "free" ? "随机未做题 →" : "开始推理 →";
+  $("startBtn").textContent = mode === "free" ? "随机新题 →" : "开始推理 →";
   if (mode !== "free") toggleHidden("puzzleList", true);
   renderList();
   renderAchievements();
@@ -155,6 +155,19 @@ function renderDailyArchive() {
   box.classList.toggle("hidden", mode !== "daily");
   box.replaceChildren();
   box.appendChild(el("p", null, "每日档案 · 北京时间（可补做往期）"));
+  if (!BANK.daily.some((p) => p.date === dayKey())) {
+    const today = dayKey();
+    const done = (REC.daily || []).includes(today);
+    box.appendChild(
+      button(
+        `今天 · ${today} · 现场生成 · ${done ? "已通关" : "未完成"}`,
+        () => {
+          mode = "daily";
+          startGame(GEN.daily(today));
+        },
+      ),
+    );
+  }
   BANK.daily
     .filter((p) => p.date <= dayKey())
     .slice()

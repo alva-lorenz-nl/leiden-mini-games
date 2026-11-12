@@ -19,10 +19,14 @@ function pickPuzzle() {
     const item = BANK.daily.find((p) => p.date === dayKey());
     return item
       ? { ...hydrate(item, item.theme, item.diff), date: item.date }
-      : null;
+      : GEN.daily(dayKey());
   }
-  const pool = filteredPuzzles().filter((p) => !REC.done.includes(p.id));
-  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+  /* 自由模式：现场生成一道新题，保证线索精简、解唯一、措辞通顺 */
+  const themes = S.theme === "all" ? Object.keys(META) : [S.theme];
+  const diffs = S.diff === "all" ? ["easy", "normal", "hard"] : [S.diff];
+  const themeKey = themes[Math.floor(Math.random() * themes.length)];
+  const diff = diffs[Math.floor(Math.random() * diffs.length)];
+  return GEN.make(themeKey, diff, Math.floor(Math.random() * 4294967296));
 }
 
 function startGame(selected) {

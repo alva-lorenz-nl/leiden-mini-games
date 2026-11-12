@@ -4,7 +4,12 @@ const META = BANK.meta,
 
 const THEME_NAMES = {};
 Object.keys(META).forEach((k) => (THEME_NAMES[k] = META[k].title));
-const DIFF_NAMES = { easy: "简单", normal: "普通", medium: "中等", hard: "困难" };
+const DIFF_NAMES = {
+  easy: "简单",
+  normal: "普通",
+  medium: "中等",
+  hard: "困难",
+};
 
 /* 把精简题库还原成页面用的结构 */
 function hydrate(p, theme, diff) {
@@ -18,12 +23,24 @@ function hydrate(p, theme, diff) {
     difficulty: diff,
     categories: cats,
     clue_count: p.n,
-    clues: p.c,
+    clues: softenClues(p.c, p.r, theme),
     rawClues: p.r,
     question: p.q,
     answer: p.a,
     solution: p.s,
   };
+}
+
+/* 早期题库里“状态=喝咖啡”和“饮料=热水”会拼出别扭的句子，这里改写成人话 */
+function softenClues(texts, raws, theme) {
+  if (theme !== "alva" || !raws) return texts;
+  const key = ["状态", "饮料"].sort().join("|");
+  return texts.map((t, i) => {
+    const r = raws[i];
+    if (r && r[0] === "same" && [r[1], r[3]].sort().join("|") === key)
+      return `正在${r[2]}的人，杯子里装的其实是${r[4]}。`;
+    return t;
+  });
 }
 
 /* 把故事章节的谜题还原成页面用的结构 */

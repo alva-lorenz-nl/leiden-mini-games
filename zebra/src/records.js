@@ -76,15 +76,16 @@ function record(sec, ok) {
   const p = S.cur;
   const d = p.difficulty;
   if (!REC.solved[d]) REC.solved[d] = { n: 0, best: null, total: 0 };
-  if (ok && !(REC.wins || []).includes(p.id)) {
+  const generated = String(p.id).startsWith("gen-");
+  if (ok && (generated || !(REC.wins || []).includes(p.id))) {
     REC.wins = REC.wins || [];
-    REC.wins.push(p.id);
+    if (!generated) REC.wins.push(p.id);
     const s = REC.solved[d];
     s.n++;
     s.total += sec;
     s.best = s.best == null ? sec : Math.min(s.best, sec);
   }
-  if (!REC.done.includes(p.id)) REC.done.push(p.id);
+  if (!generated && !REC.done.includes(p.id)) REC.done.push(p.id);
   const now = new Date();
   REC.history.unshift({
     time: `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,

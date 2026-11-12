@@ -8,7 +8,7 @@ from generator import THEMES, make_solver_for, clue_to_constraint, unique_soluti
 
 ROOT = Path(__file__).resolve().parent
 MODULES = [
-    'core', 'dom', 'records', 'clues', 'story', 'session',
+    'core', 'generator', 'dom', 'records', 'clues', 'story', 'session',
     'board', 'home', 'achievements', 'modes', 'sync', 'events',
 ]
 
