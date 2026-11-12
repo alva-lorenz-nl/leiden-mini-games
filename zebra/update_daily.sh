@@ -12,6 +12,8 @@ if git diff --quiet -- zebra/data/daily.json; then
     git push origin main
     exit 0
 fi
+"$PYTHON" zebra/build_v4.py
+node zebra/tests/ui_v4.cjs
 "$PYTHON" zebra/build.py
 node zebra/tests/ui.cjs
 python3 build_index.py
@@ -19,6 +21,6 @@ DEST=${ZEBRA_SITE_DIR:-/data/games/cat-walk/minigames}
 mkdir -p "$DEST"
 cp zebra_puzzle.html "$DEST/zebra_puzzle.html.tmp"
 mv "$DEST/zebra_puzzle.html.tmp" "$DEST/zebra_puzzle.html"
-git add zebra/data/daily.json zebra_puzzle.html index.html
+git add zebra/data/daily.json zebra_puzzle.html zebra_puzzle_legacy.html index.html
 git -c user.name='Alva Lorenz' -c user.email='alvalorenz@zohomail.com' commit -m 'chore(zebra): archive new daily puzzles'
 git push origin main

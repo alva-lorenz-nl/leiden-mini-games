@@ -2,7 +2,7 @@ const fs = require("fs"),
   assert = require("assert");
 const { JSDOM } = require("jsdom");
 const html = fs.readFileSync(
-  require("path").join(__dirname, "../../zebra_puzzle_test.html"),
+  require("path").join(__dirname, "../../zebra_puzzle.html"),
   "utf8",
 );
 const dom = new JSDOM(html, {

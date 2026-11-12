@@ -83,7 +83,7 @@ def build():
     html = html.replace('__CSS__', (source / 'style.css').read_text())
     html = html.replace('__BANK__', json.dumps(bank, ensure_ascii=False, separators=(',', ':')))
     html = html.replace('__JS__', '\n'.join((source / (m + '.js')).read_text() for m in MODULES))
-    dest = ROOT.parent / 'zebra_puzzle.html'
+    dest = ROOT.parent / 'zebra_puzzle_legacy.html'
     temporary = dest.with_suffix('.tmp')
     temporary.write_text(html)
     os.replace(temporary, dest)

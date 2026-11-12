@@ -10,8 +10,8 @@ import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SKIP = {"index.html"}
-# 临时测试页（*_test.html）不摆进柜子
-SKIP_PATTERNS = ("_test.html",)
+# 临时测试页（*_test.html）与旧版产物（*_legacy.html）不摆进柜子
+SKIP_PATTERNS = ("_test.html", "_legacy.html")
 
 
 def pick(pattern, text, default=""):

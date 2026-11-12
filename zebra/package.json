@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node tests/ui.cjs",
+    "test": "node tests/ui.cjs && node tests/ui_v4.cjs",
     "format": "prettier --write src",
     "format:check": "prettier --check src"
   },

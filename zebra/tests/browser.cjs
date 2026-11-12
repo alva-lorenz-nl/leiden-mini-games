@@ -1,6 +1,6 @@
 const {chromium}=require(process.env.ZEBRA_PLAYWRIGHT || 'playwright');
 const fs=require('fs'), assert=require('assert');
-const html=fs.readFileSync(require('path').join(__dirname,'../../zebra_puzzle.html'),'utf8');
+const html=fs.readFileSync(require('path').join(__dirname,'../../zebra_puzzle_legacy.html'),'utf8');
 const out=process.env.ZEBRA_SCREENSHOT_DIR || '/tmp/zebra-browser/shots';fs.mkdirSync(out,{recursive:true});
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.ZEBRA_CHROME,args:['--no-sandbox']});

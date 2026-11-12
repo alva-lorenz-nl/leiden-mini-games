@@ -2,7 +2,9 @@
 
 在线游戏：https://alva-lorenz.top/minigames/zebra_puzzle.html
 
-一款离线可玩的斑马谜题合集：144 道自由题、19 个独立故事、按北京时间生成的永久每日题。发布产物是仓库根目录的单个 `zebra_puzzle.html`，题库、样式与脚本全部内联，双击即可打开。
+一款离线可玩的斑马谜题合集：144 道自由题、36 道加强题（含六列运河街区）、19 个独立故事、按北京时间生成的永久每日题。发布产物是仓库根目录的单个 `zebra_puzzle.html`，题库、样式与脚本全部内联，双击即可打开。
+
+生产页由 `src_v4/` 构建；`src/` 是上一版前端，只作对照与回归基线，构建产物为 `zebra_puzzle_legacy.html`，不再上线。
 
 ## 快速开始
 
@@ -11,37 +13,46 @@ cd zebra
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 npm ci
-.venv/bin/python build.py      # 生成 ../zebra_puzzle.html
-npm test                       # DOM 行为回归
-npm run format:check           # 前端格式检查
+.venv/bin/python build_v4.py                 # 生成生产页 ../zebra_puzzle.html
+.venv/bin/python build_v4.py --out ../zebra_puzzle_test.html   # 另存一份试验页
+.venv/bin/python build.py                    # 旧前端，生成 ../zebra_puzzle_legacy.html
+npm test                                     # 两套 DOM 行为回归
+npm run format:check                         # 前端格式检查
 ```
 
-`npm run format` 会格式化 `src/`。Python 统一四空格缩进。构建、生成脚本都用自身路径定位文件，可从任意目录调用。发布前在仓库根目录执行 `sh publish.sh '提交说明'`；发布依赖现有 Git 凭据与站点写权限，仓库里不保存凭据。
+`npm run format` 会格式化 `src/` 与 `src_v4/`。Python 统一四空格缩进。构建、生成脚本都用自身路径定位文件，可从任意目录调用。发布前在仓库根目录执行 `sh publish.sh '提交说明'`；发布依赖现有 Git 凭据与站点写权限，仓库里不保存凭据。
 
 ## 目录结构
 
 ```text
 zebra/
-├─ build.py            校验题库并拼装单文件
-├─ generator.py        Z3 唯一解题目生成器
+├─ build_v4.py         生产构建：校验题库并拼装 src_v4 单文件
+├─ build.py            旧版构建（src/ → ../zebra_puzzle_legacy.html）
+├─ generator.py        Z3 唯一解题目生成器（自由题与每日题）
+├─ generator_x.py      扩展生成器：六列、否定/间隔/相邻线索（加强题）
+├─ regen_free.py       按新词表重算 144 道自由题与每日题（一次性，改了词表才跑）
 ├─ daily.py            按日期追加每日题
 ├─ stage_stories.py    一次性内容迁移工具（不要重复运行）
 ├─ story_difficulty.py 故事题难度重建工具（一次性，含 difficultyVersion 保护）
 ├─ data/
 │  ├─ free.json        144 道自由题
 │  ├─ story.json       19 个故事、分阶段谜题
+│  ├─ extra.json       36 道加强题（含六列运河街区）
 │  ├─ daily.json       永久每日档案
 │  └─ legacy_daily.json 旧版循环题，仅用于去重
 ├─ docs/chapters.md    故事设定与章节草稿
-├─ src/                前端源码（见下表）
+├─ src_v4/             当前前端源码（见下表）
+├─ src/                上一版前端源码，仅作对照
 └─ tests/
-   ├─ ui.cjs           jsdom 行为回归
-   └─ browser.cjs      Playwright 截图与溢出检查
+   ├─ ui_v4.cjs        生产页 jsdom 行为回归
+   ├─ browser_v4.cjs   生产页 Playwright 截图与溢出检查
+   ├─ ui.cjs           旧版页面 jsdom 回归
+   └─ browser.cjs      旧版页面截图检查
 ```
 
 ## 前端模块
 
-源码按职责拆分，`build.py` 按固定顺序拼接成一个 `<script>`；发布 HTML 不要手改。
+源码按职责拆分，`build_v4.py` 按固定顺序拼接成一个 `<script>`；发布 HTML 不要手改。`src/` 与 `src_v4/` 的模块名和顺序一致，换前端只换目录，题库校验共用 `build.py` 里的函数。
 
 | 顺序 | 文件 | 职责 |
 | --- | --- | --- |
@@ -82,7 +93,16 @@ zebra/
 }
 ```
 
-线索是结构化数组：`["pos", 类别, 值, 位置]` 或 `["same" | "next" | "left", 类别, 值, 另一类别, 另一值]`。判定只看玩家填表，不读标准答案；已无可能满足时标红，涉及的值都落位且关系成立时划线，其余待定。单条线索满足不代表整题正确。
+线索是结构化数组：`["pos", 类别, 值, 位置]` 或 `["same" | "next" | "left", 类别, 值, 另一类别, 另一值]`，扩展生成器另有 `["not" | "gap" | "adj"]` 等否定、间隔、相邻变体。判定只看玩家填表，不读标准答案；已无可能满足时标红，涉及的值都落位且关系成立时划线，其余待定。单条线索满足不代表整题正确。
+
+## 词表与拼句
+
+饮料、衣领颜色、手里东西、房间这几类取值在题内互不重复。生成器把结构化线索渲染成中文时有两道过滤：
+
+- `AVOID_SAME`：容易造成歧义或重复的类别对，不给它们出“同一格”线索（目前为空表，留作后续扩充）。
+- `gramClash`：同一条线索里两个取值只要字面有交集（如“咖啡杯”与“黑咖啡”），整条丢弃，避免句子读起来别扭。
+
+改词表后必须跑 `python3 regen_free.py` 重算自由题与每日题，再跑 `build_v4.py`，否则题库里的旧取值会和新词表对不上。
 
 ## 游戏规则与行为约定
 
@@ -104,7 +124,7 @@ zebra/
 
 生成器检查答案排列不与自由题、旧版每日题、已归档每日题重复，每题都通过线索一致性与唯一解校验；没有 60 天轮回。默认预备未来七天，今日题缺失时明确提示，不回退旧题冒充新题。历史题可补做，七日成就按不同日期累计，不要求连续。
 
-生产机用系统 cron 每小时运行 `update_daily.sh`：`flock` 加锁后补题、校验、跑回归、原子替换站点文件，再提交档案与构建产物。无新题不产生提交，推送失败下次重试，失败时保留旧站点并写日志。
+生产机用系统 cron 每小时运行 `update_daily.sh`：`flock` 加锁后补题，用 `build_v4.py` 重建生产页、`build.py` 重建旧版页，跑两套回归，原子替换站点文件，再提交档案与构建产物。无新题不产生提交，推送失败下次重试，失败时保留旧站点并写日志。
 
 ```cron
 5 * * * * /bin/sh /data/games/mini-games/zebra/update_daily.sh >> /data/games/mini-games/zebra/daily.log 2>&1
@@ -114,7 +134,9 @@ zebra/
 
 ## 测试
 
-`tests/ui.cjs` 用 jsdom 加载构建产物，覆盖：四章解锁与阶段推进、每日固定题与历史归属、未来日期隐藏、隐藏筛选、下拉填表与重复值清空、撤回/重置、线索三态、成就、同步码往返与损坏码拒绝、看答案不算通关、旧短篇标题与异常存档恢复。
+`tests/ui_v4.cjs` 用 jsdom 加载生产页 `zebra_puzzle.html`，覆盖点击选值、同列取值互斥、撤回/重置、线索三态实时刷新、提示、自动收尾；`tests/browser_v4.cjs` 在桌面与手机两档截取首页、对局、选择器、填满、提示、通关六个画面并检查横向溢出与控制台异常。`npm test` 同时跑新旧两套 jsdom 回归。
+
+`tests/ui.cjs` 用 jsdom 加载旧版产物，覆盖：四章解锁与阶段推进、每日固定题与历史归属、未来日期隐藏、隐藏筛选、下拉填表与重复值清空、撤回/重置、线索三态、成就、同步码往返与损坏码拒绝、看答案不算通关、旧短篇标题与异常存档恢复。
 
 `tests/browser.cjs` 用 Playwright Chromium 截取桌面 1440×1000 与手机 390×844 的主要页面、结果页、同步界面、七列表格和异常存档恢复，检查页面横向溢出与控制台异常。可用环境变量指定运行时：
 
@@ -136,6 +158,8 @@ node tests/browser.cjs
 
 ## 变更记录
 
+- 2026-11-12 上线 v4：`src_v4` 成为生产前端，新增加强与六列运河街区题、ZebraLogic 风格线索、按钮置灰与列表滚动条配色；`build_v4.py` 直接产出 `zebra_puzzle.html`，旧前端降为 `zebra_puzzle_legacy.html`。
+- 2026-11-12 词表修订：永动轮往事把“状态”换成“衣领颜色”（白、深蓝、酒红、墨绿、浅灰），咖啡杯改马克杯，并加入字面重叠过滤，自由题、每日题、加强题全部重算重验。
 - 2026-11-11 重构：`game.js` 按职责拆为 `session` / `board` / `home` / `story`，档案与成就分家，新增 `dom.js` 工具层；构建顺序与行为保持不变，回归测试与截图检查通过。
 - 2026-11-11 界面维护：清理自由推理主题，修复缓存与阶段状态，手机表格加滑动提示，存档读取容错，加入浏览器截图回归。
 - 2026-11-11 故事改版：19 个独立故事、章节内分阶段、标签筛选，旧 story 索引仅用于兼容。

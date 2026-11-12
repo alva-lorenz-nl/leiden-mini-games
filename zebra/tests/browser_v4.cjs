@@ -2,7 +2,7 @@ const { chromium } = require("/tmp/node_modules/playwright");
 const fs = require("fs"),
   assert = require("assert");
 const html = fs.readFileSync(
-  require("path").join(__dirname, "../../zebra_puzzle_test.html"),
+  require("path").join(__dirname, "../../zebra_puzzle.html"),
   "utf8",
 );
 const out = "/tmp/zebra-v4/shots";

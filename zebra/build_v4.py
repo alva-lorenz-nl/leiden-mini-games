@@ -1,8 +1,9 @@
-"""Build the test build (src_v4) into ../zebra_puzzle_test.html.
+"""Build the current front-end (src_v4) into a single-file page.
 
-Same bank and same validation as the production build; only the front-end
-sources differ. Production zebra_puzzle.html is never touched here.
+默认输出生产页 ../zebra_puzzle.html；加 --out 可另存一份试验页，
+例如 `python3 build_v4.py --out ../zebra_puzzle_test.html`。
 """
+import argparse
 import json
 import os
 from pathlib import Path
@@ -13,7 +14,7 @@ from z3 import IntVal, is_true, simplify, substitute
 
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / 'src_v4'
-DEST = ROOT.parent / 'zebra_puzzle_test.html'
+DEST = ROOT.parent / 'zebra_puzzle.html'
 MODULES = base.MODULES
 
 
@@ -90,7 +91,7 @@ def add_extra(bank):
     return sum(len(v) for v in extra.values())
 
 
-def build():
+def build(dest=DEST):
     bank, free, daily = make_bank()
     extra_count = add_extra(bank)
     html = (SOURCE / 'page.html').read_text()
@@ -101,14 +102,16 @@ def build():
     html = html.replace(
         '__JS__', '\n'.join((SOURCE / (m + '.js')).read_text() for m in MODULES)
     )
-    temporary = DEST.with_suffix('.tmp')
+    temporary = Path(dest).with_suffix('.tmp')
     temporary.write_text(html)
-    os.replace(temporary, DEST)
+    os.replace(temporary, dest)
     print(
-        f'Built {DEST}: {sum(map(len, free.values()))} free, '
+        f'Built {dest}: {sum(map(len, free.values()))} free, '
         f'{len(daily)} daily + {extra_count} extended puzzles validated.'
     )
 
 
 if __name__ == '__main__':
-    build()
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--out', default=str(DEST))
+    build(Path(ap.parse_args().out).resolve())
