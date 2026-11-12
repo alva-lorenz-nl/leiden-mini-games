@@ -29,12 +29,12 @@ THEMES = {
     },
     "alva": {
         "title": "永动轮往事",
-        "intro": "永动轮公司五间相邻的实验室里各待着一个人，他们的身份、所在房间、手里的物件、状态（以及喝的饮料）各不相同。请根据线索还原当年的现场。",
+        "intro": "永动轮公司五间相邻的实验室里各待着一个人，他们的身份、所在房间、手里的物件、衣领颜色（以及喝的饮料）各不相同。请根据线索还原当年的现场。",
         "cats": {
             "人物": ["赫尔曼", "阿尔瓦", "卢卡", "玛丽", "汉斯"],
             "房间": ["机械车间", "电气工坊", "算法实验室", "数据中心", "会议室"],
-            "手里东西": ["咖啡杯", "电路板", "服务器", "扳手", "草稿纸"],
-            "状态": ["熬夜", "争吵", "沉思", "喝咖啡", "修机器"],
+            "手里东西": ["马克杯", "电路板", "服务器", "扳手", "草稿纸"],
+            "衣领颜色": ["白色", "深蓝", "酒红", "墨绿", "浅灰"],
             "饮料": ["黑咖啡", "红茶", "牛奶", "汽水", "热水"],
         },
         "final_question": "谁的饮料是「牛奶」？",
@@ -76,13 +76,25 @@ def make_solver_for(theme, cats):
     return s, var_of
 
 
+def _grams(text):
+    return {text[i:i + 2] for i in range(len(text) - 1)}
+
+
+def clashes(v1, v2):
+    """两个取值在字面上有交集（如“咖啡杯 / 黑咖啡”）就容易拼出怪句子。"""
+    return bool(_grams(v1) & _grams(v2)) or v1 in v2 or v2 in v1
+
+
 def all_candidate_clues(theme, sol, cats):
     clues = []
     # 同位
     for i, c1 in enumerate(cats):
         for c2 in cats[i + 1:]:
             for pos in range(1, 6):
-                clues.append(("same", c1, sol[c1][pos], c2, sol[c2][pos]))
+                v1, v2 = sol[c1][pos], sol[c2][pos]
+                if clashes(v1, v2):
+                    continue
+                clues.append(("same", c1, v1, c2, v2))
     # 相邻（左右紧邻）
     for c1 in cats:
         for c2 in cats:
@@ -103,7 +115,7 @@ def all_candidate_clues(theme, sol, cats):
 
 
 def subject(c, v):
-    return {"名字": v, "人物": v, "房间": v, "毛色": f"毛色是{v}的小猫", "零食": f"爱吃{v}的小猫", "活动": f"正在{v}的小猫", "窝": f"住在{v}里的小猫", "手里东西": f"有{v}的房间", "状态": f"正在{v}的人", "饮料": f"喝{v}的人"}[c]
+    return {"名字": v, "人物": v, "房间": v, "毛色": f"毛色是{v}的小猫", "零食": f"爱吃{v}的小猫", "活动": f"正在{v}的小猫", "窝": f"住在{v}里的小猫", "手里东西": f"有{v}的房间", "衣领颜色": f"衣领是{v}的人", "饮料": f"喝{v}的人"}[c]
 
 
 def clue_to_text(clue):
@@ -120,7 +132,7 @@ def clue_to_text(clue):
     if k == "next":
         return f"{a}的右边紧挨着{b}。"
     if k == "same":
-        predicate = {"毛色": f"的毛色是{v2}", "零食": f"爱吃{v2}", "活动": f"正在{v2}", "窝": f"住在{v2}里", "房间": f"在{v2}里", "手里东西": f"所在的房间里有{v2}", "状态": f"正在{v2}", "饮料": f"喝的是{v2}"}
+        predicate = {"毛色": f"的毛色是{v2}", "零食": f"爱吃{v2}", "活动": f"正在{v2}", "窝": f"住在{v2}里", "房间": f"在{v2}里", "手里东西": f"所在的房间里有{v2}", "衣领颜色": f"的衣领是{v2}", "饮料": f"喝的是{v2}"}
         if c1 == "房间":
             return f"{v1}里有{v2}。" if c2 == "手里东西" else f"{v1}里的人{predicate[c2]}。"
         if c1 == "手里东西":

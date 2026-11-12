@@ -68,7 +68,11 @@ const GEN = (() => {
         q: "谁在有{v}的房间里？",
         roomish: true,
       },
-      状态: { noun: "正在{v}的人", pred: "正在{v}", q: "正在{v}的人是谁？" },
+      衣领颜色: {
+        noun: "衣领是{v}的人",
+        pred: "的衣领是{v}",
+        q: "衣领是{v}的人是谁？",
+      },
       饮料: { noun: "喝{v}的人", pred: "喝{v}", q: "喝{v}的人是谁？" },
     },
   };
@@ -79,7 +83,21 @@ const GEN = (() => {
   }
 
   /* 语义上互斥/容易产生怪句子的属性对，不生成“同一格”线索 */
-  const AVOID_SAME = [["状态", "饮料"]];
+  const AVOID_SAME = [];
+
+  /* 字面上有交集的取值（咖啡杯 / 黑咖啡）拼在一句里容易别扭，直接跳过 */
+  function gramClash(a, b) {
+    if (a === b) return true;
+    if (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return true;
+    const g = (t) => {
+      const set = new Set();
+      for (let i = 0; i + 1 < t.length; i++) set.add(t.slice(i, i + 2));
+      return set;
+    };
+    const ga = g(a);
+    for (const x of g(b)) if (ga.has(x)) return true;
+    return false;
+  }
 
   function pairKey(a, b) {
     return [a, b].sort().join("|");
@@ -327,8 +345,11 @@ const GEN = (() => {
         if (AVOID.has(pairKey(cats[i], cats[j]))) continue;
         for (let va = 0; va < N; va++)
           for (let vb = 0; vb < N; vb++)
-            if (posOf[cats[i]][va] === posOf[cats[j]][vb])
+            if (posOf[cats[i]][va] === posOf[cats[j]][vb]) {
+              if (gramClash(meta.cats[cats[i]][va], meta.cats[cats[j]][vb]))
+                continue;
               pool.push({ kind: "same", a: i, va, b: j, vb });
+            }
       }
     const nx = [],
       lf = [];
