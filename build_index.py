@@ -50,7 +50,7 @@ def render(games):
     cards = []
     for g in games:
         tag = f'<span class="tag">{html.escape(g["tag"])}</span>' if g["tag"] else ""
-        cards.append(f"""    <a class="card" href="{html.escape(g['file'])}">
+        cards.append(f"""    <a class="card" href="{html.escape(g['file'])}" target="_blank" rel="noopener noreferrer">
       <div class="ct">{html.escape(g['title'])}{tag}</div>
       <div class="cd">{html.escape(g['desc'] or '（还没写简介）')}</div>
       <div class="go">开始玩 →</div>
