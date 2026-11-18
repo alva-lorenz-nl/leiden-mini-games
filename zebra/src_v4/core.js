@@ -82,6 +82,8 @@ const S = {
   solved: false,
 };
 
-let mode = "free", // free | story | daily
+const savedMode = localStorage.getItem("zebra_mode");
+let mode = ["free", "story", "daily"].includes(savedMode) ? savedMode : "free", // free | story | daily
+  calMonth = null, // 每日挑战月历当前显示的月份
   chapter = 0, // 故事模式下选中的章节
   stage = 0; // 故事模式下选中的阶段

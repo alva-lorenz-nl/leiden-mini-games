@@ -149,43 +149,89 @@ function renderStoryPicker(box, tagBox, visible) {
   box.after(panel);
 }
 
-/* 每日档案：只列出今天与过去，未来预备题不显示 */
+/* 每日挑战：月历视图（自 2026-11 起，可补做往期） */
+const CAL_START = "2026-11";
+
+function calShift(delta) {
+  const y = calMonth.y, m = calMonth.m + delta;
+  calMonth = { y: y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 };
+  renderDailyArchive();
+}
+
 function renderDailyArchive() {
   const box = $("dailyArchive");
   box.classList.toggle("hidden", mode !== "daily");
   box.replaceChildren();
-  box.appendChild(el("p", null, "每日档案 · 北京时间（可补做往期）"));
-  if (!BANK.daily.some((p) => p.date === dayKey())) {
-    const today = dayKey();
-    const done = (REC.daily || []).includes(today);
-    box.appendChild(
-      button(
-        `今天 · ${today} · 现场生成 · ${done ? "已通关" : "未完成"}`,
-        () => {
-          mode = "daily";
-          startGame(GEN.daily(today));
-        },
-      ),
-    );
+
+  const today = dayKey();
+  const [ty, tm] = today.split("-").map(Number);
+  if (!calMonth) calMonth = { y: ty, m: tm - 1 };
+
+  const byDate = {};
+  BANK.daily.forEach((p) => (byDate[p.date] = p));
+  const doneSet = new Set(REC.daily || []);
+
+  const ym = `${calMonth.y}-${String(calMonth.m + 1).padStart(2, "0")}`;
+  const head = el("div", "calhead");
+  const atStart = ym <= CAL_START;
+  const atNow = ym >= today.slice(0, 7);
+  const prev = button("‹", () => calShift(-1), "btn");
+  prev.disabled = atStart;
+  const next = button("›", () => calShift(1), "btn");
+  next.disabled = atNow;
+  head.appendChild(prev);
+  head.appendChild(el("div", "title", `${calMonth.y} 年 ${calMonth.m + 1} 月`));
+  head.appendChild(next);
+  box.appendChild(head);
+
+  const grid = el("div", "calgrid");
+  ["一", "二", "三", "四", "五", "六", "日"].forEach((w) =>
+    grid.appendChild(el("div", "calwd", w)),
+  );
+  const first = new Date(Date.UTC(calMonth.y, calMonth.m, 1)).getUTCDay();
+  const lead = (first + 6) % 7;
+  for (let i = 0; i < lead; i++) grid.appendChild(el("div", "calcell blank"));
+
+  const days = new Date(Date.UTC(calMonth.y, calMonth.m + 1, 0)).getUTCDate();
+  for (let d = 1; d <= days; d++) {
+    const date = `${ym}-${String(d).padStart(2, "0")}`;
+    const p = byDate[date];
+    const isToday = date === today;
+    const done = doneSet.has(date);
+    const playable = !!p || isToday;
+    const cell = el("button", "calcell", String(d));
+    if (playable && date <= today) cell.classList.add("open");
+    if (done) cell.classList.add("done");
+    if (isToday) cell.classList.add("today");
+    cell.appendChild(el("span", "dot"));
+    cell.disabled = !playable || date > today;
+    if (playable && date <= today) {
+      cell.title = done ? "已通关 · 可重做" : "可挑战";
+      cell.onclick = () => {
+        mode = "daily";
+        localStorage.setItem("zebra_mode", "daily");
+        startGame(p ? { ...hydrate(p, p.theme, p.diff), date } : GEN.daily(date));
+      };
+    }
+    grid.appendChild(cell);
   }
-  BANK.daily
-    .filter((p) => p.date <= dayKey())
-    .slice()
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .forEach((p) => {
-      const status = (REC.daily || []).includes(p.date)
-        ? "已通关"
-        : REC.done.includes(p.id)
-          ? "已查看"
-          : "未完成";
-      box.appendChild(
-        button(
-          `${p.date} · ${THEME_NAMES[p.theme]} / ${DIFF_NAMES[p.diff]} · ${status}`,
-          () => {
-            mode = "daily";
-            startGame({ ...hydrate(p, p.theme, p.diff), date: p.date });
-          },
-        ),
-      );
-    });
+  box.appendChild(grid);
+
+  const solved = [...doneSet].filter((x) => x.startsWith(ym)).length;
+  const legend = el("div", "callegend");
+  const dot = (color, text) => {
+    const sp = el("span");
+    const i = el("i");
+    i.style.background = color;
+    sp.appendChild(i);
+    sp.appendChild(document.createTextNode(text));
+    return sp;
+  };
+  legend.appendChild(dot("var(--amber2)", "有题可挑战"));
+  legend.appendChild(dot("var(--good)", "已通关"));
+  legend.appendChild(dot("#5d5346", "未开放 / 无题"));
+  box.appendChild(legend);
+  box.appendChild(
+    el("p", "calnote", `本月已通关 ${solved} 天 · 北京时间 · 可补做往期`),
+  );
 }

@@ -12,6 +12,7 @@ function bindEvents() {
   document.querySelectorAll("[data-mode]").forEach((b) => {
     b.onclick = () => {
       mode = b.dataset.mode;
+      localStorage.setItem("zebra_mode", mode);
       setMessage("homeMsg", "");
       renderModes();
       updateStartState();
