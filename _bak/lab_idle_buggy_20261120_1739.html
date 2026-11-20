@@ -1,0 +1,3892 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>永动轮实验室日常 · 小猫监督官</title>
+<meta name="tag" content="放置 · 养成">
+<meta name="description" content="十九世纪末的出租屋，两个学生和一只猫。他们想造一台永动的机器，代价是每一个天亮。">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#ece3d6; --dim:#9b8f7e; --amber:#e0a458; --amber2:#c9863c;
+    --bg:#11100e; --panel:#1a1714; --line:#2f2822; --ok:#8fbf7f; --bad:#c96a5a;
+  }
+  :root[data-theme="day"]{
+    --ink:#2a2416; --dim:#8b7d6c; --amber:#d8a040; --amber2:#b8860f;
+    --bg:#f5f1eb; --panel:#ebe5dd; --line:#d4cbbf; --ok:#7db06f; --bad:#c9664f;
+  }
+  html,body{height:100%;transition:background-color .4s}
+  body{
+    background:radial-gradient(1100px 620px at 50% -10%, #26201a 0%, #11100e 62%), var(--bg);
+    color:var(--ink);
+    font-family:"Songti SC","STSong","Noto Serif SC",serif;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:14px;min-height:100%;
+  }
+  /* data-theme 挂在 <html> 上，所以这里必须用 html[data-theme="day"] body */
+  html[data-theme="day"] body{
+    background:radial-gradient(1100px 620px at 50% -10%, #ebe5dd 0%, #f5f1eb 62%), var(--bg);
+  }
+  .wrap{width:100%;max-width:560px;padding-bottom:36px}
+
+  header{text-align:center;margin-bottom:12px}
+  .kicker{font-size:10.5px;letter-spacing:.32em;color:var(--amber2);margin-bottom:6px}
+  h1{font-size:19px;font-weight:600;letter-spacing:.06em}
+  h1 small{display:block;font-size:11px;color:var(--dim);letter-spacing:.14em;margin-top:5px;font-weight:400}
+
+  .panel{
+    background:linear-gradient(180deg,#1d1a16,#16130f);
+    border:1px solid var(--line);border-radius:13px;
+    padding:14px;margin-bottom:11px;
+    box-shadow:0 18px 44px -22px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+    position:relative;
+    transition:all .3s;
+  }
+  [data-theme="day"] .panel{
+    background:linear-gradient(180deg,#f0ebe5,#e8dfd6);
+    border:1px solid var(--line);
+    box-shadow:0 2px 8px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.6);
+  }
+
+  /* 场景 */
+  .scene{padding:0;overflow:hidden;position:relative;background:#0d0c0b}
+  .scene canvas{width:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+  .scene .cap{
+    position:absolute;left:0;right:0;bottom:0;padding:16px 12px 8px;
+    background:linear-gradient(180deg,rgba(13,12,11,0),rgba(13,12,11,.86));
+    font-size:11.5px;letter-spacing:.1em;color:#cbb99e;display:flex;
+    justify-content:space-between;align-items:flex-end;gap:8px;
+  }
+  .scene .cap b{font-weight:600;color:var(--amber);font-size:12.5px;letter-spacing:.08em}
+  .scene .cap i{font-style:normal;color:#7d6a52;font-size:10.5px}
+  .tierbar{position:absolute;top:0;left:0;right:0;height:2px;background:rgba(0,0,0,.4)}
+  .tierbar span{display:block;height:100%;background:linear-gradient(90deg,#8a6a3a,#e0a458);width:0;transition:width .4s}
+
+  /* 资源 */
+  .res{display:flex;align-items:baseline;justify-content:center;gap:9px;padding:2px 0}
+  .res .num{font-size:27px;color:var(--amber);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+  .res .unit{font-size:11.5px;color:var(--dim);letter-spacing:.08em}
+  .rate{text-align:center;font-size:11px;color:var(--dim);margin-top:3px;letter-spacing:.06em}
+  .rate b{color:#b79a6a;font-weight:400}
+
+  /* 稳定性 */
+  .stab{margin-top:12px}
+  .stab .lab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim);letter-spacing:.1em;margin-bottom:5px}
+  .stab .lab b{color:#b7a88e;font-weight:400;font-variant-numeric:tabular-nums}
+  .bar{height:7px;border-radius:4px;background:#241f1a;overflow:hidden;border:1px solid #2b241e;position:relative}
+  .bar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#4a6a52,#8fbf7f);transition:width .25s,background .4s}
+  .bar.warn span{background:linear-gradient(90deg,#7a5a2a,#e0a458)}
+  .bar.danger span{background:linear-gradient(90deg,#6a3a30,#c96a5a)}
+  .heat{text-align:right;font-size:10px;color:#6f6152;margin-top:4px;letter-spacing:.06em}
+
+  /* 小猫技能 */
+  .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .ab{
+    position:relative;overflow:hidden;
+    padding:10px 6px 9px;border-radius:10px;border:1px solid #3a2f24;
+    background:linear-gradient(180deg,#2a2219,#1d1813);
+    color:#e8dcc8;font-family:inherit;font-size:12px;letter-spacing:.02em;
+    cursor:pointer;transition:.15s;text-align:center;line-height:1.45;
+  }
+  .ab small{display:block;font-size:9.5px;color:#8d7d66;letter-spacing:.04em;margin-top:3px}
+  .ab:hover:not(:disabled){border-color:#6a5236;background:linear-gradient(180deg,#3a2d1f,#241c15)}
+  .ab:active:not(:disabled){transform:translateY(1px)}
+  .ab:disabled{cursor:default;opacity:.55}
+  .ab .cd{
+    position:absolute;left:0;bottom:0;height:100%;width:0;
+    background:rgba(0,0,0,.45);pointer-events:none;transition:width .2s linear;
+  }
+  .ab b{font-weight:600;color:#f0d8b0;font-size:12.5px;white-space:nowrap}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tabs button{
+    flex:1;min-width:64px;padding:9px 4px;border-radius:9px;
+    border:1px solid var(--line);background:#191512;color:#9b8f7e;
+    font-family:inherit;font-size:12px;letter-spacing:.08em;cursor:pointer;transition:.15s;
+  }
+  .tabs button.on{background:linear-gradient(180deg,#33281c,#241c15);color:var(--amber);border-color:#5c4630}
+
+  /* 工位子标签 */
+  .sub{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+  .sub button{
+    flex:1;min-width:52px;padding:6px 4px;border-radius:8px;
+    border:1px solid #2a241d;background:#141110;color:#8a7d6b;
+    font-family:inherit;font-size:11.5px;letter-spacing:.06em;cursor:pointer;transition:.15s;
+  }
+  .sub button.on{background:#241c15;color:var(--amber);border-color:#4a3a26}
+
+  /* 升级列表 */
+  .row{
+    display:flex;align-items:center;gap:11px;padding:10px 0;
+    border-bottom:1px solid #241f1a;
+  }
+  .row:last-child{border-bottom:none}
+  .row .info{flex:1;min-width:0}
+  .row .nm{font-size:13.5px;letter-spacing:.04em;color:#e6dcc9}
+  .row .nm em{font-style:normal;font-size:10px;color:#7d6a52;margin-left:6px;letter-spacing:.06em}
+  .row .ds{font-size:10.5px;color:#8a7d6a;margin-top:3px;letter-spacing:.03em;line-height:1.6}
+  .row .ds .up{color:#8fbf7f}
+  .row .ds .dn{color:#c96a5a}
+  .row .buy{
+    flex:0 0 auto;min-width:88px;padding:9px 10px;border-radius:9px;
+    border:1px solid #4a3a29;background:linear-gradient(180deg,#3a2d1f,#241c15);
+    color:#f0e2cc;font-family:inherit;font-size:12px;letter-spacing:.04em;
+    cursor:pointer;transition:.13s;font-variant-numeric:tabular-nums;
+  }
+  .row .buy small{display:block;font-size:9.5px;color:#a8927a;margin-top:2px}
+  .row .buy:disabled{opacity:.42;cursor:default}
+  .row .buy:hover:not(:disabled){border-color:var(--amber);background:linear-gradient(180deg,#48371f,#2b2118)}
+  .row .buy:active:not(:disabled){transform:translateY(1px)}
+  .row.max .buy{border-color:#3a3f30;color:#8fbf7f}
+
+  .sec{font-size:10.5px;letter-spacing:.22em;color:#7d6a52;margin:14px 0 4px;padding-top:10px;border-top:1px solid #241f1a}
+  .sec:first-child{margin-top:0;padding-top:0;border-top:none}
+
+  /* 收藏 */
+  .item{
+    display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #241f1a;
+    cursor:pointer;
+  }
+  .item:last-child{border-bottom:none}
+  .item .ico{
+    flex:0 0 34px;height:34px;border-radius:7px;display:grid;place-items:center;
+    background:#241f1a;border:1px solid #322a22;font-size:15px;color:#6a5a45;
+  }
+  .item.open .ico{background:linear-gradient(180deg,#3a2d1f,#241c15);border-color:#5c4630;color:var(--amber)}
+  .item .tx{flex:1;min-width:0}
+  .item .tn{font-size:13px;color:#8a7d6a;letter-spacing:.03em}
+  .item.open .tn{color:#e6dcc9}
+  .item .td{font-size:10.5px;color:#6f6152;margin-top:3px;line-height:1.6}
+  .item .bar{
+    margin-top:6px;height:2px;background:#241f1a;border-radius:2px;overflow:hidden;
+  }
+  .item .bar i{display:block;height:100%;background:#5c4630;border-radius:2px}
+  .item .note{
+    display:none;margin-top:9px;padding:9px 11px;border-left:2px solid #5c4630;
+    background:#191512;border-radius:0 7px 7px 0;
+    font-size:11px;line-height:1.85;color:#a99a84;
+  }
+  .item .note p+p{margin-top:7px}
+  .item .note b{color:#c9b28c;font-weight:400}
+  .item.show .note{display:block}
+
+  /* 重生 */
+  .rebirth .big{text-align:center;padding:6px 0 12px}
+  .rebirth .frag{font-size:30px;color:#c9a0d0;font-variant-numeric:tabular-nums}
+  .rebirth .big small{display:block;font-size:10.5px;color:var(--dim);letter-spacing:.14em;margin-top:4px}
+  .rebirth p{font-size:11.5px;line-height:1.95;color:#8a7d6a;letter-spacing:.02em}
+  .rebirth p+p{margin-top:7px}
+  .rebirth .btn{
+    width:100%;margin-top:13px;padding:15px;border-radius:11px;
+    border:1px solid #5a4a6a;background:linear-gradient(180deg,#33283a,#241c28);
+    color:#e8d8f0;font-family:inherit;font-size:14px;letter-spacing:.1em;cursor:pointer;transition:.15s;
+  }
+  .rebirth .btn:hover:not(:disabled){border-color:#8a6aa0}
+  .rebirth .btn:disabled{opacity:.45;cursor:default}
+  .rebirth .btn small{display:block;font-size:10.5px;color:#9a8aa8;margin-top:5px;letter-spacing:.06em}
+
+  /* 日志 */
+  .log{max-height:340px;overflow-y:auto;font-size:11.5px;line-height:1.9;color:#8a7d6a}
+  .log p{padding:5px 0;border-bottom:1px solid #201b17;letter-spacing:.02em}
+  .log p:last-child{border-bottom:none}
+  .log time{color:#5f5546;margin-right:8px;font-variant-numeric:tabular-nums}
+  .log .hot{color:#c9a06a}
+
+  /* 事件卡 */
+  .event{
+    position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-22px);
+    width:min(520px,calc(100% - 28px));z-index:60;
+    max-height:calc(100vh - 28px);overflow-y:auto;
+    background:linear-gradient(180deg,#241d16,#1a1512);
+    border:1px solid #5c4630;border-radius:13px;padding:14px;
+    box-shadow:0 24px 60px -20px #000;
+    opacity:0;pointer-events:none;transition:.3s;
+  }
+  .event.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  /* ─────────────────────────────────────────────────────────────
+     结局过场：强制置顶 + 全屏拦截 + 专属背景
+     普通事件(z-index 60) 浮在界面上，玩家边看边买东西没问题；
+     结局期间不该还能点到工位、商城、永动轮 —— 那不只是误触，
+     还会在 S.fx 已经置上的状态下改设备等级，把结局数据搅乱。
+     ───────────────────────────────────────────────────────────── */
+  .event.finale{
+    z-index:200;left:0;top:0;transform:none;width:100%;height:100%;
+    max-height:100vh;border-radius:0;padding:0;border:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    /* 三层叠加：中心一点暖光 + 四周沉下去的黑 + 极细的横向纹理 */
+    background:
+      radial-gradient(760px 460px at 50% 34%, rgba(74,54,32,.55) 0%, rgba(20,16,12,0) 68%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.011) 0 1px, transparent 1px 3px),
+      linear-gradient(180deg,#0d0b09 0%,#14100c 44%,#080706 100%);
+  }
+  /* 暗角：把注意力压到画面中心 */
+  .event.finale::before{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 46%, transparent 38%, rgba(0,0,0,.72) 100%);
+  }
+  /* 顶上一条细的暖色引线，像天要亮 */
+  .event.finale::after{
+    content:'';position:absolute;left:0;right:0;top:0;height:2px;pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(224,164,88,.55), transparent);
+  }
+  .event.finale.on{transform:none}
+
+  /* 正文卡片：不是弹窗，是一页摊开的纸 */
+  .event.finale .box{
+    position:relative;z-index:1;
+    width:min(560px,calc(100% - 40px));max-height:calc(100vh - 72px);overflow-y:auto;
+    padding:34px 34px 26px;
+    background:linear-gradient(180deg, rgba(32,26,20,.96), rgba(22,18,15,.97));
+    border:1px solid #43362a;border-radius:3px;
+    box-shadow:0 30px 80px -28px #000, inset 0 0 60px rgba(0,0,0,.45);
+    animation:finaleRise .7s cubic-bezier(.22,.9,.3,1) both;
+  }
+  @keyframes finaleRise{
+    from{opacity:0;transform:translateY(16px) scale(.995)}
+    to  {opacity:1;transform:none}
+  }
+  /* 左边的竖线：像装订边 */
+  .event.finale .box::before{
+    content:'';position:absolute;left:0;top:22px;bottom:22px;width:1px;
+    background:linear-gradient(180deg, transparent, rgba(224,164,88,.30), transparent);
+  }
+  /* 章：右下角一枚很淡的印 */
+  .event.finale .box::after{
+    content:'PERPETUUM MOBILE';position:absolute;right:20px;bottom:12px;
+    font-size:8px;letter-spacing:.30em;color:rgba(224,164,88,.20);pointer-events:none;
+  }
+
+  /* 结局里的字要更大、更慢、更松 */
+  .event.finale .k{
+    font-size:9.5px;letter-spacing:.36em;color:var(--amber2);
+    text-align:center;margin-bottom:18px;
+  }
+  .event.finale .t{
+    font-size:15px;letter-spacing:.14em;color:#ecdcc0;text-align:center;
+    margin-bottom:16px;font-weight:400;
+  }
+  .event.finale .t:empty{display:none}
+  .event.finale .d{
+    font-size:13px;line-height:2.35;letter-spacing:.045em;
+    color:#a89a86;text-align:left;white-space:pre-line;
+    margin-bottom:26px;max-height:none;
+    animation:finaleFade .9s ease both .12s;
+  }
+  @keyframes finaleFade{ from{opacity:0} to{opacity:1} }
+  .event.finale .opts{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+  /* 带选项的过场卡（M8）：副标题单独成行，不要跟着 .22em 的字距乱飘 */
+  .event.finale .opts button br + span{
+    display:block;margin-top:5px;font-size:10.5px;letter-spacing:.06em;
+    color:#8a7d6a;line-height:1.7;text-align:center;
+  }
+  .event.finale .opts button{
+    padding:11px 30px;border-radius:2px;border:1px solid #553f26;
+    background:linear-gradient(180deg,#2a2115,#191310);color:#e2d3ba;
+    font-family:inherit;font-size:12px;letter-spacing:.22em;cursor:pointer;
+    transition:.2s;
+  }
+  .event.finale .opts button:hover{
+    border-color:var(--amber);background:linear-gradient(180deg,#3a2c1a,#241a10);
+    box-shadow:0 0 24px -6px rgba(224,164,88,.5);
+  }
+  .event.finale .opts button b{display:none}
+  .event .k{font-size:9.5px;letter-spacing:.24em;color:var(--amber2);margin-bottom:6px}
+  .event .t{font-size:14px;color:#e6dcc9;letter-spacing:.04em;margin-bottom:7px}
+  .event .d{
+    font-size:11.5px;line-height:1.85;color:#9b8f7e;margin-bottom:11px;
+    white-space:pre-line;max-height:46vh;overflow-y:auto;
+  }
+  .event .opts{display:grid;gap:7px}
+  .event .opts button{
+    text-align:left;padding:10px 12px;border-radius:9px;border:1px solid #3a2f24;
+    background:#201a15;color:#d8cbb8;font-family:inherit;font-size:11.5px;line-height:1.65;
+    cursor:pointer;transition:.15s;letter-spacing:.02em;
+  }
+  .event .opts button:hover{border-color:var(--amber);background:#2a2219}
+  .event .opts button b{color:#f0d8b0;font-weight:600;margin-right:5px}
+
+  .toast{
+    position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(14px);
+    background:#241d16;border:1px solid #5c4630;border-radius:9px;
+    padding:9px 15px;font-size:12px;color:#e8dcc8;letter-spacing:.05em;
+    opacity:0;pointer-events:none;transition:.25s;z-index:70;
+    box-shadow:0 14px 34px -16px #000;
+  }
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .foot{text-align:center;font-size:10px;color:#5f5546;letter-spacing:.1em;margin-top:6px}
+  .reset{
+    width:100%;margin-top:12px;padding:9px;border-radius:9px;border:1px solid #2f2822;
+    background:transparent;color:#5f5546;font-family:inherit;font-size:10.5px;
+    letter-spacing:.1em;cursor:pointer;
+  }
+  .reset:hover{color:#8a7d6a;border-color:#3a2f24}
+  /* 封顶横幅 */
+  #capBanner{
+    position:fixed;left:50%;top:10px;transform:translateX(-50%) translateY(-150%);
+    width:min(520px,calc(100% - 24px));z-index:80;
+    border:1px solid #7a5a2a;border-radius:12px;padding:11px 14px;text-align:center;
+    background:linear-gradient(180deg,#2e2213,#1d150c);
+    box-shadow:0 18px 48px -18px #000;
+    opacity:0;pointer-events:none;transition:.35s;
+  }
+  #capBanner.on{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #capBanner .t{font-size:13px;color:#f0d8b0;letter-spacing:.08em;margin-bottom:4px}
+  #capBanner .d{font-size:11px;color:#a8927a;line-height:1.7}
+  #capBanner b{display:inline-block;margin-top:8px;padding:7px 16px;border-radius:8px;
+    border:1px solid #7a5a2a;background:linear-gradient(180deg,#3a2d1f,#241c15);
+    color:#f0e2cc;font-size:12px;letter-spacing:.06em;cursor:pointer;font-weight:400;
+    animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+  /* 结局黑屏 */
+  #endnight{
+    position:fixed;inset:0;z-index:90;display:none;
+    background:#000;align-items:center;justify-content:center;text-align:center;padding:24px;
+  }
+  #endnight.on{display:flex}
+  #endnight .inner{max-width:420px}
+  #endnight .ln{font-size:12.5px;line-height:2.2;color:#6f6152;letter-spacing:.05em;margin-bottom:28px}
+  #endnight .ln .hi{color:#c9b28c}
+  #endnight button{
+    padding:13px 34px;border-radius:10px;border:1px solid #5a4a2a;
+    background:linear-gradient(180deg,#2a2115,#191310);color:#e8dcc8;
+    font-family:inherit;font-size:13.5px;letter-spacing:.14em;cursor:pointer;
+    animation:pulse 2.2s ease-in-out infinite;
+  }
+  /* 到了钟形峰值：这一夜现在结最划算，按钮亮起来提醒一下 */
+  #endnight button.peak{
+    border-color:#c9a24a;color:#ffe9b0;
+    background:linear-gradient(180deg,#4a3512,#241a0c);
+    box-shadow:0 0 18px rgba(201,162,74,.45), inset 0 0 12px rgba(201,162,74,.18);
+    animation:peakGlow 1.1s ease-in-out infinite;
+  }
+  @keyframes peakGlow{
+    0%,100%{box-shadow:0 0 14px rgba(201,162,74,.35), inset 0 0 10px rgba(201,162,74,.14)}
+    50%    {box-shadow:0 0 28px rgba(255,214,130,.75), inset 0 0 18px rgba(255,214,130,.30)}
+  }
+  /* 左上角设置键 */
+  #setBtn{position:fixed;left:12px;top:12px;z-index:80;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:rgba(25,21,18,.82);color:#cbb99e;font-size:15px;
+    line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
+  #setBtn:hover{border-color:var(--amber);color:var(--amber)}
+  /* 左上角昼夜切换键 */
+  .themeToggle{position:fixed;left:54px;top:12px;z-index:80;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:rgba(25,21,18,.82);color:#cbb99e;font-size:15px;
+    line-height:1;cursor:pointer;backdrop-filter:blur(4px);font-family:inherit;padding:0}
+  .themeToggle:hover{border-color:var(--amber);color:var(--amber)}
+  [data-theme="day"] .themeToggle{background:rgba(245,241,235,.86);color:#6b5d4a}
+  #setView{position:fixed;inset:0;z-index:90;display:none;overflow-y:auto;padding:14px;
+    background:radial-gradient(1100px 620px at 50% -10%, #26201a 0%, #11100e 62%), #11100e}
+  #setView.on{display:block}
+  #setView .setwrap{width:100%;max-width:560px;margin:0 auto;padding-bottom:24px}
+  #setView .catbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  #setView .catbar .ct{font-size:12.5px;letter-spacing:.2em;color:var(--amber2)}
+  #setView .catbar button{padding:8px 15px;border-radius:9px;border:1px solid var(--line);
+    background:#191512;color:#cbb99e;font-family:inherit;font-size:12px;cursor:pointer}
+  .setrow{display:block;width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;
+    border-radius:10px;border:1px solid var(--line);background:#191512;color:#d8cbb8;
+    font-family:inherit;font-size:13px;letter-spacing:.03em;cursor:pointer}
+  .setrow small{display:block;margin-top:4px;font-size:10.5px;color:#8a7d6a;letter-spacing:.02em}
+  .setrow:hover{border-color:#5c4630}
+  .setrow.danger{color:#c98a7a;border-color:#4a2f2a}
+  .setrow.danger:hover{border-color:#8a4a3a}
+  .setrow:disabled{opacity:.45;cursor:default}
+  /* 小猫界面（全屏） */
+  #catView{position:fixed;inset:0;z-index:85;display:none;overflow-y:auto;padding:14px;
+    background:radial-gradient(1100px 620px at 50% -10%, #26201a 0%, #11100e 62%), #11100e}
+  #catView.on{display:block}
+  #catView .catwrap{width:100%;max-width:560px;margin:0 auto;padding-bottom:24px}
+  #catView .catbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  #catView .catbar .ct{font-size:12.5px;letter-spacing:.2em;color:var(--amber2)}
+  #catView .catbar button{padding:8px 15px;border-radius:9px;border:1px solid var(--line);
+    background:#191512;color:#cbb99e;font-family:inherit;font-size:12px;letter-spacing:.08em;cursor:pointer}
+  #catView .catbar button:hover{border-color:#5c4630;color:var(--amber)}
+  /* 商店里的入口 */
+  .catenter{display:block;width:100%;margin:2px 0 10px;padding:13px 14px;border-radius:11px;
+    border:1px solid #5a4a2a;background:linear-gradient(180deg,#2e2418,#1d1712);
+    color:#f0d8b0;font-family:inherit;font-size:13px;letter-spacing:.06em;cursor:pointer;text-align:left}
+  .catenter small{display:block;font-size:10.5px;color:#a8927a;margin-top:4px;letter-spacing:.04em}
+  .catenter:hover{border-color:var(--amber)}
+  /* 小猫的小鱼工厂 */
+  .catsc{padding:0;overflow:hidden;border:1px solid var(--line);border-radius:11px;
+    margin-bottom:12px;background:#0d0c0b}
+  .catsc canvas{width:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+
+  /* ---------- 昼夜主题（day） ---------- */
+  /* 场景字幕 */
+  [data-theme="day"] .scene .cap{
+    background:linear-gradient(180deg,rgba(245,241,235,0),rgba(245,241,235,.97));
+    color:#5c5040;
+  }
+  [data-theme="day"] .scene .cap b{color:var(--amber)}
+  [data-theme="day"] .scene .cap i{color:#7a6c5c}
+  [data-theme="day"] .tierbar{background:rgba(0,0,0,.1)}
+
+  /* 商店条目 */
+  [data-theme="day"] .row .buy{
+    border:1px solid #d0c7b8;background:linear-gradient(180deg,#f0ebe5,#e8dfd6);
+    color:#3a2f24;
+  }
+  [data-theme="day"] .row .buy:hover:not(:disabled){border-color:var(--amber);background:linear-gradient(180deg,#e8dfd6,#e0d7ca)}
+  [data-theme="day"] .row .nm{color:#3a2f24}
+  [data-theme="day"] .row .ds{color:#8b7d6c}
+
+  /* 设备分栏按钮 */
+  [data-theme="day"] .sub button{
+    border:1px solid #d0c7b8;background:#ebe5dd;color:#8b7d6c;
+  }
+  [data-theme="day"] .sub button.on{background:#ddd4c5;color:var(--amber);border-color:var(--amber)}
+
+  /* 顶部标签页 */
+  [data-theme="day"] .tabs button{
+    border:1px solid #d0c7b8;background:#f0ebe5;color:#8b7d6c;
+  }
+  [data-theme="day"] .tabs button.on{background:linear-gradient(180deg,#e0d7ca,#d4cbbd);color:var(--amber);border-color:var(--amber)}
+
+  /* 技能按钮 */
+  [data-theme="day"] .ab{
+    border:1px solid #d0c7b8;background:linear-gradient(180deg,#f5f1eb,#ebe5dd);color:#3a2f24;
+  }
+  [data-theme="day"] .ab b{color:#8a6a2a}
+  [data-theme="day"] .ab small{color:#8b7d6c}
+
+  /* 提示行 */
+  .catsHint{font-size:10px;color:#6f6152;margin-top:6px;text-align:center;letter-spacing:.06em}
+  [data-theme="day"] .catsHint{color:#9b8d7a}
+
+  /* 稳定性 / 温度条 */
+  [data-theme="day"] .stab .lab{color:#8b7d6c}
+  [data-theme="day"] .stab .lab b{color:#8b7d6c}
+  [data-theme="day"] .bar.warn span{background:linear-gradient(90deg,#d4a844,#e0b45a)}
+  [data-theme="day"] .bar.danger span{background:linear-gradient(90deg,#c97a6a,#dd9080)}
+
+  /* ---------- 场景画布：日间用滤镜提亮，不改美术 ---------- */
+  /* 场景是按夜色画的：这里只把亮度/对比拉起来，模拟白天照明，
+     而不是盖一层白把整张图洗掉。 */
+  [data-theme="day"] .scene canvas{
+    filter:brightness(1.55) contrast(1.04) saturate(.92);
+  }
+  [data-theme="day"] .scene{background:#e8dfd6}
+  [data-theme="day"] .catsc canvas{
+    filter:brightness(1.4) contrast(1.05) saturate(.94);
+  }
+
+  /* ---------- 购买按钮 / 进度条 ---------- */
+  [data-theme="day"] .row .buy small{color:#8b7d6c;opacity:.9}
+  [data-theme="day"] .bar{
+    background:#e5ddd3;border-color:#d4c9b8;
+  }
+  [data-theme="day"] .bar span{background:linear-gradient(90deg,#8fb07f,#c8e0b8)}
+  [data-theme="day"] #stabBar{border-color:#d4c9b8}
+
+  /* ---------- 收藏室 ---------- */
+  [data-theme="day"] .item{border-bottom-color:#e0d7ca}
+  [data-theme="day"] .item .ico{
+    background:#ebe5dd;border-color:#d4c9b8;color:#8b7d6c;
+  }
+  [data-theme="day"] .item.open .ico{
+    background:linear-gradient(180deg,#f5f1eb,#ebe5dd);
+    border-color:var(--amber);color:var(--amber);
+  }
+  [data-theme="day"] .item .tn{color:#8b7d6c}
+  [data-theme="day"] .item.open .tn{color:#3a2f24}
+  [data-theme="day"] .item .td{color:#9b8d7a}
+  [data-theme="day"] .item .bar{background:#e5ddd3}
+  [data-theme="day"] .item .bar i{background:#d4b890}
+  [data-theme="day"] .item .note{
+    border-left-color:#d4b890;background:#f5ede3;color:#6b5d4c;
+  }
+  [data-theme="day"] .item .note b{color:#8b7d6c}
+
+  /* ---------- 日志 ---------- */
+  [data-theme="day"] .log p{border-bottom-color:#e8dfd6;color:#6b5d4c}
+  [data-theme="day"] .log time{color:#a89a88}
+  [data-theme="day"] .log .hot{color:#c08a3a}
+
+  /* 热度文字 */
+  [data-theme="day"] .heat{color:#b8a88a}
+
+  /* 设置面板 */
+  [data-theme="day"] #setView{
+    background:radial-gradient(1100px 620px at 50% -10%, #ebe5dd 0%, #f5f1eb 62%), #f5f1eb;
+  }
+  [data-theme="day"] #setView .catbar button{
+    border:1px solid #d0c7b8;background:#ebe5dd;color:#8b7d6c;
+  }
+  [data-theme="day"] #setView .catbar button:hover{border-color:var(--amber);color:var(--amber)}
+  [data-theme="day"] .setrow{
+    border:1px solid #d0c7b8;background:#ebe5dd;color:#4a3a2c;
+  }
+  [data-theme="day"] .setrow:hover{border-color:var(--amber)}
+  [data-theme="day"] .setrow small{color:#8b7d6c}
+  [data-theme="day"] .setrow.danger{color:#c9664f;border-color:#ddc2ba}
+  [data-theme="day"] .setrow.danger:hover{border-color:#c9664f}
+
+  /* 小猫面板 */
+  [data-theme="day"] #catView{
+    background:radial-gradient(1100px 620px at 50% -10%, #ebe5dd 0%, #f5f1eb 62%), #f5f1eb;
+  }
+  [data-theme="day"] #catView .catbar button{
+    border:1px solid #d0c7b8;background:#ebe5dd;color:#8b7d6c;
+  }
+  [data-theme="day"] #catView .catbar button:hover{border-color:var(--amber);color:var(--amber)}
+  [data-theme="day"] .catenter{
+    border:1px solid #d0c7b8;background:linear-gradient(180deg,#e8dfd6,#e0d7ca);
+    color:#3a2f24;
+  }
+  [data-theme="day"] .catenter:hover{border-color:var(--amber)}
+  [data-theme="day"] .catenter small{color:#9b8d7a}
+
+  /* 事件卡 */
+  [data-theme="day"] .event{background:linear-gradient(180deg,#f5f1eb,#ebe5dd)}
+  [data-theme="day"] .event.on .box{box-shadow:0 20px 60px rgba(0,0,0,.15)}
+  [data-theme="day"] .event .box b{color:var(--amber)}
+
+  /* 禁用态 */
+  [data-theme="day"] button[disabled]{opacity:.35}
+</style>
+</head>
+<body>
+<button id="themeToggle" class="themeToggle" title="切换昼夜">☀</button>
+<button id="setBtn" title="设置">⚙</button>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">PERPETUAL WHEEL · 1890s</div>
+    <h1>永动轮实验室日常<small>两位未来的大发明家和小猫监督官</small></h1>
+  </header>
+
+  <div class="panel scene">
+    <canvas id="scene" width="192" height="108"></canvas>
+    <div class="tierbar"><span id="tierFill"></span></div>
+    <div class="cap"><span><b id="sceneName">出租屋 · 一盏煤油灯</b><br><i id="sceneDesc">两张折叠桌，一箱演算纸，还有一只还没决定跟谁睡的猫。</i></span></div>
+  </div>
+
+  <div class="panel">
+    <div class="res">
+      <span class="num" id="ip">0</span>
+      <span class="unit">能量 <b id="unitLbl" style="color:#b79a6a;font-weight:400"></b></span>
+    </div>
+    <div class="rate" id="rateLine">每秒 <b>0</b> · 稳定性系数 ×1.00</div>
+
+    <div class="stab">
+      <div class="lab"><span>系统稳定性</span><b id="stabVal">100%</b></div>
+      <div class="bar" id="stabBar"><span id="stabFill"></span></div>
+      <div class="heat" id="heatLine">发热 0.8 / 散热 1.0 · 净 +0.2</div>
+    </div>
+
+    <div class="cats">
+      <button class="ab" id="ab1"><b>踩踏板</b><small>立刻 8 秒产出</small><div class="cd"></div></button>
+      <button class="ab" id="ab2"><b>呼噜声</b><small>稳定性 +22</small><div class="cd"></div></button>
+      <button class="ab" id="ab3"><b>尾巴扫纸</b><small>20 秒 ×2.5</small><div class="cd"></div></button>
+    </div>
+    <div class="catsHint">技能被小猫接管了（三个按钮都由猫触发）</div>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="shop" class="on">工位</button>
+    <button data-tab="shelf">收藏室</button>
+    <button data-tab="re">记忆碎片</button>
+    <button data-tab="log">日志</button>
+  </div>
+
+  <div class="panel" id="tab-shop">
+    <div class="sub" id="shopSub">
+      <button data-g="her" class="on">赫尔曼</button>
+      <button data-g="alv">阿尔瓦</button>
+      <button data-g="cat">小猫</button>
+    </div>
+    <div id="shopList"></div>
+    <div class="foot" id="shopHint">两个人在同一间屋子里，一点点的事。</div>
+  </div>
+
+  <div class="panel" id="tab-shelf" style="display:none">
+    <div id="shelfList"></div>
+  </div>
+
+  <div id="setView">
+  <div class="setwrap">
+    <div class="catbar">
+      <span class="ct">设置</span>
+      <button id="setClose">← 返回</button>
+    </div>
+    <div class="panel">
+      <div class="sec">存档</div>
+      <button class="setrow" id="setExport">导出存档<small>下载一份 JSON，备份或换设备用</small></button>
+      <button class="setrow" id="setImport">导入存档<small>用 JSON 覆盖当前进度</small></button>
+      <input type="file" id="setFile" accept=".json,application/json" style="display:none">
+      <div class="sec" id="setChSec" style="display:none">挑战</div>
+      <button class="setrow" id="setChallenge" style="display:none"></button>
+      <div class="sec">危险</div>
+      <button class="setrow danger" id="setWipe">清空全部存档<small>碎片、收藏、小猫、挑战快照全部消失</small></button>
+    </div>
+  </div>
+</div>
+
+<div id="catView">
+    <div class="catwrap">
+      <div class="catbar">
+        <span class="ct">小猫 · 小鱼工厂</span>
+        <button id="catBack">← 返回</button>
+      </div>
+      <div class="catsc"><canvas id="catScene" width="192" height="108"></canvas></div>
+      <div class="panel">
+        <div class="res" style="padding:0 0 4px">
+          <span class="num" id="catIp" style="font-size:22px">0</span>
+          <span class="unit">鱼干</span>
+        </div>
+        <div class="rate" id="catLine" style="margin-bottom:10px">每秒 <b>0</b></div>
+        <div id="catList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel rebirth" id="tab-re" style="display:none">
+    <div class="big">
+      <div class="frag" id="fragTotal">0</div>
+      <small>记忆碎片 · 每片 +8% 全局产出</small>
+    </div>
+    <p>结束这一夜会把这里的一切清空：能量、设备、两个人的状态。留下的只有记忆碎片，和架子上那些旧东西。</p>
+    <p id="reInfo"></p>
+    <button class="btn" id="reBtn">结束这一夜<small id="reSub">还差一点</small></button>
+    <button class="reset" id="catGo" style="display:none">猫甩了甩尾巴，走出了门</button>
+    <button class="reset" id="catHidden" style="display:none">猫还坐在门口，好像在等谁</button>
+  </div>
+
+  <div class="panel" id="tab-log" style="display:none">
+    <div class="log" id="logBox"></div>
+  </div>
+
+</div>
+
+<div id="capBanner">
+  <div class="t" id="capTitle">这一夜的火烧到头了</div>
+  <div class="d" id="capDesc">最后一块还在桌上。</div>
+  <b id="capGo">装上最后一块</b>
+</div>
+
+<div id="endnight">
+  <div class="inner">
+    <div class="ln" id="endLines"></div>
+    <button id="endnightBtn">结束这一夜</button>
+  </div>
+</div>
+
+<div class="event" id="event">
+  <div class="box">
+    <div class="k" id="evKicker">INTERLUDE</div>
+    <div class="t" id="evTitle"></div>
+    <div class="d" id="evDesc"></div>
+    <div class="opts" id="evOpts"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   永动轮实验室日常 · 小猫监督官
+   纯放置：能量（产出）/ 系统稳定性（效率系数）
+   重生：记忆碎片永久加成
+   ============================================================ */
+
+const SAVE_KEY = 'leiden_lab_idle_v1';
+
+/* ---------- 数据表 ---------- */
+// 赫尔曼：抬高产出，同时抬高发热
+const HER = [
+  {id:'h1', name:'演算草纸',      desc:'写满又划掉的演算',        cost:12,       g:1.12, val:0.5,    heat:1},
+  {id:'h2', name:'手稿笔记',      desc:'页边全是问号的那种',      cost:90,       g:1.13, val:3,      heat:1},
+  {id:'h3', name:'黑板推演',      desc:'一整面墙的箭头和方框',        cost:800,      g:1.13, val:16,     heat:1, scene:1},
+  {id:'h4', name:'联动齿轮组',    desc:'八组齿轮一起咬合，很吵',      cost:7500,     g:1.13, val:95,     heat:1},
+  {id:'h5', name:'蒸汽机房',      desc:'夜里听起来像在下雨',          cost:72000,    g:1.13, val:560,    heat:1, scene:2},
+  {id:'h6', name:'电磁线圈阵',      desc:'没人说得清它怎么动的',    cost:700000,   g:1.13, val:3400,   heat:1},
+  {id:'h7', name:'自走机构',    desc:'它开始自己改自己的图纸',    cost:10000000, g:1.15, val:21000,  heat:1},
+  {id:'h8', name:'永动轮原型',    desc:'名字比东西本身响得多',        cost:300000000,g:1.15, val:130000, heat:1},
+];
+// 阿尔瓦：抬高散热（稳定性回升）
+const ALV = [
+  {id:'a1', name:'恒温焊锡炉',    desc:'焊点终于不再发灰了',          cost:500,      g:1.14, val:2.0},
+  {id:'a2', name:'稳压电池组',      desc:'电压表指针不再乱跳',          cost:7500,     g:1.14, val:7, scene:1},
+  {id:'a3', name:'隔振台',      desc:'把震动关在石板下面',          cost:120000,   g:1.14, val:25},
+  {id:'a4', name:'精密天平',      desc:'称到一粒灰的重量',      cost:2000000,  g:1.14, val:85, scene:2},
+  {id:'a5', name:'水冷套',      desc:'铜管绕着机身爬了一圈',        cost:30000000, g:1.14, val:300},
+  {id:'a6', name:'全屋煤气管路',      desc:'从此再也不用抢灯',          cost:500000000,g:1.14, val:1100},
+];
+// 小猫：全局倍率
+const CAT = [
+  {id:'b1', name:'猫窝挪到锅炉旁', desc:'它自己选的，没人敢挪',   cost:5000,     g:2.40, val:1.10, max:30, scene:3},
+  {id:'b2', name:'爪印印记',   desc:'盖过印的图纸才算通过',   cost:120000,   g:2.60, val:1.16, max:25, scene:4},
+  {id:'b3', name:'监督官铭牌', desc:'钉在门框上，比学会的牌子早', cost:300000000,g:3.00, val:1.26, max:20, scene:5},
+];
+
+// 小猫支线：8 项产线，独立货币「鱼干」，不进主线经济
+// 价格曲线全部 g:1.55，和模拟保持一致（买最便宜的就是最优）
+const CATSUB = [
+  {id:'c1', name:'窗台',     desc:'有太阳的那一块',       cost:5,      g:1.55, val:0.30},
+  {id:'c2', name:'毛线球',   desc:'从楼上滚下来的',       cost:20,     g:1.55, val:0.80},
+  {id:'c3', name:'屋顶',     desc:'能看见整条街',         cost:80,     g:1.55, val:2.1},
+  {id:'c4', name:'烟囱',     desc:'冬天最暖',             cost:320,    g:1.55, val:5.6},
+  {id:'c5', name:'面包店后门', desc:'每天下午三点',       cost:1300,   g:1.55, val:15},
+  {id:'c6', name:'码头',     desc:'有鱼腥味',             cost:5000,   g:1.55, val:39},
+  {id:'c7', name:'剧院阁楼', desc:'有人在下面唱',         cost:20000,  g:1.55, val:100},
+  {id:'c8', name:'自己的地盘', desc:'谁都别想',           cost:80000,  g:1.55, val:260},
+  // 下面两项不加鱼干速率，而是放宽主线的离线
+  {id:'c9',  util:1, name:'留一盏灯', desc:'走的时候不关灯 · 主线离线时限 +4 小时',
+   cost:50000, g:2.0, val:0, max:5},
+  {id:'c10', util:1, name:'按时回来', desc:'猫知道你会回来 · 主线离线效率 +5%',
+   cost:80000, g:2.0, val:0, max:6},
+  {id:'c13', util:1, name:'带回来的', desc:'从街上捡回来的零件 · 主线产出 +3%（无上限）',
+   cost:1500, g:1.40, val:0},
+  {id:'c11', util:1, name:'囤货',     desc:'把东西码整齐 · 主线上限 ×1.2（无上限）',
+   cost:3000, g:1.35, val:0},
+  {id:'c12', util:1, name:'自动值守', desc:'猫替你盯着 · 自动买小猫自己的升级',
+   cost:600000, g:2.4, val:0, max:3}
+];
+
+// 场景阶段（由已购设备解锁，取历史最高）
+const SCENES = [
+  {name:'出租屋 · 一盏煤油灯', desc:'两张折叠桌，一箱演算纸，还有一只还没决定跟谁睡的猫。'},
+  {name:'学院 · 借来的地下室', desc:'墙上有潮气，电流计的指针第一次自己动了起来。'},
+  {name:'工坊 · 蒸汽与齿轮',   desc:'传动轴转起来，地板跟着抖，说话要凑近才能听见。'},
+  {name:'市中心 · 工业博览会', desc:'玻璃柜里摆着别人的机器，比这边的亮。'},
+  {name:'学会 · 二层讲堂',     desc:'台下坐着人，台上只有一张图。'},
+  {name:'永动轮陈列馆',        desc:'夜里从很远的地方就能看见那扇窗。'},
+];
+
+// 收藏室
+const ITEMS = [
+  /* ── 主线性：累计能量 ── */
+  {id:'i1', kind:'all', need:1e4, icon:'烙', name:'补过三次的旧烙铁',
+   a:'二年级时送给赫尔曼的。那时候赫尔曼还很穷。手柄后来裂过，我缠了三层胶布。还能用，但是我们谁都没再用过。',
+   h:'大学里用了三年，一直没换。后来我们也买了新的，旧的这个我们俩都还是舍不得丢，毕竟阿尔瓦当年为了它一周没吃晚饭。'},
+  {id:'i2', kind:'all', need:1e5, icon:'图', name:'被猫爪踩过印泥的初版图纸',
+   a:'红色初审章盖得很正，是我盖的。右下角那枚爪印是后来印上去的，不影响存档。这张纸就应该这样——有我们全部成员的印记。',
+   h:'本来觉得太丢人了。我说扔，阿尔瓦说留着。结果一直在抽屉里。现在我有时候会翻出来看，觉得这是我们最真实的开始。'},
+  {id:'i3', kind:'all', need:1e6, icon:'表', name:'双人熬夜轮班表',
+   a:'左边是我排的班。格子就那么小，字只能写那么小。右边被红笔改过很多次，改得很凶狠。我最后放弃了。',
+   h:'我写的那半张被红笔改满了。阿尔瓦说不是针对我，是针对数字。但有时候我觉得他只是在用这种方法表达自己的焦虑。'},
+  {id:'i4', kind:'all', need:1e7, icon:'据', name:'压在玻璃板底下的第一笔收据',
+   a:'我们用其中一半还了赊账三个月的材料钱。剩下那半记在了另一本账上，那笔钱后来用的比我们想象中还要快得多。',
+   h:'阿尔瓦把它压在玻璃板底下。我说留着干什么，他说这是凭据——我们一开始有多穷的凭据。其实那是他在记自己的承诺。'},
+  {id:'i5', kind:'all', need:1e8, icon:'稿', name:'第一次通过验收的图纸',
+   a:'第七版。前六版都在纸箱里，编号还留着，我没扔。每一版的失败都记录在纸上。',
+   h:'裱起来那天阿尔瓦说这有点过了。我说不过——这是我的理想，值一次框。现在每次看到它，我就想起那七个版本背后的所有夜晚。'},
+  {id:'i6', kind:'all', need:1e9, icon:'针', name:'被拆开的电流计',
+   a:'拆完装回去多出两颗螺丝，至今不知道是哪儿的。它现在还能用。我有时候会听它工作的声音，防止哪天量到一半它散架在手上。',
+   h:'是我拆的。能用就行了。阿尔瓦非要我再拆一遍。我们站在那台机器面前，两个人都很紧张——怕少装一颗螺丝就永远失效。'},
+  {id:'i7', kind:'all', need:1e10, icon:'条', name:'一张写着「对不起」的便签',
+   a:'写完之后我算过一遍：道歉解决不了那个分歧。也改变不了已经说出的话。所以没送出去。我写了很多遍，最后都没有送。但纸张上的压痕已经很深了。',
+   h:'在抽屉里见过。纸很小，字很小，压得很深。阿尔瓦大概写了很多很多遍。我从不知道上面写的是什么，但我能想到。那是一张永远没有被送出去的信。'},
+  {id:'i8', kind:'all', need:1e11, icon:'钥', name:'工坊的备用钥匙',
+   a:'钥匙最初只有一把，租下那个房间当天赫尔曼去配了这一份。离开那天我没还，猫的玩具还在那里，总得去取。',
+   h:'大一那年，阿尔瓦因为交不起住宿费差点露宿街头，我在工作室找到他时他鼻头被冻得通红，狼狈到看不出是个天才。那时我们就约定过，只要我还在，绝不会让他晚上没地方去。'},
+
+  /* ── 时间：灯一直亮着 ── */
+  {id:'t1', kind:'time', need:3600, icon:'台', name:'一片被踩圆的窗台',
+   a:'猫每天蹲在这里，木板被踩出了一块浅坑，似乎有猫毛嵌在了木头里。',
+   h:'那块地方永远是最暖的。谁都不敢往上面放东西，猫就是这样不讲道理。'},
+  {id:'t2', kind:'time', need:28800, icon:'壶', name:'第三壶咖啡',
+   a:'第三壶了。前两壶的钱我记在灯油那一栏下面——单独列出来有点太奢侈。',
+   h:'我是给阿尔瓦买的。因为他那天没怎么睡，眼睛红得像兔子。结果他喝完苦到吐舌头。'},
+  {id:'t3', kind:'time', need:86400, icon:'灯', name:'一整天没熄的灯',
+   a:'整整二十四小时。灯芯烧短了半寸，煤油下去一格，桌子上留下一圈碳痕。',
+   h:'中间我睡着了两次，每一次醒来灯还是亮着的，阿尔瓦还坐在原来的位置。'},
+  {id:'t4', kind:'time', need:259200, icon:'痕', name:'桌角压出来的凹痕',
+   a:'手肘长年搁在同一个地方，木头陷下去一小块。桌子是租的，押金有百分之几十的可能要不回来。',
+   h:'这张桌子上出过东西。这个凹痕就是证明——两个人一起坐在这里，把不可能的东西做出来了。'},
+
+  /* ── 手动操作：手上留下的东西 ── */
+  {id:'k1', kind:'taps', need:300, icon:'笔', name:'磨秃的铅笔',
+   a:'削了太多次，已经握不住了。但换一支要三芬尼，这笔钱可以改别的。所以我套了截铜管接着用。',
+   h:'我劝过他扔了。他就是不舍得。有一次我假装丢了它，他花了两个小时才找到。'},
+  {id:'k2', kind:'taps', need:1000, icon:'尖', name:'一排用空的笔尖',
+   a:'一共十九个，按长短排在窗台上。没舍得扔。有时候我看着看着，会数一遍，像数一遍我们的来时路。',
+   h:'连废笔尖都要排整齐。我看着这一排，我感觉阿尔瓦应该有一点强迫症。'},
+  {id:'k3', kind:'taps', need:3000, icon:'扳', name:'一把握不住的扳手',
+   a:'手柄被手掌磨得发亮，印着的编号已经完全磨掉了。或许早就该换了，但终归还是这一把趁手。',
+   h:'第一颗螺丝是我拧的。后面所有的螺丝，都是阿尔瓦在用这一把拧。我从没见过他用新的。'},
+
+  /* ── 结束的夜：一天一天 ── */
+  {id:'n1', kind:'nights', need:5, icon:'芯', name:'第五根烧完的灯芯',
+   a:'每一根都留着，用纸包好，标了日期和那晚的最高温度。它们放在抽屉最深处，没人会看见，但我知道它们在那里。',
+   h:'阿尔瓦说这叫凭据。我说这叫放不下。其实我们都是放不下的人，只是放不下的东西不一样。'},
+  {id:'n2', kind:'nights', need:15, icon:'历', name:'十五张撕下来的日历页',
+   a:'一天一张，压在一起。十五张也不过薄薄一叠。我有时候会翻出来看，再压回去。每一页上都记了那天用了多少灯油。',
+   h:'撕的时候我问今天算不算过完了。阿尔瓦说，「还要再跑一次」。他每一次都这么说。我从不相信他，但每一次我都陪他跑。'},
+  {id:'n3', kind:'nights', need:30, icon:'账', name:'第二本用尽的账本',
+   a:'头一本收在箱子里。这一本还剩三页，照这个写法撑不到月底。但我会一页一页很认真地填完它。页边上全是我对未来的担忧。',
+   h:'阿尔瓦换本子总是先写完最后一页。一页都不浪费——这是他在乡下养成的习惯。他说过，在乡下，什么都浪费不起。'},
+
+  /* ── 赫尔曼的设备 ── */
+  {id:'h1', kind:'her', need:40, icon:'卷', name:'七卷设计草图',
+   a:'第一卷到第七卷。越往后画得越潦草，线条也越来越疯狂。但我能看出来他在进步。',
+   h:'第七卷最后一张是永动轮本来的样子。我画了三次才敢留着。那时候我的手在抖。'},
+  {id:'h2', kind:'her', need:80, icon:'改', name:'改到第四十一版的机构图',
+   a:'原来的标注已经看不清了，被新的改动完全覆盖。照这个改法，图纸迟早会比机器本身还要沉重。但赫尔曼停不下来。',
+   h:'我说过它会自己长大。阿尔瓦说那叫失控。我说一个意思——理想应该自己长大。'},
+
+  /* ── 阿尔瓦的设备 ── */
+  {id:'v1', kind:'alv', need:40, icon:'表', name:'一排校准过的仪表',
+   a:'电表、气压表、那台秤。每一个的误差我都写在背面。精确到小数点后三位。没人要求我这么做，但这就是我的方式。',
+   h:'阿尔瓦的表比学会档案室的准。这是学会的人自己说的。他用三年的时间校准这些仪表，只为了让我们的数据不出错。'},
+  {id:'v2', kind:'alv', need:80, icon:'录', name:'写到第两千行的记录本',
+   a:'每一行都有日期、温度、湿度和误差范围。漏一行就要从头重来。我从没算过要用多少年才能写满它，但我会坚持到底。',
+   h:'我翻过一页，从头翻到尾。字迹一致得可怕。二十年也写不出这么多字。有时候我看着这个本子，觉得阿尔瓦把整个人生都记录在上面了。'},
+
+  /* ── 小猫支线 ── */
+  {id:'q1', kind:'cat', need:20, icon:'窝', name:'猫的第一块地盘',
+   a:'窗台靠左的那一块，有太阳。是猫自己先占的。我从没见过它睡在别的地方。这是它自己选择的地方，所以我们都没有去打扰。',
+   h:'我先在那儿撒了一把东西——吃剩的鱼，用来试试猫的反应。它一下就认下了。有时候我会看着它睡在那里，想起第一次见到它的时候。'},
+  {id:'q2', kind:'cat', need:50, icon:'骨', name:'码头带回来的鱼骨头',
+   a:'晾干了，收在一个木盒子里。不知道为什么要收着——也许只是因为猫带回来的东西，我舍不得扔。我给那个盒子标了日期。',
+   h:'猫从码头带回来的。阿尔瓦居然把它收起来了，还标了日期、地点、猫当时的状态。他把猫的每一次冒险都记录下来。'},
+  {id:'q3', kind:'cat', need:90, icon:'图', name:'一条街的地图',
+   a:'我照着猫的路线画过一张地图。它去的巷子、屋顶、下水管道，都比我知道的多得多。看着这张图，我意识到猫比我们更懂这个城市。',
+   h:'那张图上有一个小小的墨点——就是我们的工坊。墨点旁边没有写名字，什么都没写。但我们都知道那是什么。这就是猫眼中的世界：中心是我们。'}
+];
+
+// 事件
+/* ── 人物设定 ────────────────────────────────────────────
+   阿尔瓦·洛伦兹 —— 乡下出身，家里穷，永远先算预算
+     · 温柔收敛，话少；越急越只讲数，不擅长处理情绪
+     · 不擅交际，宁愿一个人看文献；但该做的报告做得比谁都扎实
+     · 白色长发，单马尾垂在一边，用母亲留下的淡紫色发圈
+     · 棕色工装 + 普通白衬衫，淡蓝色的眼睛
+     · 猫是阿尔瓦养的；只要不紧急、猫没捅大篓子，就先照顾猫
+     · 不挑项目，把赫尔曼的理想当成两个人的理想去做
+   赫尔曼·塞曼 —— 贵族出身，花钱不拘小节
+     · 开朗，理想主义，擅长设计新东西
+     · 擅长交际，常去宴会，靠口才拉投资；一急就把分歧扯到「你信不信我」上
+     · 很讲义气，会帮助阿尔瓦；非常在意阿尔瓦对自己的信任
+     · 绿色眼睛；绿宝石胸针别在领结上；重要场合穿棕绿条纹西装
+     · 永动机是赫尔曼的理想，也是赫尔曼的命——赫尔曼眼里理想比生命重
+   两人是大学同学兼挚友，一起创业。
+   ── 写法 ────────────────────────────────────────────
+   · 关于两人的句子优先写名字，「他」也可以用（上下文看得清是谁就行）
+   · 「阿尔维」是赫尔曼对阿尔瓦的昵称，只出现在赫尔曼说的话里、
+     只在他俩最亲近的时刻，全文不超过三处——多了就不值钱了
+   · 钱：阿尔瓦能省则省，换算成月份；赫尔曼愿意为更好的研究效果多花钱，
+     昂贵的设备会直接买下。阿尔瓦心疼成本，也会在赫尔曼花完经费后
+     主动缩减自己的开支
+   · 整体以小猫视角展开：只写看见、闻到、听见的东西
+   ──────────────────────────────────────────────────── */
+const EVENTS = [
+  /* ---------------- 阶段 0 · 出租屋 ---------------- */
+  {id:'e01', stage:0, title:'灯芯结焦',
+   desc:'灯芯烧出一截黑头，光每十几秒暗一下。猫的影子在墙上跟着抖。赫尔曼把演算纸举到灯底下，纸边被烤得发黄，卷了起来。阿尔瓦把垂到胸前的白发往上拢了拢，那根淡紫色的发圈已经很旧了。',
+   opts:[
+     {label:'换一根新灯芯', sub:'稳定性 +12 · 消耗 30 秒产出',
+      run:()=>{ paySeconds(30); addStab(12);
+        log('灯亮起来的那一刻，猫眯了眼睛。屋里忽然显得很乱——纸堆得比猫还高，空罐子、用旧的工具、没收拾的早饭。赫尔曼说：「原来这里这么小。」他的语气里没有抱怨，更像是发现。阿尔瓦说：「小才租得起。」','hot'); }},
+     {label:'把桌子搬到灯正下方', sub:'立刻获得 45 秒产出 · 稳定性 −6',
+      run:()=>{ gain(rate()*45); addStab(-6);
+        log('两张桌子硬生生挤在一起，赫尔曼的袖口和阿尔瓦的棕色工装不断蹭在一起。后半夜谁都没起身，动作越来越小心翼翼，生怕打扰对方。猫睡在两张桌子中间的缝里，它不挑地方。','hot'); }},
+     {label:'猫趴到灯罩上', sub:'45 秒内产出 ×1.2 · 稳定性 −10',
+      run:()=>{ buff(1.2,45); addStab(-10);
+        log('灯罩慢慢暖起来，猫舒服地眯起了眼睛。阿尔瓦抬眼看了很久，看着那团毛发在灯下的样子。最后他说：「下来。」语气很轻，轻到像是在问自己。猫没动。阿尔瓦也就没再说第二次。','hot'); }}
+   ]},
+
+  {id:'e02', stage:0, title:'第一份委托书',
+   desc:'桌上摊着一张纸，边上还有刚压出来的墨迹。阿尔瓦在本子上又核对了一遍，确认没看错数字。笔在赫尔曼手里转了几圈，「阿尔维，有人愿意相信我们的能力。」',
+   opts:[
+     {label:'让赫尔曼直接签', sub:'立刻获得 120 秒产出 · 稳定性 −20',
+      run:()=>{ gain(rate()*120); addStab(-20);
+        log('签完字后，赫尔曼把笔放下，手指还按在纸上。他说：「对方满意就好，没必要在细节上纠缠。」阿尔瓦把墨迹吹干，对着窗光又看了一遍那些承诺和条款，没再多问。','hot'); }},
+     {label:'先改几版再交', sub:'稳定性 +18 · 30 秒内产出 ×0.8',
+      run:()=>{ addStab(18); buff(0.8,30);
+        log('改到第五版的时候天已经亮了。赫尔曼趴在桌上睡得很香，肩膀起伏有致。委托人对工作室的成果给予了极高的认可，但阿尔瓦知道，这一夜的辛苦不只是为了对方的认可。','hot'); }},
+     {label:'猫一脚踩了上去', sub:'本轮产出 +3%',
+      run:()=>{ boost(0.03);
+        log('纸上多了一枚灰爪印，刚好落在签名栏上。赫尔曼看到了，笑得很开心，说：「也好，本来就应该每个成员都签名。」阿尔瓦抱起猫，它还在舔爪子。','hot'); }}
+   ]},
+
+  /* ---------------- 阶段 1 · 地下室 ---------------- */
+  {id:'e11', stage:1, title:'指针不对',
+   desc:'电流计的指针每隔几秒抖一下，像有谁从里面拽了一把。屋里有热漆包线的味道，混着墙根的潮气。猫蹲在门槛上，探头往里面看。',
+   opts:[
+     {label:'让赫尔曼查接地', sub:'稳定性 +25 · 消耗 10% 能量',
+      run:()=>{ spend(0.10); addStab(25);
+        log('阿尔瓦在箱子里了找表笔，赫尔曼没等他，探头进去看。赫尔曼说：「这种故障我一眼就看出来了。」他自己蹲下去把地线接上。指针停止了抖动。阿尔瓦把表笔翻出来，又检查了一遍。没有问题。','hot'); }},
+     {label:'先跑完这一圈', sub:'立刻获得 60 秒产出 · 90 秒内产出 ×0.8',
+      run:()=>{ gain(rate()*90); buff(0.8,90);
+        log('第一圈的读数好看得不像是真的。赫尔曼说：「再跑一次，万一呢？」阿尔瓦盯着那些数字看了很久，最后说：「十次也一样。」但他还是重跑了。第二天早上数据全部崩溃了。赫尔曼没再说「万一」。','hot'); }},
+     {label:'猫蹲到机壳上', sub:'稳定性 +8 · 60 秒内产出 ×1.15',
+      run:()=>{ addStab(8); buff(1.15,60);
+        log('猫跳上机壳，找到了最暖和的位置窝下来。赫尔曼说：「它占了位置，你就没法往上面放东西了。」阿尔瓦没有争执，把手里的图纸挪到旁边一尺开外，然后摸了摸猫的头。猫依然没有让开。','hot'); }}
+   ]},
+
+  {id:'e12', stage:1, title:'第一次通宵',
+   desc:'窗外开始泛灰的时候，屋里有咖啡凉掉的味道，还有赫尔曼衬衫的味道。灯油下去了一截。那枚绿宝石胸针还别在领结上，一夜没摘。猫换过三个地方睡，最后还是在赫尔曼脚边。',
+   opts:[
+     {label:'陪赫尔曼做到底', sub:'立刻获得 120 秒产出 · 稳定性 −22',
+      run:()=>{ gain(rate()*120); addStab(-22);
+        log('天亮的时候赫尔曼趴在桌上，纸上全是圈——改了太多遍，原来的设计已经看不见了。阿尔瓦把自己的外套轻轻搭到赫尔曼背上，没有叫醒他。半个钟头后赫尔曼自己下了楼，回来时手里是面包和一张付过房钱的收据。阿尔瓦看了一眼那张收据，把它夹进了账本最后一页。','hot'); }},
+     {label:'关灯睡觉', sub:'稳定性 +25 · 30 秒内产出 ×0.7',
+      run:()=>{ addStab(25); buff(0.7,30);
+        log('赫尔曼本想反对，但阿尔瓦已经走向了灯芯。赫尔曼没有再说什么。天亮时两个人都睡在桌边，猫睡在赫尔曼脚边。阿尔瓦睡得很浅，一有动静就会抬起头。','hot'); }},
+     {label:'猫在灯下陪着', sub:'稳定性 +12 · 60 秒内产出 ×1.1',
+      run:()=>{ addStab(12); buff(1.1,60);
+        log('猫跳上了桌子，蜷在两人之间。它知道这意味着什么——又是一个很长很长的夜晚。赫尔曼和阿尔瓦没有把它赶下去。天亮时猫身上有了灯油和铅笔芯的味道。','hot'); }}
+   ]},
+
+  {id:'e13', stage:1, title:'深夜的无声停电',
+   desc:'嗡嗡声突然全停了，窗外的雨声一下子压了进来。黑暗里只有两点红光一明一灭，是炉膛还没凉下去。猫在两双皮鞋之间穿过去。',
+   opts:[
+     {label:'猫跳到赫尔曼膝上', sub:'稳定性 +20 ·  30 秒内产出 ×0.8',
+      run:()=>{ buff(0.8,30); addStab(15);
+        log('赫尔曼把烟掐了，顺手摸着猫的背。他说：「阿尔维，歇会儿吧。反正保险丝烧了，今晚也做不了了。」阿尔瓦内心纠结了一下，还是把手里的螺丝刀放下了。黑暗里两个人都没再说话，只有猫的呼噜声，很轻很稳定，像另一种节奏的心跳。','hot'); }},
+     {label:'猫去扒拉阿尔瓦的裤脚', sub:'30 秒内产出 ×1.5 · 稳定性 −10',
+      run:()=>{ buff(1.5,30); addStab(-10);
+        log('阿尔瓦把灯放在地上，半跪着拧开闸盒的螺丝。发圈松了，白发滑下来挡住眼睛。他用手腕把头发拨回去，手上已经全是黑。猫在旁边蹭他，他没看。赫尔曼那边一直没动静——他坐在椅子上，应该睡着了。已经很久没有人好好睡过一觉。','hot'); }},
+     {label:'猫蹲在机壳上叫了一声', sub:'本轮产出 +3%',
+      run:()=>{ boost(0.03);
+        log('黑暗里没人说话。过了很久，火柴划了一声。赫尔曼说：「喂，你刚才那个传动比，好像少考虑了一个奇异点。」阿尔瓦在黑暗里皱了眉——那是三天前就记在本子上的事，赫尔曼当时没听。阿尔瓦说：「已经记着了。」声音很平。','hot'); }}
+   ]},
+
+  /* ---------------- 阶段 2 · 工坊 ---------------- */
+  {id:'e21', stage:2, title:'雨落在斜屋顶上',
+   desc:'雨声比楼下清楚得多，敲在瓦片上，一层一层的。笔停了。屋顶有一处漏水，滴在接水的盆里。',
+   opts:[
+     {label:'让两个人停下来听', sub:'稳定性 +20 · 30 秒内产出 ×0.8',
+      run:()=>{ addStab(20); buff(0.8,30);
+        log('阿尔瓦和赫尔曼都没说话。猫在窗台上，尾巴一下一下敲着窗框。赫尔曼说：「……听。」阿尔瓦把笔放下了。这是他这一晚第一次放笔，笔尖上的墨已经快干了。他们坐在那里听了很久，直到有人在楼下喊雨声。','hot'); }},
+     {label:'别管，明天要交', sub:'立刻获得 100 秒产出 · 稳定性 −25',
+      run:()=>{ gain(rate()*100); addStab(-25);
+        log('赫尔曼说：「哦。」笔尖的声音又响起来。雨后来一直没停，也没人再提听声音的事。盆里的水满了，猫看着阿尔瓦半夜起来倒水，用脚趾轻轻拨开水流，一滴都不让溅到地上。','hot'); }},
+     {label:'猫去踩盆里的水', sub:'稳定性 -15 · 60 秒内产出 ×1.2',
+      run:()=>{ addStab(-15); buff(1.2,60);
+        log('水溅了一地。赫尔曼抬起头看猫，笑了一声，很短。阿尔瓦去拿抹布，赫尔曼说：「算了，反正地板已经湿了。」阿尔瓦停了一下，还是擦干了。他擦地的时候，赫尔曼又看了他一会儿，什么都没说。','hot'); }}
+   ]},
+
+  {id:'e22', stage:2, title:'第一笔进项',
+   desc:'一张纸，数字比猫想的少。赫尔曼把它翻过来，在背面画了个圈。阿尔瓦把这个数除以了七个月，更不够看了。',
+   opts:[
+     {label:'让赫尔曼存起来', sub:'稳定性 +14 · 本轮产出 +2%',
+      run:()=>{ addStab(14); boost(0.02);
+        log('阿尔瓦说：「留着。等下次要买新材料再看。」赫尔曼说：「或许那时候我们早赚到更多了。」他说得很轻松，但看不出是真的轻松还是装出来的。阿尔瓦没接，只是把这个数字转录到账本的另一栏，后面跟着一行小字——一个很复杂的除法。','hot'); }},
+     {label:'让赫尔曼买鱼', sub:'立刻获得 120 秒产出 · 稳定性 −12',
+      run:()=>{ gain(rate()*120); addStab(-12);
+        log('罐头是给猫的。赫尔曼还额外买了一块银怀表，说看时间方便。阿尔瓦看了一眼价签，没说什么，把那张发票塞进口袋。第二天，那块怀表被一个更便宜的鼹鼠皮表带替换了，手法很不熟练。赫尔曼假装没发现。','hot'); }},
+     {label:'让赫尔曼换把椅子', sub:'稳定性 +22 · 消耗 20% 能量',
+      run:()=>{ spend(0.20); addStab(22);
+        log('新椅子送来那天赫尔曼坐上去转了两圈。赫尔曼说：「太软了，会睡着。」当天下午赫尔曼真的在椅子上睡着了，头靠在扶手上，睡了四个小时。阿尔瓦在那把椅子上垫了一块硬木板，第二天赫尔曼照样睡。椅子就这样用着，没人再提过。','hot'); }}
+   ]},
+
+  /* ---------------- 阶段 3 · 工业博览会 ---------------- */
+  {id:'e31', stage:3, title:'传动轴太吵',
+   desc:'一整排传动轴转起来，地板在抖。猫踩在上面，脚底是麻的。空气里有热铁和油的味道，机油味压过了隔壁摊位的香水味。',
+   opts:[
+     {label:'让赫尔曼停机检修', sub:'稳定性 +30 · 120 秒内产出 ×0.8 · 本轮产出 +5%',
+      run:()=>{ addStab(30); buff(0.8,60);boost(0.05);
+        log('停机两个钟头。赫尔曼说：「这是今年最贵的一次安静。」阿尔瓦说：「换一组轴成本更贵。」赫尔曼笑了一下，没再说话。他站在旁边看阿尔瓦把轴一根根擦干净，一根都没放过。','hot'); }},
+     {label:'先扛过去', sub:'立刻获得 60 秒产出 · 稳定性 −20',
+      run:()=>{ gain(rate()*60); addStab(-20);
+        log('扛过去了。三个星期后同一根轴烧了，得换一整组。阿尔瓦把这笔钱和时间成本记在账本最后一页，下面画了三条警示线。他的笔压得很重，纸都穿破了一角。','hot'); }},
+     {label:'把猫窝搬过来', sub:'稳定性 +15 · 本轮产出 +3%',
+      run:()=>{ addStab(15); boost(0.03);
+        log('猫睡在传动轴顶上，震动把它的毛都颤起来了。奇怪的是从那以后，关于噪音的投诉少了。赫尔曼说：「它居然还睡得着。」阿尔瓦说：「别把它吵醒了。」两个人都压低了声音，语气里带着一股两人都没察觉的温柔。','hot'); }}
+   ]},
+
+  {id:'e32', stage:3, title:'难缠的客人',
+   desc:'门口站着几个陌生人，身上是很浓的香水味。阿尔瓦把工坊里里外外清理了一遍领头的那个一直用手帕捂着鼻子。赫尔曼已经把胸针别正了，阿尔瓦还穿着那件棕色工装。',
+   opts:[
+     {label:'让两个人好好接待', sub:'立刻获得 120 秒产出 · 稳定性 −25',
+      run:()=>{ gain(rate()*120); addStab(-25);
+        log('单子签了。赫尔曼送人下楼，回来在楼梯口站了很久，身体靠在栏杆上。赫尔曼刚才笑得不太对——那种笑阿尔瓦见过，是赫尔曼在压制什么的时候用的。阿尔瓦站在门后没出来。猫躲进了床底，半夜才钻出来，房间里有了陌生人香水的味道。','hot'); }},
+     {label:'让猫去迎客', sub:'稳定性 +10 · 30 秒内产出 ×1.2',
+      run:()=>{ addStab(10); buff(1.2,30);
+        log('客人打了三个喷嚏。赫尔曼说：「这是我今年最满意的一次交涉。」阿尔瓦在楼上没下来。猫在客人脚边坐下了，客人吓得不敢动，再也不敢再往工坊里走。','hot'); }},
+     {label:'先别答应', sub:'稳定性 +25 · 30 秒内产出 ×0.9',
+      run:()=>{ addStab(25); buff(0.9,30);
+        log('赫尔曼说：「再等等吧。」这一等，等过了两个冬天。阿尔瓦用笔在账本上打了个问号，每个月都会用铅笔描深一次。只是账本上那两页空白，后来一直没填上。有时候赫尔曼会看那两页，但从不开口。','hot'); }}
+   ]},
+
+  {id:'e33', stage:3, title:'还没开封的劣质白兰地',
+   desc:'木箱里塞着一瓶连标签都贴歪的白兰地，杯子只有一只，赫尔曼拿量杯当公道杯。瓶身上还贴着宴会带回来的封条。',
+   opts:[
+     {label:'让猫把量杯推翻', sub:'稳定性 +20 · 消耗 15% 能量',
+      run:()=>{ spend(0.15); addStab(20);
+        log('猫跳得老高，酒洒了一地，混着工坊的油渍。赫尔曼笑得呛住了，笑到喘不上气。阿尔瓦去拿抹布擦地板，他蹲下来时发圈松了。赫尔曼说：「让我来。」阿尔瓦说：「我来。」两个人都没再动。最后阿尔瓦还是擦干净了。他把剩下的半杯酒倒回瓶里，瓶塞按得很紧。','hot'); }},
+     {label:'让两个人喝完', sub:'60 秒内产出 ×1.8 · 稳定性 −25',
+      run:()=>{ buff(1.8,60); addStab(-25);
+        log('两个人在黑板前站了半宿，黑板上写满了式子和箭头。赫尔曼的领结歪了，胸针掉在桌上。他们讨论的声音越来越大，最后把猫都吵醒了——他们在讨论内容是永动机该怎么做。赫尔曼说：「阿尔维，我们快要摸到那个边界了。」阿尔瓦的脸很红，但说话很冷：「还是摸不到。」赫尔曼没理他，继续在黑板上画。阿尔瓦把空量杯洗得很干净，洗完之后，他把掉在地上的胸针捡起来，放在赫尔曼手边。没有人说感谢。','hot'); }},
+     {label:'让猫跳上桌子打翻', sub:'稳定性 +8 · 本轮产出 +3%',
+      run:()=>{ addStab(8); boost(0.03);
+        log('瓶子碎了。酒流了一地，又烧又甜。赫尔曼说了一句很长的德语，阿尔瓦没听懂。赫尔曼蹲下来捡玻璃，手没割到——是阿尔瓦抓住了他的手腕。他们对着看了一会儿，什么都没说，一起擦的地板。','hot'); }}
+   ]},
+
+  /* ---------------- 阶段 4 · 讲堂 ---------------- */
+  {id:'e41', stage:4, title:'讲堂的窗',
+   desc:'窗很大，城里的灯一盏盏亮起来。地板很凉，比地下室凉得多。赫尔曼换上了棕绿色的条纹西装，阿尔瓦还是那件工装，只把衬衫换成了新的。',
+   opts:[
+     {label:'陪赫尔曼站着', sub:'稳定性 +20 · 本轮产出 +2%',
+      run:()=>{ addStab(20); boost(0.02);
+        log('赫尔曼说：「你当初有想过会和我一起走到这里吗。」阿尔瓦没回应，只是看着手里的草稿说：「图纸上的数，还是对不上。」赫尔曼没接话，把窗子又推开了一点。风进来，把桌上的纸吹起一角。阿尔瓦伸手压住，动作很快，很紧张——好像生怕纸会飞出去。赫尔曼看了他很久。','hot'); }},
+     {label:'别站了，去干活', sub:'立刻获得 120 秒产出 · 稳定性 −15',
+      run:()=>{ gain(rate()*120); addStab(-15);
+        log('赫尔曼把咖啡一口喝完，杯子掉在了地上。那晚赫尔曼又没回去，就在讲堂里睡着了。阿尔瓦收拾到十二点，关灯时看见那个碎裂的咖啡杯，用纸包好了。第二天早上，两个人谁也没提起那杯子的事。','hot'); }},
+     {label:'猫跳上窗台', sub:'稳定性 +10 · 60 秒内产出 ×1.4',
+      run:()=>{ addStab(10); buff(1.4,60);
+        log('猫的影子映在玻璃上，和整座城叠在一起。赫尔曼掏出速写本画了一张，笔很快，笔尖摩擦纸张的声音很响。赫尔曼说：「这张给我，挂在我那边。」阿尔瓦看了一眼，说：「本来就是你的。」但他在之后的一个月里，问过三次那张画的位置。','hot'); }}
+   ]},
+
+  {id:'e42', stage:4, title:'委员会上的那句话',
+   desc:'门关着，里面安静了四秒。猫从门缝里挤了进去。赫尔曼坐在最里面，绿眼睛盯着桌面。',
+   opts:[
+     {label:'让阿尔瓦讲清楚', sub:'立刻获得 120 秒产出 · 稳定性 −12',
+      run:()=>{ gain(rate()*120); addStab(-12);
+        log('阿尔瓦讲了四十分钟，所有人都点头。这是阿尔瓦一年里说过最多话的一个场合。他的嗓子在最后变得有点哑。讲完他坐下，手在桌下抖了一下，抖得很明显。散会后赫尔曼说：「你自己信吗。」阿尔瓦没有回答。他们走出会议室时，赫尔曼走在阿尔瓦前面。','hot'); }},
+     {label:'让阿尔瓦把问题扔回去', sub:'稳定性 +18 · 30 秒内产出 ×0.7',
+      run:()=>{ addStab(18); buff(0.7,30);
+        log('没人回答，会就散了。赫尔曼说：「你刚才那一下很狠。」阿尔瓦抬起眼看着赫尔曼，说：「因为我知道我说的是事实。」赫尔曼听到这句话的时候，嘴角抖了一下。他没再说下去，走在阿尔瓦前面半步，一路把楼梯踩得很响。','hot'); }},
+     {label:'让阿尔瓦避开问题', sub:'稳定性 −6 · 本轮产出 +4%',
+      run:()=>{ addStab(-6); boost(0.04);
+        log('阿尔瓦只说了句「下次再谈」。散会后一个人留在讲堂里，灯亮到很晚。猫趴在椅子上等了很久。阿尔瓦没敢抬头，他把讲台边上的一排空椅子一张一张摆正了，摆得很整齐。','hot'); }}
+   ]},
+
+  /* ---------------- 阶段 5 · 陈列馆 ---------------- */
+  {id:'e51', stage:5, title:'那块牌子',
+   desc:'楼顶有一块发亮的牌子，从很远的地方就能看见。猫坐在窗边看它，眼睛有点酸。墙上挂着那张速写，画框角上别着一枚绿宝石胸针。',
+   opts:[
+     {label:'让赫尔曼上去看看', sub:'稳定性 +25 · 本轮产出 +2%',
+      run:()=>{ addStab(25); boost(0.02);
+        log('楼顶风很大。赫尔曼的大衣没扣，绿宝石胸针在领结上晃。赫尔曼说：「当年在出租屋，我以为这就是终点。」阿尔瓦没抬头，看着脚下那条街——很亮，是从前那间屋子望不见的。他没有回答赫尔曼，但他在想：那现在呢。一切就到这里吗。','hot'); }},
+     {label:'让赫尔曼回去做事', sub:'立刻获得 120 秒产出 · 稳定性 −10',
+      run:()=>{ gain(rate()*120); addStab(-10);
+        log('那晚的读数很漂亮。牌子在天上亮着，阿尔瓦和赫尔曼都没抬头看。桌上多了一张新的采购单，阿尔瓦看了一遍，成本已经开始扩张。他什么也没说，只是在采购单下面添了一行小字，记录了他对未来预算的担忧。','hot'); }},
+     {label:'猫在窗边看牌子叫', sub:'稳定性 +15 · 60 秒内产出 ×1.2',
+      run:()=>{ addStab(15); buff(1.2,60);
+        log('猫的叫声让两个人都抬起了头。赫尔曼说：「它在为我们庆祝。」阿尔瓦走过去摸了摸猫，说：「它只是累了。」但他没有否认赫尔曼的话。那一刻，两个人都看着那块发亮的牌子，各自心里想着他们的终点在哪里。','hot'); }}
+   ]},
+
+  /* ---------------- 小猫专属（任意阶段，低频） ---------------- */
+  {id:'c1', stage:-1, title:'半夜的脚步声',
+   desc:'阿尔瓦半夜起来倒水，站在厨房没开灯。白发散着，没扎起来。',
+   opts:[
+     {label:'猫蹭阿尔瓦的脚踝', sub:'稳定性 +15',
+      run:()=>{ addStab(15);
+        log('阿尔瓦低头看了很久才认出是猫。他蹲下来，用指背很轻地蹭了蹭猫的耳朵，动作很小心，像是害怕吓到它。阿尔瓦想：原来猫也睡不着。他们两个一起站在黑暗的厨房里，什么都不说。','hot'); }},
+     {label:'假装没看见', sub:'立刻获得 30 秒产出',
+      run:()=>{ gain(rate()*30);
+        log('阿尔瓦站了很久，杯子里的水凉了也没喝。他看着窗外的夜，什么也没想，然后他转身回去，继续用冷水写字。猫在身后看了他很久。','hot'); }},
+     {label:'猫跳上灶台碰倒杯子', sub:'稳定性 −15 · 立刻获得 60 秒产出',
+      run:()=>{ addStab(-15); gain(rate()*60);
+        log('杯子碎了，水溅了一地。赫尔曼从楼上喊：「怎么了？」阿尔瓦说：「没事，是猫。」——答得很快，像是早就想好要替谁挡。他蹲下来收拾玻璃渣。手被割了一个小口子，他没有吭声。','hot'); }}
+   ]},
+
+  {id:'c2', stage:-1, title:'抽屉里的便签',
+   desc:'抽屉没关严，里面有一张纸，写着三个字。字很小，压得很深。桌沿上放着那根淡紫色的发圈，是阿尔瓦刚摘下来的。',
+   opts:[
+     {label:'叼给阿尔瓦', sub:'稳定性 +20',
+      run:()=>{ addStab(20); 
+        log('阿尔瓦接过去，看了很久，然后折起来放进衬衫口袋。这算收到，还是没收到。那天阿尔瓦把发圈重新扎好，换到了另一边。','hot'); }},
+     {label:'塞回原处', sub:'本轮产出 +5%',
+      run:()=>{ boost(0.05);
+        log('猫把它推回原来的位置。抽屉还是没关严。那根发圈还在桌上，阿尔瓦一直没有再去整理，放到了天亮。','hot'); }}
+   ]},
+
+  {id:'c3', stage:-1, title:'阿尔瓦睡着的时候',
+   desc:'阿尔瓦趴在桌上睡着了，白发铺开，压住半张没画完的图。',
+   opts:[
+     {label:'把赫尔曼的外套盖上去', sub:'稳定性 +5',
+      run:()=>{ addStab(5);
+        log('赫尔曼把外套很轻地盖上去。阿尔瓦没有醒。猫顺势钻了进去，阿尔瓦在睡梦里搂紧了猫。赫尔曼站在楼上看了很久才回房间。','hot'); }},
+     {label:'一爪子拍下去', sub:'稳定性 −8 · 60 秒内产出 ×1.3',
+      run:()=>{ addStab(-8); buff(1.3,60);
+        log('阿尔瓦猛地醒过来，先眨了两下眼才看清是猫。赫尔曼在旁边看着，问：「它是不是饿了？」猫没理赫尔曼，只是跳到了阿尔瓦腿上。阿尔瓦把它搂在怀里。','hot'); }},
+      {label:'轻轻摸一下', sub:'稳定性 +12 · 本轮产出 +2%',
+       run:()=>{ addStab(12); boost(0.02);
+        log('猫用头蹭阿尔瓦的手。阿尔瓦在睡梦中呓语：「别走……」猫就这么坐在他手边，一动都不动。等他真正醒来时，睡得有点晕乎。赫尔曼说：「猫一直在旁边陪你。」','hot'); }}
+   ]},
+
+  {id:'c4', stage:-1, title:'赫尔曼的外套内衬',
+   desc:'棕绿色的条纹礼服挂在椅背上，内衬是滑溜溜的丝绸。领结上还别着那枚绿宝石胸针。猫钻进袖子里，只露出一对眼睛。',
+   opts:[
+     {label:'在袖子里睡大觉', sub:'稳定性 +15',
+      run:()=>{ addStab(15);
+        log('赫尔曼第二天穿衣服时，猫从袖子里掉了出来。赫尔曼没有生气，反而把猫抱起来掂了掂，感受它的重量。赫尔曼说：「又胖了，看来这周罐头没少吃。」阿尔瓦在门口说：「总不能饿着它。」他的声音很小，像是有点心虚。赫尔曼听到了，笑了一下，什么都没说。','hot'); }},
+     {label:'在内衬上磨爪子', sub:'立刻获得 45 秒产出',
+      run:()=>{ gain(rate()*45);
+        log('丝绸被勾出了几道细细的线。阿尔瓦看见了，什么也没说，假装在很认真地看纸。但他心里想：谁让赫尔曼穿这么招摇的料子。第二天早上，那几道线被人用同色的丝线密密地补过了，补得非常细致，看不出是外行干的。是谁补的，为什么要补，没有人问。','hot'); }},
+      {label:'猫在衣柜里把外套推下来', sub:'稳定性 +8 · 本轮产出 +3%',
+       run:()=>{ addStab(8); boost(0.03);
+        log('外套掉在地上，猫跟着跳下来，在上面打了个滚。赫尔曼把礼服捡起来，戳了戳猫脑袋：「别乱动，它可值你半年的罐头。」','hot'); }}
+   ]}
+];
+
+/* 里程碑：每阶段一次，触发后永不再来（跨周目保留） */
+const MILESTONES = [
+  {id:'M1', title:'第一张演算纸',
+   desc:'赫尔曼从包里翻出一张纸，上面是他们第一次讨论那台机器时打的草稿，写了满满一张，最后被划到只剩下最下面被加粗的：“永动轮”。',
+   when:()=>lv('h1')>=1,
+   opts:[
+     {label:'让赫尔曼留着', sub:'本轮产出 +2% · 稳定性 +10',
+      run:()=>{ boost(0.02); addStab(10);
+        log('那张纸后来贴在黑板边上，用图钉钉的。谁也没敢撕。阿尔瓦路过时看过一眼，看着那行被划掉的数，又看了一眼赫尔曼当时写的措辞——其实推导过程没错，只是赫尔曼算早了。三年后他还在看这张纸。','hot'); }},
+     {label:'让赫尔曼扔掉', sub:'本轮产出 +3%',
+      run:()=>{ boost(0.03);
+        log('赫尔曼把纸揉成一团，扔进箱底。纸团在箱子里躺了三年。搬去工坊那天，赫尔曼把它翻了出来：「这个还在这儿啊。」语气里带了几丝怀念。阿尔瓦接过纸，轻轻展开，什么都没说。','hot'); }}
+   ]},
+
+  {id:'M2', title:'永恒机器的受托人',
+   desc:'纸笔还是从学校里带出来的。赫尔曼从报纸上抄了一版委托协议，受托人那里空着。赫尔曼说：「以后你就是永动机的首席技术顾问了。」',
+   when:()=>S.run >= 100,
+   opts:[
+     {label:'让阿尔瓦签', sub:'本轮产出 +5% · 稳定性 −5',
+      run:()=>{ boost(0.05); addStab(-5);
+        log('阿尔瓦签完字，笔尖在纸上停留了三秒钟。他问：「这算开始了吗?」赫尔曼把合同收进抽屉里。后来这张纸上面层层叠叠压了很多新东西——都是赫尔曼的承诺。','hot'); }},
+     {label:'让猫先踩一脚', sub:'本轮产出 +2% · 稳定性 +15',
+      run:()=>{ boost(0.02); addStab(15);
+        log('猫一脚下去留下一个灰扑扑的爪印。赫尔曼说：「好吧，它也算一个合伙人。」阿尔瓦把纸抽回来，看了看那道灰色的爪印，又看了看自己的签名。他想：也许以后所有重要的纸，都应该这么过一遍。','hot'); }}
+   ]},
+
+  {id:'M3', title:'黑板写满的那一夜',
+   desc:'窗外的天黑到鸟叫声也停了。黑板从左上角一直写到右下角，中间没有一处空。屋里只剩笔尖的声音和机器的声音。猫打了个哈欠。',
+   when:()=>lv('h3')>=1,
+   opts:[
+     {label:'陪赫尔曼做到底', sub:'本轮产出 +8% · 稳定性 −10',
+      run:()=>{ boost(0.08); addStab(-10);
+        log('天亮的时候赫尔曼趴在桌上，纸全是圈和箭头——改了太多遍，原来的方案已经完全看不见了。黑板上那一片密集的字，到最后擦都擦不干净。后来那块黑板上面总有淡淡的字痕，新写的压在旧的上头，颜色越来越混乱。','hot'); }},
+     {label:'关灯，让猫睡在赫尔曼腿上', sub:'稳定性 +20 · 本轮产出 +2%',
+      run:()=>{ addStab(20); boost(0.02);
+        log('赫尔曼的眼睛其实已经睁不开了，猫跳上他的腿之后，他的手自己落下来，落在猫背上，睡得很深。第二天赫尔曼说这是他今年睡得最好的一觉。阿尔瓦替他梳掉裤子上的猫毛。','hot'); }}
+   ]},
+
+  {id:'M4', title:'第一次聚餐',
+   desc:'食盒摆了一地，桌子不够用，就坐地板。香槟是便宜的那种，喷得到处都是，猫身上也有。',
+   when:()=>lv('h5')>=1,
+   opts:[
+     {label:'让赫尔曼举杯说点什么', sub:'本轮产出 +4%',
+      run:()=>{ boost(0.04);
+        log('赫尔曼说了很久，从和阿尔瓦的校园回忆讲到对永动机器带来的美好未来的构想。猫一句也没听进去。只记得有一块鸡肉滚进了角落，但阿尔瓦抱得太紧，它没法去捡。','hot'); }},
+     {label:'先擦猫', sub:'稳定性 +25',
+      run:()=>{ addStab(25);
+        log('猫被擦得炸毛，身上的酒味还是压不住。整个晚上猫都没理两个人，高冷地蹲在窗台上。赫尔曼说：「对不起嘛。」被猫用肉垫扇了一巴掌。阿尔瓦也跟着笑，但后面还是用连续一周的羊奶把猫哄回了赫尔曼腿上。','hot'); }},
+     {label:'就这么吃，谁也别说话', sub:'本轮产出 +2% · 稳定性 +10',
+      run:()=>{ boost(0.02); addStab(10);
+        log('阿尔瓦、赫尔曼和猫坐在地板上，谁都没讲话。只有翻开食盒、碰碰杯子，咀嚼的声音。这顿饭吃了两个小时，吃到最后灯都忘了关。两个人都记不清自己什么时候喝醉的，又什么时候睡倒在地毯上。阿尔瓦觉得永远不会忘记这个晚上。','hot'); }}
+   ]},
+
+  {id:'M5', title:'猫自己选地方睡的那天',
+   desc:'锅炉顶上空着一小块。猫跳上去，转了两圈，趴下，就没再挪过。',
+   when:()=>lv('b1')>=1,
+   opts:[
+     {label:'铺个垫子', sub:'稳定性 +10 · 本轮产出 +2%',
+      run:()=>{ addStab(10); boost(0.02);
+        log('垫子是柔软的绒毛，做得很用心。猫看了一眼，还是窝在了旁边的铁皮上。最后垫子收进了一个纸箱里。但锅炉的铁皮被压出了一个浅浅的坑，坑的形状和猫的身体一模一样。阿尔瓦偶尔会扒上去看看，算算要不要给它减点猫粮。','hot'); }},
+     {label:'就这么睡，别管', sub:'本轮产出 +5%',
+      run:()=>{ boost(0.05);
+        log('从那以后，所有重要的决定都是在猫眼皮子下做的。赫尔曼和阿尔瓦常常坐在锅炉对面，在猫的见证下改稿、审计或吵架。猫睡得很熟，做梦时爪子会微微踢动。','hot'); }},
+      {label:'把猫窝搬过来', sub:'稳定性 +15 · 本轮产出 +1%',
+       run:()=>{ addStab(15); boost(0.01);
+        log('阿尔瓦用剩下的布料铺了一个垫子，软软的。猫看了一眼，没用。只管在那块铁皮上睡。铁皮日积月累被压出一个浅坑，形状和猫一模一样。阿尔瓦看了两回，没再提垫子的事。','hot'); }}
+   ]},
+
+  {id:'M6', title:'第一份带爪印的图纸',
+   desc:'红章盖得很正。右下角那枚灰爪印是后来才有的。对面的人看了一眼，没说什么。',
+   when:()=>lv('b2')>=1,
+   opts:[
+     {label:'让阿尔瓦解释成防伪', sub:'本轮产出 +5% · 稳定性 −5',
+      run:()=>{ boost(0.05); addStab(-5);
+        log('阿尔瓦想了两秒钟，然后说：「这是防伪标识。」对方真的信了。回去的路上，赫尔曼提起：「你撒谎的时候脸一点都不红。」阿尔瓦说：「这不完全算撒谎。」赫尔曼没有回答。','hot'); }},
+     {label:'什么也别解释', sub:'稳定性 +10 · 本轮产出 +2%',
+      run:()=>{ addStab(10); boost(0.02);
+        log('图纸照常通过。对方在爪印旁边按了个手印，说这样更统一。阿尔瓦把回单收好，出门时长叹一口气。赫尔曼知道阿尔瓦在紧张什么。赫尔曼说：「他们也得给它付工资了」阿尔瓦听到这句话，嘴角动了一下。','hot'); }}
+   ]},
+
+  {id:'M7', title:'把铭牌钉上门框的下午',
+   desc:'赫尔曼找人定制了一块铜牌，上面刻了猫的画像和名字。被磨得光亮的铜板在阳光下似乎发着金光。',
+   when:()=>lv('b3')>=1,
+   opts:[
+     {label:'钉高一点', sub:'本轮产出 +4%',
+      run:()=>{ boost(0.04);
+        log('赫尔曼踩着凳子敲钉子。他说：「这样猫跳不上去，但所有人都能看见。」钉子敲得很响，响得像是在宣布什么。敲最后一个钉子时赫尔曼手滑了，锤子砸到了大拇指。阿尔瓦替他做了冰敷，但赫尔曼也丧失了继续敲下去的勇气。最后还是阿尔瓦上来把一个钉子敲了进去。','hot'); }},
+     {label:'钉低一点', sub:'稳定性 +20 · 本轮产出 +2%',
+      run:()=>{ addStab(20); boost(0.02);
+        log('第二天牌子上就有三道抓痕：猫跳上去，用爪子试了试，好像很满意。阿尔瓦拿布擦了半天，擦不掉，只好放弃。那块铜后来一直带着三道痕——猫的独家签名。','hot'); }},
+      {label:'让赫尔曼自己选', sub:'稳定性 +8 · 本轮产出 +3%',
+       run:()=>{ addStab(8); boost(0.03);
+        log('赫尔曼看了半天，说：「中间吧。」钉在中间的牌子，既能让人看见，猫也能够到。阿尔瓦说：「好。」就这么简单。后来每一个客人来都能看到那块牌子，每一个客人都会问那是什么。赫尔曼说：「永动轮的监督官。」','hot'); }}
+   ]},
+
+  {id:'M8', manual:true, title:'最后一次关灯',
+   desc:'整层楼只剩走廊的灯。阿尔瓦把手放在总闸上。屋里很安静。',
+   opts:[
+     {label:'让阿尔瓦按', sub:'永久 · 储存上限 +10%',
+      run:()=>{ S.m8pick = 'a';
+        log('灯灭的那一下，能听见猫自己的爪子。屋里没有第二个人。阿尔瓦在黑暗里站了一会儿，把总闸的盖子合上。阿尔瓦想：那我也该走了吧。','hot'); }},
+     {label:'先抱一会儿猫', sub:'永久 · 储存上限 +5% · 小猫鱼干 +15%',
+      run:()=>{ S.m8pick = 'b';
+        log('阿尔瓦抱了一会儿猫，把头埋进猫身上。猫在他怀里能感觉到那口气，很长，出得很慢。灯灭了，屋子里就剩猫的呼吸。','hot'); }}
+   ]}
+];
+
+
+/* ---------- 状态 ---------- */
+const S = {
+  ip:0, run:0, all:0,           // 当前能量 / 本轮累计 / 历史累计
+  stab:100,
+  lv:{},                        // 设备等级
+  frag:0,                       // 记忆碎片
+  scene:0,                      // 本周目场景 0-5（重启归 0）
+  items:[],                     // 已解锁收藏
+  secs:0,                       // 累计在线秒数（只算页面开着的时间）
+  taps:0,                       // 手动操作次数
+  nights:0,                     // 结束过的夜
+  battles:0,                    // 事件里做过的选择
+  buffs:[],                     // {m, until}
+  cd:{ab1:0, ab2:0, ab3:0},
+  evtAt: 0, evtOpen:false,
+  log:[], born:Date.now(), last:Date.now(),
+
+  /* ---- 周目制 ---- */
+  cycle:1,                      // 当前周目，从 1 开始
+  cycleAt:Date.now(),           // 本周目开始时间戳（算碎片时长）
+  capRun:1e6,                   // 本周目能量上限
+  fx:false,                     // 本周目是否已装「永动轮总装」（每轮可再买）
+  route:'',                     // '' | 'bad' | 'good'
+  seenBad:false,                // 是否看过坏结局（看过之后才出现「结束这一夜」）
+  endingDone:false,             // 结局过场已播完 —— 刷新后直接给收尾界面，不再重播
+  breakthrough:0,               // 好结局突破次数（加法叠加）
+  achieved:[],                  // 隐藏成就 id
+  cat:null,                     // 小猫支线 {ip,lv,total,last,on}
+  lastCycleMin:0,               // 上一局实际时长（分钟）
+  hiddenCatReady:false,         // 第一周目守满 8 小时，隐藏入口解锁
+  challenge:false,              // 挑战模式进行中
+  challengeReady:false,         // 普通通关过，解锁「重新挑战」
+  restorePending:false,         // 挑战结束后要把快照盖回来
+  snapshot:null,                // 挑战快照摘要 {frag, cat}
+  ach:[],                       // 隐藏成就
+  m8pick:'',                    // M8 最后的选择：'a' 关机 / 'b' 抱猫
+  hiddenCat:false,              // 走过隐藏入口（硬核路线）
+  boost:0,                      // 本周目产出加成（事件给，重启清零，封顶 +25%）
+  seenEv:[],                    // 本周目已看过的事件 id（重启清空）
+  milestones:[],                // 已触发的里程碑 id（跨周目保留）
+};
+
+/* ---------- 工具 ---------- */
+const $ = id => document.getElementById(id);
+
+const UNITS = [[1e20,'垓'],[1e16,'京'],[1e12,'兆'],[1e8,'亿'],[1e4,'万']];
+function fmt(n){
+  if(!isFinite(n)) return '∞';
+  if(n < 1000){
+    if(n < 10) return (Math.round(n*10)/10).toString().replace(/\.0$/,'');
+    return Math.round(n).toString();
+  }
+  for(const [v,s] of UNITS){
+    if(n >= v){
+      let x = n/v;
+      let t = x >= 100 ? Math.round(x).toString() : (Math.round(x*100)/100).toString();
+      return t + s;
+    }
+  }
+  return Math.round(n).toString();
+}
+function now(){ return Date.now(); }
+
+function log(text, cls){
+  S.log.unshift({t:now(), text, cls:cls||''});
+  if(S.log.length > 80) S.log.pop();
+  renderLog();
+}
+let toastTimer=null;
+function toast(text){
+  const el=$('toast');
+  el.textContent=text; el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('on'), 1800);
+}
+
+/* ---------- 计算 ---------- */
+function lv(id){ return S.lv[id] || 0; }
+
+function herRate(){
+  let r = 0.5;
+  for(const u of HER) r += u.val * lv(u.id);
+  return r;
+}
+function alvaRate(){
+  let r = 1.0;
+  for(const u of ALV) r += u.val * lv(u.id);
+  return r;
+}
+function catMult(){
+  let m = 1;
+  for(const u of CAT) m *= Math.pow(u.val, lv(u.id));
+  return m;
+}
+function heat(){
+  // 发热 = 基数 + 赫尔曼^0.5。
+  // 次线性是关键：如果发热随赫尔曼线性涨，散热会被指数成本甩得越来越远，
+  // 玩家就只剩「一直买赫尔曼」一条路，阿尔瓦整条线作废。
+  return HEAT_BASE + Math.pow(Math.max(0, herRate()), HEAT_EXP);
+}
+
+function buffMult(){
+  let m = 1;
+  const t = now();
+  for(const b of S.buffs) if(b.until > t) m *= b.m;
+  return m;
+}
+/* 稳定性 → 产出系数。稳定性只影响产出，不影响碎片。 */
+function stabFactor(){
+  const s = Math.max(0, Math.min(100, S.stab)) / 100;
+  return STAB_FLOOR + (1 - STAB_FLOOR) * Math.pow(s, STAB_POW);
+}
+
+function rate(){
+  if(S.ip >= S.capRun) return 0;               // 储存装满，先花掉才能继续产出
+  return herRate() * stabFactor() * catMult() * (1 + FRAG_PER*S.frag) * (1 + S.boost) *
+         (1 + 0.03 * clv('c13')) * buffMult();
+}
+
+function priceOf(u){ return Math.ceil(u.cost * Math.pow(u.g, lv(u.id))); }
+
+/* ---------- 小猫支线 ---------- */
+function clv(id){ return (S.cat && S.cat.lv[id]) || 0; }
+function catRate(){
+  if(!S.cat) return 0;
+  let r = 0.1;
+  for(const u of CATSUB) if(!u.util) r += u.val * clv(u.id);
+  // 隐藏线：玩家放弃了转生、放弃了碎片、放弃了全部主线机制，
+  // 只靠一只猫硬顶。这只猫在这条线里就该更活跃。
+  if(S.hiddenCat) r *= HIDDEN_FISH_BOOST;
+  if(S.m8pick === 'b') r *= 1.15;   // 抱过一次猫，它记住了
+  return r;
+}
+function catPrice(u){ return Math.ceil(u.cost * Math.pow(u.g, clv(u.id))); }
+// 猫对主线的加成全部来自手动升级：c13 产出、c11 储存
+
+let autoT = 0;
+function autoDrive(dt){
+  if(!S.cat) return;
+  const autoLv = clv('c12');
+  if(autoLv <= 0) return;
+  autoT += dt;
+  const gap = autoLv >= 3 ? 1.0 : autoLv >= 2 ? 1.6 : 2.2;
+  if(autoT < gap) return;
+  autoT = 0;
+  if(S.evtOpen) return;
+
+  // 只管小猫自己的升级：1 级产线，2 级加囤货，3 级加带回来的
+  const allow = u => {
+    if(u.id === 'c12') return false;                    // 不自动买自己
+    if(u.id === 'c9' || u.id === 'c10') return false;   // 离线两项留手动
+    if(u.id === 'c11') return autoLv >= 2;
+    if(u.id === 'c13') return autoLv >= 3;
+    return true;                                        // c1~c8
+  };  // 挑「买得起里最便宜的」：各条价格增速相同，买最便宜的就是最优
+  let best = null, bc = Infinity;
+  for(const u of CATSUB){
+    if(!allow(u)) continue;
+    if(u.max && clv(u.id) >= u.max) continue;
+    const c = catPrice(u);
+    if(c > S.cat.ip) continue;
+    if(c < bc){ bc = c; best = u; }
+  }
+  if(best) buyCat(best.id, true);
+}
+
+function buyCat(id, auto){
+  if(!S.cat) return;
+  const u = CATSUB.find(x => x.id === id);
+  if(!u) return;
+  if(u.max && clv(id) >= u.max) return;
+  const c = catPrice(u);
+  if(S.cat.ip < c) return;
+  S.cat.ip -= c;
+  S.cat.lv[id] = clv(id) + 1;
+  if(!auto) S.taps += 1;
+  renderCat(); updateCat(); drawCatWorld(); save();
+}
+
+/* ---------- 周目 / 上限 / 碎片 ---------- */
+/* ---------- 数值：v3 跷跷板 ----------
+ *
+ * 三条互相咬住的线：
+ *   上限 ∝ 散热^0.22        —— 买散热抬天花板，但指数压得很小
+ *   碎片 = 钟形(散热比)     —— 贴着峰值收益最高，两边冲过头都掉
+ *   发热 = 0.2 + 赫尔曼^0.5 —— 次线性，否则散热永远追不上，阿尔瓦作废
+ *
+ * 为什么上限的指数必须小：如果「上限 ∝ 散热」太强，买散热永远是最优解
+ * （既抬上限又拉高散热比），玩家会一路买到散热比 24，那里钟形只剩 16 碎片。
+ * 压到 0.22 之后，把散热比推过峰值的代价才压得过收益。
+ */
+const CAP_BASE      = 3.0e5;   // 上限基数（单局时长主控）
+                               // 3e5 → 首局约 44 分钟，第 27 周目通关，累计 3 小时。
+                               // 3e7 会让上限在第 12 周目就够到好结局门槛，
+                               // 那样通关靠的是 MIN_GOOD_CYCLE 这道闸，不是玩家攒出来的。
+const CAP_ALVA_POW  = 0.22;    // 上限 ∝ 散热^pow
+const FRAG_PER      = 0.035;   // 每片碎片 +3.5%（上限与产出）
+const BT_MULT       = 1.20;    // 每次突破，上限 ×1.2
+
+const HEAT_BASE     = 0.20;
+const HEAT_EXP      = 0.50;    // 发热次线性
+
+const STAB_SLOPE    = 2.2;     // 稳定性 sigmoid 陡度（log 空间）
+const STAB_FLOOR    = 0.25;    // 崩盘时产出仍剩 25%
+const STAB_POW      = 1.10;
+
+const FRAG_BASE     = 40;      // 到达峰值时的碎片基数
+const BELL_MU       = 2.60;    // 钟形峰值：散热比 2.6
+const BELL_SIGMA    = 0.85;    // 钟形宽度（对数空间）
+const BELL_FLOOR    = 0.12;    // 钟形地板：散热比再离谱也留 12%，保证能自救
+const PEAK_FLASH    = 0.95;    // 钟形到峰值 95% 时，「结束这一夜」开始闪光
+const FRAG_CYCLE    = 0.15;    // 每多一个周目，碎片基数 +15%
+
+const CAT_OFFLINE_MIN = 120;   // 每局结束，猫按「离场 2 小时」额外结算鱼干
+const CAT_STASH_MULT  = 1.20;  // 囤货每级 ×1.2（不是 1.5，否则上限会被推爆）
+const HIDDEN_FISH_BOOST = 3.0; // 隐藏线专属：鱼干产量 ×3（放弃转生的补偿）
+
+const COOL_CAP     = 3.0;      // 保留：旧接口，暂无引用
+const SCENE_AT     = [0, 6e5, 1.08e6, 1.92e6, 3.5e6, 6.3e6]; // 场景阈值（本周目内）
+
+/* 碎片钟形：散热比的对数正态，带地板 */
+function bellCurve(cool){
+  if(!(cool > 0)) return 0;
+  const d = (Math.log(cool) - Math.log(BELL_MU)) / BELL_SIGMA;
+  return Math.exp(-0.5 * d * d);
+}
+/* 钟形 + 地板，0~1 */
+function fragShape(cool){
+  return BELL_FLOOR + (1 - BELL_FLOOR) * bellCurve(cool);
+}
+
+// 储存上限：散热 / 碎片 / 突破 / 小猫囤货 / M8 共同决定
+function storageMax(){
+  const fm = 1 + FRAG_PER * S.frag;                       // 碎片加成
+  const km = Math.pow(CAT_STASH_MULT, clv('c11'));        // 小猫囤货
+  const bt = Math.pow(BT_MULT, S.breakthrough || 0);
+  // M8「最后一次关灯」的永久加成：a 关机 +10%，b 抱猫 +5%
+  const mm = S.m8pick === 'a' ? 1.10 : S.m8pick === 'b' ? 1.05 : 1;
+  return CAP_BASE * Math.pow(Math.max(1e-9, alvaRate()), CAP_ALVA_POW)
+       * fm * bt * km * mm;
+}
+function syncCap(){ S.capRun = storageMax(); }
+function atCap(){ return S.run >= S.capRun; }
+// 装上永动轮之后这一夜就已经算完了。M8 的储存加成会让 capRun 再涨一截，
+// 那时候 S.run 追不上新上限，但玩家不该因此卡在「结束这一夜」上。
+function reachedCap(){ return S.run >= S.capRun || S.fx; }
+function coolRatio(){ const h = heat(); return h > 0 ? alvaRate() / h : 0; }
+function cycleMinutes(){ return Math.max(0, (now() - S.cycleAt) / 60000); }
+function sceneForRun(r){
+  let s = 0;
+  for(let i = 1; i < SCENE_AT.length; i++) if(r >= SCENE_AT[i]) s = i;
+  return s;
+}
+
+/* 本局当前能拿到的碎片（不含时长项 —— 结夜时机完全交给玩家） */
+function fragNow(){
+  const depth = 1 + FRAG_CYCLE * Math.max(0, S.cycle - 1);
+  return Math.floor(FRAG_BASE * fragShape(coolRatio()) * depth);
+}
+/* 是否已到钟形峰值附近，「结束这一夜」该闪光了 */
+function atPeak(){ return reachedCap() && fragShape(coolRatio()) >= PEAK_FLASH; }
+
+function fragGain(){
+  if(!reachedCap()) return 0;
+  return fragNow();
+}
+
+/* ---------- 操作 ---------- */
+function gain(n){ S.ip += n; S.run += n; S.all += n; }
+
+function spend(frac){
+  // 只扣当前能量。run 是本轮成绩、all 是历史累计（收藏里程碑），都不该被事件回退。
+  const n = Math.max(0, Math.min(S.ip, S.ip * frac));
+  S.ip -= n;
+  return n;
+}
+
+function addStab(d){
+  S.stab = Math.max(0, Math.min(100, S.stab + d));
+}
+
+function buff(m, sec){
+  S.buffs.push({m, until: now() + sec*1000});
+}
+
+// 本轮加成：事件专用，重启清零，单局封顶 +25%
+function boost(n){ S.boost = Math.min(0.25, Math.max(0, S.boost + n)); }
+
+// 用「N 秒产出」当作代价
+function paySeconds(sec){
+  const n = Math.min(S.ip, rate() * sec);
+  S.ip -= n;
+  return n;
+}
+
+function buy(id){
+  // 结局过场期间锁死购买。
+  // 只靠 CSS 遮罩不够 —— 遮罩挡的是指针，键盘/脚本/以后加的快捷键都绕得过去，
+  // 而这时 S.fx 已经置上、结局数据也已经落盘，再改设备等级会把它搅乱。
+  // 注意这里只看 S.fx（结局态），不看 S.evtOpen ——
+  // 普通事件期间玩家继续买东西是可以的，那是另一回事。
+  if(S.fx) return;
+  const u = [...HER, ...ALV, ...CAT].find(x => x.id === id);
+  if(!u) return;
+  const c = priceOf(u);
+  if(S.ip < c) return;
+  if(u.max && lv(id) >= u.max) return;
+  S.ip -= c;
+  S.lv[id] = lv(id) + 1;
+  S.taps += 1;
+  renderShop();
+  renderSceneCaption();
+  save();
+}
+
+/* ---------- 存档 ---------- */
+const SNAP_KEY = SAVE_KEY + '_snap';
+
+// 挑战开始前把整份存档存到快照，结束时原样盖回来
+function saveSnapshot(){
+  try{ localStorage.setItem(SNAP_KEY, JSON.stringify(S)); }catch(e){}
+}
+function restoreSnapshot(){
+  try{
+    const raw = localStorage.getItem(SNAP_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    const ach = (S.ach || []).slice();
+    for(const k in S) delete S[k];
+    Object.assign(S, d);
+    // 成就不能被快照抹掉：两份取并集
+    const merged = new Set(ach.concat(d.ach || []));
+    S.ach = Array.from(merged);
+    S.challenge = false;
+    S.restorePending = false;
+    localStorage.removeItem(SNAP_KEY);
+    return true;
+  }catch(e){ return false; }
+}
+
+let wiping = false;
+function save(){
+  if(wiping) return;                 // 正在清档，别在 beforeunload 里又写回去
+  S.last = now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){}
+}
+function hardReset(){
+  wiping = true;
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  try{ sessionStorage.removeItem(SAVE_KEY); }catch(e){}
+  try{ localStorage.removeItem(SNAP_KEY); }catch(e){}
+  setTimeout(() => location.reload(), 0);
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d || typeof d !== 'object') return false;
+    for(const k of ['ip','run','all','stab','frag','scene','born','last','cycle','cycleAt','breakthrough','secs','taps','nights','battles'])
+      if(typeof d[k] === 'number' && isFinite(d[k])) S[k] = d[k];
+    for(const k of ['fx','seenBad','endingDone'])
+      if(typeof d[k] === 'boolean') S[k] = d[k];
+    if(typeof d.route === 'string') S.route = d.route;
+    if(Array.isArray(d.achieved)) S.achieved = d.achieved;
+    if(typeof d.boost === 'number' && isFinite(d.boost)) S.boost = Math.max(0, Math.min(0.25, d.boost));
+    if(typeof d.lastCycleMin === 'number' && isFinite(d.lastCycleMin)) S.lastCycleMin = Math.max(0, d.lastCycleMin);
+    if(d.hiddenCatReady === true) S.hiddenCatReady = true;
+    if(d.challenge === true) S.challenge = true;
+    if(d.challengeReady === true) S.challengeReady = true;
+    if(d.restorePending === true) S.restorePending = true;
+    if(d.snapshot && typeof d.snapshot === 'object') S.snapshot = d.snapshot;
+    if(Array.isArray(d.ach)) S.ach = d.ach.filter(x => typeof x === 'string');
+    if(d.m8pick === 'a' || d.m8pick === 'b') S.m8pick = d.m8pick;
+    if(d.hiddenCat === true) S.hiddenCat = true;
+    if(Array.isArray(d.seenEv)) S.seenEv = d.seenEv;
+    if(Array.isArray(d.milestones)) S.milestones = d.milestones;
+    if(d.cat && typeof d.cat === 'object') S.cat = d.cat;
+    if(typeof d.cycle !== 'number'){          // 旧存档迁移：当作第 1 周目，计时从现在起
+      S.cycle = 1;
+      S.cycleAt = now();
+      S.capRun  = CAP_BASE;
+    }
+    if(d.lv && typeof d.lv === 'object') S.lv = d.lv;
+    if(Array.isArray(d.items)) S.items = d.items;
+    if(Array.isArray(d.ach)) S.ach = d.ach;
+    if(Array.isArray(d.log)) S.log = d.log.slice(0,80);
+    if(Array.isArray(d.buffs)) S.buffs = d.buffs.filter(b=>b && b.until > now());
+    S.stab = Math.max(0, Math.min(100, S.stab));
+    S.cycle = Math.max(1, Math.round(S.cycle));
+    S.breakthrough = Math.max(0, Math.round(S.breakthrough));
+    syncCap();
+    // 场景由本周目进度决定（run 在周目内单调递增，所以这一句是幂等的）
+    S.scene = sceneForRun(S.run);
+
+    // 小猫支线：补算关页面期间（12 小时封顶、50% 效率），不自动购买
+    if(S.cat){
+      if(!S.cat.lv || typeof S.cat.lv !== 'object') S.cat.lv = {};
+      if(typeof S.cat.ip !== 'number') S.cat.ip = 0;
+      if(typeof S.cat.total !== 'number') S.cat.total = 0;
+      const last = S.cat.last || now();
+      const dt = Math.min(12 * 3600, (now() - last) / 1000);
+      if(dt > 60){
+        const got = catRate() * dt * 0.5;
+        S.cat.ip += got;
+        S.cat.total += got;
+      }
+      S.cat.last = now();
+    }
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------- 离线收益 ---------- */
+/* 主线离线：上限与效率都靠小猫支线升 */
+function offlineCapH(){ return 8 + 4 * clv('c9'); }
+function offlineEff(){ return Math.min(0.80, 0.50 + 0.05 * clv('c10')); }
+
+function offline(){
+  if(!S.last) return;
+  const dt = Math.min(offlineCapH() * 3600, (now() - S.last)/1000);
+  if(dt < 60) return;
+  const r = rate();
+  if(r <= 0) return;
+  const eff = offlineEff();
+  const got = r * dt * eff;
+  gain(got);
+  addStab(-dt * 0.002); // 无人值守，稳定性略降
+  log('离开了 ' + Math.round(dt/60) + ' 分钟，屋子自己跑了 ' + fmt(got) +
+      ' 能量（' + Math.round(eff*100) + '% 效率）。', 'hot');
+}
+
+/* 小猫离线：猫不会因为屋子空了就停下。
+ * 主线一局只有 3–20 分钟，如果鱼干只在局内产，猫永远长不起来 ——
+ * 所以离场这段时间也照常结算，上限是 CAT_OFFLINE_MIN 分钟。 */
+function offlineCat(){
+  if(!S.cat || !S.cat.last) return;
+  const dtMin = Math.min(CAT_OFFLINE_MIN, (now() - S.cat.last) / 60000);
+  if(dtMin < 1) return;
+  const g = catRate() * dtMin * 60;
+  if(g <= 0) return;
+  S.cat.ip += g;
+  S.cat.total += g;
+  log('猫在你不在的时候逛了一圈，叼回来 ' + Math.round(g) + ' 条鱼干。', 'hot');
+}
+
+/* ============================================================
+   像素场景
+   ============================================================ */
+const W=192, H=108;
+const sceneCv = $('scene');
+const sctx = sceneCv.getContext('2d');
+sctx.imageSmoothingEnabled = false;
+
+const off = document.createElement('canvas');
+off.width=W; off.height=H;
+const octx = off.getContext('2d');
+octx.imageSmoothingEnabled = false;
+
+let anim = [];   // 动画元素
+
+function R(g,x,y,w,h,c){ g.fillStyle=c; g.fillRect(x|0,y|0,w|0,h|0); }
+function line(g,x0,y0,x1,y1,c){
+  g.fillStyle=c;
+  let dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+  let sx=x0<x1?1:-1, sy=y0<y1?1:-1, err=dx-dy;
+  let x=x0, y=y0;
+  for(let i=0;i<400;i++){
+    g.fillRect(x|0,y|0,1,1);
+    if(x===x1 && y===y1) break;
+    const e2=err*2;
+    if(e2 > -dy){ err-=dy; x+=sx; }
+    if(e2 < dx){ err+=dx; y+=sy; }
+  }
+}
+function glow(g,cx,cy,r,c1,c2){
+  const lg=g.createRadialGradient(cx,cy,2,cx,cy,r);
+  lg.addColorStop(0,c1); lg.addColorStop(1,c2);
+  g.fillStyle=lg; g.fillRect(cx-r,cy-r,r*2,r*2);
+}
+function vig(g,a){
+  const vg=g.createRadialGradient(96,56,34,96,56,124);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,'+a+')');
+  g.fillStyle=vg; g.fillRect(0,0,W,H);
+}
+
+/* ---------- 猫：矢量贴图 ---------- */
+/* 在 1× 分辨率下直接绘制曲线，再靠 CSS 的 pixelated 放大，线条不会糊 */
+const CAT_SKIN = {fur:'#f8f1e5', line:'#241e2a', ear:'#e8a2ac', nose:'#d98f8f'};
+
+// 小猫：直接用素材包里的像素猫（原图朝右，绘制时水平翻转）
+const CAT_PNG = {
+  sit: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAyklEQVR4nJ2TsRHDIAxFv+hcu/QqWSoLZJWs4NojZIoUpjMtlEqRCBOCBJd35/Mhie8vnQx8YGaGQS/vyiKtuJfPQgAQ1w0+JHADHxLiulmGTiEAWOYJAOBD+npLvAsz837ElpmM5E2RksvtaZ41MUdENOb7jVpfWxce13uzNbM9EdTm1J3PiIgmVrtzben+hwHkvRt203JVx2io9woi+rnnxOIIUleKSEydkSVe/kLLPJ271ZqTdt6PmJ/SWd7Sf2elJsv9qHfF4gXsWNrsDQpYlQAAAABJRU5ErkJggg==',
+  loaf: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAQCAYAAAD52jQlAAAA0UlEQVR4nJ1TsRGDMAx801FTskqWygJZJStQM0KmSBHfkbuYdDid0sRCYAvb+QaQ8PP/EsAPREQ4QK4v0cgD2sFcP0kKAMswwjoPSsA6j2UYS4WupADQdy0AwDq/uYZ6FYiIHq8lJZIR+sWEEqfL/fA5hci+McaUOnq+P6qwpNK9/dv5GtmfZk/T7Mui0Yj39aPcJTFP3zqvTrnvWt6EEjT5V7bQyMOHOYZau7k6Tz4K+g8HIT62v1+t1Kpp1mW9ZkUBrH+etC/vmbiKFXpMUuEXE5DSRBb3lNwAAAAASUVORK5CYII='
+};
+const CAT_H = {sit:18, loaf:16, walk:18};
+const CAT_PRELOAD = {};
+for(const k in CAT_PNG){ const im = new Image(); im.src = CAT_PNG[k]; CAT_PRELOAD[k] = im; }
+
+function catSprite(pose, closed){
+  return CAT_PRELOAD[CAT_PNG[pose] ? pose : 'sit'];
+}
+
+const CAT_IMG = {};
+
+// 把环境色烘进精灵：白猫在昏黄屋子里不能是纯白，否则像贴上去的
+function tintSprite(img, color){
+  const w = img.width || 18, h = img.height || 18;
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const c = cv.getContext('2d');
+  c.imageSmoothingEnabled = false;
+  c.drawImage(img, 0, 0);
+  c.globalCompositeOperation = 'source-atop';
+  c.fillStyle = color;
+  c.fillRect(0, 0, w, h);
+  cv.__src = img.src;      // 给离屏渲染器留的标记
+  cv.__tint = color;
+  return cv;
+}
+
+// 三档环境色：越往后（讲堂、陈列馆）屋子里越亮，猫也跟着亮
+const CAT_TINTS = ['rgba(58,38,20,0.46)','rgba(76,56,34,0.30)','rgba(102,82,56,0.16)'];
+
+function catLit(){
+  if(S.scene < 4) return 0;
+  const d = sceneDetail();
+  return d < 0.34 ? 0 : (d < 0.67 ? 1 : 2);
+}
+
+function catImage(pose, closed, lit){
+  const L = lit || 0;
+  const k = pose + (closed ? '_c' : '') + '_' + L;
+  if(!CAT_IMG[k]){
+    const raw = catSprite(pose, closed);
+    // 贴图没加载完就先返回原图，别把空画布缓存下来
+    if(!raw || !raw.complete || !raw.naturalWidth) return raw;
+    CAT_IMG[k] = tintSprite(raw, CAT_TINTS[L]);
+  }
+  return CAT_IMG[k];
+}
+
+/* 放一只猫，并登记眨眼 / 尾巴（y 沿用旧点阵的基线，底部对齐） */
+function drawCatImg(g, img, x, y, noShadow){
+  const w = img.width || 18, h = img.height || 18;
+  // 落地投影：压住猫，别让它飘在桌面上（卧在窝里时不画，窝本身就是承托）
+  if(!noShadow){
+  g.save();
+  g.fillStyle = 'rgba(0,0,0,.48)';
+  g.beginPath();
+  g.ellipse(x + w * 0.5, y + h - 2, w * 0.50, 2.6, 0, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
+  }
+  // 原图朝右，绘制时水平翻转
+  g.save();
+  g.translate(x + w, y);
+  g.scale(-1, 1);
+  g.drawImage(img, 0, 0);
+  g.restore();
+}
+
+function putCat(g, x, y, pose, sc, inBed){
+  const oldH = pose === 'loaf' ? 7 : pose === 'walk' ? 12 : 14;
+  const img = catImage(pose, false, catLit());
+  const h = CAT_H[pose] || 18;
+  const ox = x + 8 - Math.round((img.width || 18)/2), oy = y + oldH - h;
+  drawCatImg(g, img, ox, oy, !!inBed);
+  anim.push({type:'cat', pose, img, ox, oy, inBed: !!inBed,
+             nextBlink: 1600 + Math.random()*3000, blinkUntil: 0,
+             tailPhase: Math.random()*6.28});
+}
+
+/* ============================================================
+   场景绘制
+   —— 只画环境，不画人。
+   —— d 是本周目的"家当程度"（0~1），同一场景内加小件；
+      换大件（整场景切换）由 S.scene 决定。
+   ============================================================ */
+
+function wear(g, n, seed){
+  let s = seed;
+  for(let i=0;i<n;i++){
+    s = (s*1103515245 + 12345) & 0x7fffffff;
+    const x = s % W;
+    s = (s*1103515245 + 12345) & 0x7fffffff;
+    const y = s % 76;
+    R(g, x, y, 1, 1, '#1d1712');
+  }
+}
+
+/* 每个场景几个猫待着的地方，刷新时随机挑一个 */
+const CAT_SPOTS = [
+  [ {x:150,y:66,pose:'sit'},  {x:38,y:66,pose:'sit'},  {x:156,y:91,pose:'loaf',bed:1} ],
+  [ {x:150,y:66,pose:'sit'},  {x:38,y:66,pose:'sit'},  {x:156,y:91,pose:'loaf',bed:1} ],
+  [ {x:150,y:66,pose:'sit'},  {x:36,y:74,pose:'sit'},  {x:156,y:92,pose:'loaf',bed:1} ],
+  [ {x:38,y:66,pose:'sit'},   {x:152,y:66,pose:'sit'}, {x:156,y:92,pose:'loaf',bed:1} ],
+  [ {x:64,y:68,pose:'sit'},   {x:26,y:68,pose:'sit'},  {x:156,y:93,pose:'loaf',bed:1} ],
+  [ {x:150,y:68,pose:'sit'},  {x:70,y:68,pose:'sit'},  {x:156,y:93,pose:'loaf',bed:1} ]
+];
+const catPick = [];
+function catSpot(){
+  const i = S.scene;
+  if(catPick[i] === undefined) catPick[i] = Math.floor(Math.random() * CAT_SPOTS[i].length);
+  return CAT_SPOTS[i][catPick[i]];
+}
+/* 猫窝：浅口藤篮 + 垫子 */
+// 猫窝的档次：随场景推进，越往后越讲究
+function bedTier(){
+  const base = Math.floor(S.scene / 2);                  // 0,0,1,1,2,2
+  return Math.min(2, base + (sceneDetail() > 0.65 ? 1 : 0));
+}
+
+function drawBowl(g, x, y){
+  // 猫饭碗：浅碟 + 里面一点吃的
+  R(g, x,   y+3, 11, 3, '#7a6248');
+  R(g, x+1, y+3, 9, 1, '#a8895f');
+  R(g, x+2, y+1, 7, 2, '#3f3a34');
+  R(g, x+3, y+1, 5, 1, '#c0a279');
+  R(g, x+4, y+2, 3, 1, '#8a6a45');
+  R(g, x+1, y+6, 9, 1, '#3a2d22');
+}
+
+function drawBed(g, cx, by){
+  const x = Math.round(cx) - 15;
+  const tier = bedTier();
+
+  // 篮底
+  R(g, x+3, by+7, 24, 3, '#3a2d22');
+  // 篮身（前低后高的浅口）
+  R(g, x+1, by+4, 28, 4, '#6a5235');
+  R(g, x+1, by+4, 28, 1, '#8a6a45');
+  R(g, x+2, by+8, 26, 1, '#4a3a2c');
+  // 篮口
+  R(g, x,   by+3, 30, 2, '#8a6a45');
+  R(g, x,   by+3, 30, 1, '#a07c52');
+  // 垫子
+  R(g, x+3, by,   24, 3, '#a88a62');
+  R(g, x+5, by+1, 20, 2, '#c0a279');
+
+  // 第二级：旁边多一只饭碗
+  if(tier >= 1) drawBowl(g, x - 13, by + 2);
+
+  // 第三级：篮沿搭一条毯子，脚边一个球
+  if(tier >= 2){
+    R(g, x+6,  by+4, 11, 4, '#8a4040');
+    R(g, x+6,  by+4, 11, 1, '#a55252');
+    R(g, x+6,  by+7, 11, 1, '#6a3030');
+    R(g, x+18, by+5, 5, 5, '#c9a227');
+    R(g, x+19, by+4, 3, 1, '#e0c060');
+    R(g, x+19, by+9, 3, 1, '#a8851f');
+  }
+}
+function drawCatIn(g){
+  // 窝一直在，猫不在的时候也摆在那儿
+  const bed = CAT_SPOTS[S.scene].find(s => s.bed);
+  if(bed) drawBed(g, bed.x + 8, bed.y + 2);
+  const sp = catSpot();
+  putCat(g, sp.x, sp.y, sp.pose, 1, !!sp.bed);
+}
+
+/* ---------------- 场景 0/1：出租屋 ---------------- */
+function drawRoom(g, d, detail){
+  R(g,0,0,W,H,'#181310');
+  // 墙
+  R(g,0,0,W,80,'#2b2119');
+  for(let x=0;x<W;x+=12) R(g,x,0,1,80,'#241b14');
+  for(let y=8;y<70;y+=15) for(let x=7;x<W;x+=15) R(g,x,y,1,1,'#33271d');
+  wear(g, 26, 7);
+  // 护墙板
+  R(g,0,66,W,12,'#241c15');
+  R(g,0,66,W,1,'#3a2d22');
+  for(let x=0;x<W;x+=12) R(g,x,67,1,11,'#1b1510');
+
+  // 地板（提亮一层，能看出木条）
+  R(g,0,78,W,H-78,'#2a2019');
+  R(g,0,78,W,1,'#4a3a2c');
+  for(let i=1;i<6;i++){ const y=78+i*6; R(g,0,y,W,1,'#1f1811'); }
+  for(let i=0;i<9;i++){ const x=i*24+6; line(g,x,79,x-14,H,'#191309'); }
+  for(let i=0;i<30;i++) R(g,(i*37)%W, 82+((i*13)%24), 3,1,'#332619');
+
+  // 窗
+  R(g,10,12,44,34,'#3d3229');
+  R(g,12,14,40,30,'#121a26');
+  R(g,32,14,1,30,'#3d3229'); R(g,12,29,40,1,'#3d3229');
+  const sky = ['#1b2740','#22304a','#2a3a52'];
+  for(let i=0;i<3;i++) R(g,12,14+i*10,40,10,sky[i]);
+  R(g,20,22,2,2,'#e8c88a'); R(g,43,18,1,1,'#a8b4c8');
+  R(g,26,34,1,1,'#8a94a8'); R(g,38,26,1,1,'#8a94a8');
+  // 窗台 + 书
+  R(g,8,46,48,3,'#4c3b2d');
+  R(g,9,44,3,2,'#8a4a3a'); R(g,12,43,3,3,'#4a5a7a'); R(g,15,44,2,2,'#8a6a45');
+  R(g,40,44,4,2,'#6a5a45');
+
+  // 挂钟：木壳 + 方形表盘 + 摆锤窗
+  R(g,148,7,18,26,'#3a2d20');
+  R(g,150,9,14,22,'#4c3b2d');
+  R(g,150,9,14,1,'#5c4a38');
+  R(g,150,9,1,22,'#5c4a38');
+  // 表盘
+  R(g,152,11,10,10,'#d8cfbb');
+  R(g,152,11,10,1,'#e6ddc9');
+  // 刻度
+  R(g,156,12,1,1,'#a89e88'); R(g,156,19,1,1,'#a89e88');
+  R(g,153,15,1,1,'#a89e88'); R(g,160,15,1,1,'#a89e88');
+  // 指针
+  R(g,156,13,1,3,'#3b3339');
+  R(g,157,15,3,1,'#3b3339');
+  R(g,156,15,1,1,'#8a2f22');
+  // 摆锤窗
+  R(g,152,22,10,7,'#241c15');
+  R(g,156,23,1,4,'#7a5a20');
+  R(g,154,26,5,3,'#c9a227');
+
+  // 门
+  R(g,158,34,34,44,'#3b2f26');
+  R(g,160,36,30,40,'#4a3b2e');
+  R(g,160,36,30,1,'#5c4a38');
+  R(g,186,54,2,3,'#c9a227');
+
+  // 左桌：演算纸（有字）、书摞、墨水瓶、笔
+  R(g,10,60,70,4,'#5a4535'); R(g,10,60,70,1,'#6e5442');
+  R(g,14,64,3,16,'#4a3a2c'); R(g,74,64,3,16,'#4a3a2c');
+  // 底下一张（露边）
+  R(g,17,58,28,3,'#b8ad95');
+  // 上面一张
+  R(g,16,51,28,8,'#ded4bf'); R(g,16,51,28,1,'#f0e7d4'); R(g,16,51,1,8,'#c9bda4');
+  // 三行字：每行断成三段，读起来像字
+  for(let i=0;i<3;i++){
+    const y=53+i*2;
+    R(g,19,y,7,1,'#3f2f1f'); R(g,28,y,5,1,'#3f2f1f'); R(g,35,y,6,1,'#3f2f1f');
+  }
+  // 书摞
+  R(g,49,55,17,3,'#7a3b32'); R(g,49,55,17,1,'#8d4a40');
+  R(g,50,58,15,2,'#3f4a63');
+  // 墨水瓶
+  R(g,69,56,5,4,'#22262e'); R(g,70,55,3,1,'#3a4048');
+  // 笔搁在墨水瓶上
+  R(g,74,55,1,5,'#3a4048'); R(g,75,54,1,2,'#e8e0cc');
+
+  // 右桌 + 煤油灯
+  R(g,108,60,66,4,'#5a4535'); R(g,108,60,66,1,'#6e5442');
+  R(g,112,64,3,16,'#4a3a2c'); R(g,168,64,3,16,'#4a3a2c');
+  R(g,119,57,28,3,'#b8ad95');
+  R(g,118,50,28,8,'#ded4bf'); R(g,118,50,28,1,'#f0e7d4'); R(g,118,50,1,8,'#c9bda4');
+  for(let i=0;i<3;i++){
+    const y=52+i*2;
+    R(g,121,y,7,1,'#3f2f1f'); R(g,130,y,6,1,'#3f2f1f'); R(g,138,y,5,1,'#3f2f1f');
+  }
+  // 第二张（斜一点）
+  R(g,148,55,12,5,'#cfc6b0'); R(g,148,55,12,1,'#e6ddc9');
+  R(g,150,57,8,1,'#3f2f1f'); R(g,151,59,6,1,'#3f2f1f');
+  R(g,146,56,6,6,'#2b2f3a'); R(g,147,55,4,1,'#4a4f5c');
+  R(g,152,52,1,8,'#d8cfbb');
+
+  // 煤油灯
+  R(g,92,54,10,6,'#4a3a28');
+  R(g,93,46,8,9,'#6a5a48');
+  R(g,94,47,6,8,'#8a7a58');
+  R(g,95,41,4,6,'#ffe9b0');
+  R(g,96,42,2,4,'#fff6d0');
+  anim.push({type:'bulb', x:97, y:41});
+  glow(g,97,44,58,'rgba(255,206,120,.26)','rgba(255,206,120,0)');
+
+  // 箱子、凳子
+  R(g,84,70,18,11,'#8a6a45'); R(g,84,70,18,1,'#a07c52'); R(g,88,75,10,1,'#6a5235');
+  if(d > 0.12){ R(g,86,62,14,8,'#8a6a45'); R(g,86,62,14,1,'#a07c52'); }
+  if(d > 0.3){
+    R(g,55,70,12,12,'#7a5c3c'); R(g,55,70,12,1,'#916f49');
+    R(g,140,74,10,9,'#4a3a2c'); R(g,140,74,10,1,'#5c4a38');  // 矮凳
+  }
+  if(d > 0.2){
+    // 桌上多一叠纸
+    R(g,30,58,10,2,'#cfc6b0'); R(g,30,56,10,2,'#e0d8c4');
+    // 墙上多一张钉着的草图（挪到黑板和挂钟之间，不再压住钟）
+    R(g,116,15,22,17,'#3a2d20');
+    R(g,118,17,18,13,'#cfc6b0');
+    R(g,120,20,14,1,'#8a7d6a'); R(g,120,23,10,1,'#8a7d6a'); R(g,122,26,7,1,'#8a7d6a');
+    R(g,126,10,2,6,'#3d3229');
+  }
+
+  if(detail){
+    // 黑板
+    R(g,58,14,52,30,'#241f1a');
+    R(g,59,15,50,28,'#26291f');
+    R(g,58,44,52,3,'#4a3a2c');
+    for(let i=0;i<5;i++) R(g,63,20+i*4,8+i*7,1,'#cfd8c4');
+    R(g,63,40,20,1,'#c96a5a'); R(g,88,40,14,1,'#8ab0c8');
+    // 电流计
+    R(g,140,48,18,12,'#3a3428');
+    R(g,141,49,16,10,'#d8cfbb');
+    R(g,148,53,1,5,'#8a2f22');
+    anim.push({type:'needle', x:148, y:50, h:7, c:'#2b2620'});
+  }
+
+  drawCatIn(g);
+  vig(g,.55);
+}
+
+/* ---------------- 场景 2：工坊 ---------------- */
+function drawWorkshop(g, d){
+  R(g,0,0,W,H,'#15100e');
+  // 砖墙
+  R(g,0,0,W,80,'#2a1f1a');
+  for(let y=0;y<80;y+=6){
+    const off = (y/6)%2 ? 8 : 0;
+    for(let x=-8;x<W;x+=16) R(g,x+off,y,15,5,'#332620');
+  }
+  wear(g, 20, 31);
+
+  // 铁横梁
+  R(g,0,8,W,5,'#3a3230'); R(g,0,8,W,1,'#4a423f');
+  for(let x=4;x<W;x+=22) R(g,x,9,2,3,'#2a2422');
+
+  // 传动轴 + 皮带轮
+  R(g,0,20,W,3,'#4a423f');
+  for(const px of [24,70,118,164]){
+    R(g,px-4,15,8,13,'#5a504a');
+    R(g,px-4,15,8,1,'#6e625a');
+    R(g,px-1,15,2,13,'#3a3230');
+    line(g,px,16,px+18,54,'#3a3128');
+    line(g,px+1,16,px+19,54,'#3a3128');
+  }
+
+  // 齿轮
+  function gear(cx,cy,r,teeth,col){
+    for(let i=0;i<teeth;i++){
+      const a = i/teeth*Math.PI*2;
+      R(g, Math.round(cx+Math.cos(a)*r), Math.round(cy+Math.sin(a)*r*0.9), 3,3, col);
+    }
+    for(let a=0;a<Math.PI*2;a+=0.08) R(g, Math.round(cx+Math.cos(a)*r*0.72), Math.round(cy+Math.sin(a)*r*0.65), 2,2, '#3a3028');
+    R(g, cx-3, cy-3, 7,7, '#2a2420');
+    R(g, cx-1, cy-1, 3,3, '#55493f');
+  }
+  gear(38,54,15,10,'#4a403a');
+  gear(84,60,11,8,'#443a34');
+  if(d > 0.25) gear(124,56,13,9,'#4a403a');
+
+  // 蒸汽管
+  R(g,168,10,6,62,'#3f4a46');
+  R(g,168,10,1,62,'#55615c');
+  R(g,164,18,14,4,'#4a5651');
+  R(g,166,40,10,10,'#2f3835');
+  for(let i=0;i<8;i++){ const a=i/8*Math.PI*2; R(g,169+Math.round(Math.cos(a)*5),45+Math.round(Math.sin(a)*5),2,2,'#5a6661'); }
+
+  // 铁地板
+  R(g,0,80,W,H-80,'#2a2521');
+  R(g,0,80,W,1,'#4a403a');
+  for(let x=0;x<W;x+=24){ R(g,x,80,1,H-80,'#1b1714'); }
+  for(let y=86;y<H;y+=8) for(let x=6;x<W;x+=24) R(g,x,y,1,1,'#3f3833');
+  for(let i=0;i<16;i++) R(g,20+i*11,86+(i%4)*5,4,1,'#211c19');
+
+  // 高窗
+  R(g,8,26,26,18,'#3a3028');
+  R(g,10,28,22,14,'#2a3a4a');
+  R(g,21,28,1,14,'#3a3028'); R(g,10,35,22,1,'#3a3028');
+
+  // 工作台
+  R(g,92,60,76,4,'#6a5238'); R(g,92,60,76,1,'#7d6244');
+  R(g,96,64,4,16,'#4a3a2c'); R(g,160,64,4,16,'#4a3a2c');
+  R(g,101,58,22,2,'#b8ad95');
+  R(g,100,52,22,7,'#ded4bf'); R(g,100,52,22,1,'#f0e7d4');
+  for(let i=0;i<3;i++){
+    const y=54+i*2;
+    R(g,103,y,6,1,'#3f2f1f'); R(g,111,y,5,1,'#3f2f1f'); R(g,117,y,3,1,'#3f2f1f');
+  }
+  R(g,124,56,10,4,'#3a3428');
+  // 铁砧
+  R(g,138,52,10,4,'#3a3a42'); R(g,140,56,6,4,'#2e2e36');
+
+  // 墙角挂灯：家当越多，烧得越亮
+  if(d > 0.1){
+    R(g,154,34,6,4,'#5a504a'); R(g,156,32,2,2,'#c9a227');
+  }
+  if(d > 0.18){
+    R(g,146,46,16,16,'#3a3428');
+    R(g,147,47,14,14,'#d8cfbb');
+    R(g,154,50,1,8,'#8a2f22');
+    anim.push({type:'needle', x:154, y:51, h:7, c:'#2b2620'});
+  }
+  // 添了两根竖着的管子
+  if(d > 0.3){
+    R(g,12,44,8,12,'#3a3428');
+    R(g,14,46,4,8,'#5a504a');
+    R(g,36,48,6,10,'#3a3428');
+    R(g,38,50,4,6,'#5a504a');
+  }
+  if(d > 0.4){
+    // 木桶
+    R(g,58,66,14,16,'#6a4f34'); R(g,58,66,14,1,'#7d5f40');
+    R(g,58,70,14,1,'#3f2f20'); R(g,58,76,14,1,'#3f2f20');
+    // 煤堆
+    R(g,22,74,26,8,'#1d1a18'); R(g,26,72,16,3,'#242120'); R(g,30,70,8,2,'#2b2725');
+    // 地上散落的零件
+    R(g,48,90,5,4,'#3a3428'); R(g,76,92,4,3,'#3a3428');
+  }
+  // 墙上挂的图纸框
+  if(d > 0.6){
+    R(g,140,36,12,8,'#2a2420'); R(g,142,38,8,4,'#d8cfbb');
+  }
+
+  drawCatIn(g);
+  vig(g,.6);
+}
+
+/* ---------------- 场景 3：市中心 · 工业博览会 ---------------- */
+function drawExpo(g, d){
+  R(g,0,0,W,H,'#12100f');
+  // 拱顶
+  R(g,0,0,W,66,'#1e1a17');
+  g.fillStyle='#241f1b';
+  g.beginPath(); g.moveTo(0,42); g.quadraticCurveTo(96,2,192,42); g.lineTo(192,66); g.lineTo(0,66); g.closePath(); g.fill();
+  for(let i=1;i<9;i++){ const x=i*22; line(g,x,42-Math.sin(i/9*Math.PI)*30,x,66,'#2e2823'); }
+  for(let j=1;j<3;j++){ const y=46+j*7; R(g,0,y,W,1,'#2e2823'); }
+
+  // 吊灯
+  for(const lx of [36,96,156]){
+    R(g,lx,18,1,16,'#3a322c');
+    R(g,lx-5,34,11,3,'#4a4038');
+    R(g,lx-3,37,7,3,'#ffe9b0');
+    anim.push({type:'bulb', x:lx, y:38});
+    glow(g,lx,40,36,'rgba(255,214,140,.20)','rgba(255,214,140,0)');
+  }
+
+  // 石地：近大远小
+  R(g,0,80,W,H-80,'#26221f');
+  R(g,0,80,W,1,'#463f38');
+  for(let i=0;i<4;i++){
+    const y = 80 + i*7;
+    R(g,0,y,W,1,'#332e29');
+    const step = 16 + i*8;
+    for(let x=-step;x<W;x+=step) R(g,x,y,1,7,'#332e29');
+  }
+  // 中央地毯（带透视，越近越宽）
+  g.fillStyle='#3f2424';
+  g.beginPath(); g.moveTo(76,82); g.lineTo(116,82); g.lineTo(136,H); g.lineTo(56,H); g.closePath(); g.fill();
+  g.fillStyle='#5e3636';
+  g.beginPath(); g.moveTo(78,84); g.lineTo(114,84); g.lineTo(132,H-2); g.lineTo(60,H-2); g.closePath(); g.fill();
+  g.fillStyle='#3f2424';
+  g.beginPath(); g.moveTo(86,88); g.lineTo(106,88); g.lineTo(118,H-8); g.lineTo(74,H-8); g.closePath(); g.fill();
+
+  // 展柜
+  function case_(cx, w, h, y){
+    R(g,cx,y+h-4,w,4,'#4a3f33');
+    R(g,cx,y+h-4,w,1,'#5d5044');
+    R(g,cx+1,y+6,w-2,1,'#7a7268');
+    R(g,cx+1,y+6,1,h-10,'#7a7268');
+    R(g,cx+w-2,y+6,1,h-10,'#7a7268');
+    R(g,cx+3,y+h-14,w-6,4,'#3a3a44');
+    R(g,cx+5,y+h-20,w-10,6,'#5a5a66');
+    R(g,cx+6,y+h-22,w-12,2,'#c9a227');
+    anim.push({type:'bulb', x:cx+(w>>1), y:y+h-16});
+    glow(g,cx+(w>>1),y+h-16,22,'rgba(255,240,200,.14)','rgba(255,240,200,0)');
+  }
+  case_(22, 40, 32, 46);
+  case_(76, 40, 32, 42);
+  if(d > 0.2) case_(130, 40, 32, 46);
+
+  // 围栏绳
+  for(const px of [10,96,182]){ R(g,px,66,2,14,'#6a5a48'); R(g,px-1,64,4,3,'#c9a227'); }
+  R(g,10,70,172,1,'#6a5a48');
+
+  if(d > 0.35){
+    R(g,150,24,20,14,'#2a2a30');
+    R(g,151,25,18,12,'#d8cfbb');
+    R(g,153,28,14,1,'#8a7d6a'); R(g,153,31,10,1,'#8a7d6a');
+  }
+
+  drawCatIn(g);
+  vig(g,.5);
+}
+
+/* ---------------- 场景 4：学会 · 二层讲堂 ---------------- */
+function drawHall(g, d){
+  R(g,0,0,W,H,'#141110');
+  R(g,0,0,W,82,'#2a231d');
+  for(let x=0;x<W;x+=16) R(g,x,0,1,82,'#231d18');
+  for(const px of [0,60,132,190]){
+    R(g,px,0,6,82,'#332a22');
+    R(g,px,0,1,82,'#3f342a');
+    R(g,px,0,6,4,'#443830');
+  }
+  for(const wx of [10,150]){
+    R(g,wx,10,32,34,'#3a3228');
+    R(g,wx+2,12,28,30,'#1a2636');
+    R(g,wx+16,12,1,30,'#3a3228'); R(g,wx+2,26,28,1,'#3a3228');
+    glow(g,wx+16,30,46,'rgba(200,220,255,' + (0.10 + 0.18*d).toFixed(2) + ')','rgba(200,220,255,0)');
+  }
+  // 黑板
+  R(g,52,12,88,36,'#3a3028');
+  R(g,54,14,84,32,'#20241d');
+  R(g,52,48,88,3,'#4a3a2c');
+  for(let i=0;i<4;i++) R(g,60,20+i*6,20+i*12,1,'#cfd8c4');
+  R(g,60,44,26,1,'#c96a5a'); R(g,96,44,18,1,'#8ab0c8');
+
+  // 讲台
+  R(g,78,56,36,4,'#5a4535'); R(g,78,56,36,1,'#6e5442');
+  R(g,84,60,24,18,'#4a3a2c'); R(g,84,60,24,1,'#5c4a38');
+  R(g,90,51,12,7,'#ded4bf'); R(g,90,51,12,1,'#f0e7d4');
+  R(g,92,53,8,1,'#3f2f1f'); R(g,92,55,6,1,'#3f2f1f'); R(g,94,57,4,1,'#3f2f1f');
+
+  // 地板
+  R(g,0,82,W,H-82,'#241d18');
+  R(g,0,82,W,1,'#4a3a2c');
+  for(let x=0;x<W;x+=20) R(g,x,83,1,H-83,'#1a1410');
+  // 中间走道
+  R(g,86,82,20,H-82,'#2e241c');
+  R(g,86,82,1,H-82,'#3f3226'); R(g,105,82,1,H-82,'#3f3226');
+
+  // 长椅：有椅背，成排
+  function bench(y, w){
+    const x = (W-w)>>1;
+    R(g,x,y,w,4,'#4a3527'); R(g,x,y,w,1,'#5e4433');        // 坐板
+    R(g,x,y+4,w,1,'#2e2018');
+    R(g,x,y-7,w,3,'#3f2e22'); R(g,x,y-7,w,1,'#4d392b');    // 椅背
+    R(g,x+2,y-7,2,7,'#352619');
+    R(g,x+w-4,y-7,2,7,'#352619');
+    R(g,x+4,y+5,3,5,'#352619'); R(g,x+w-7,y+5,3,5,'#352619');
+  }
+  bench(86, 88);
+  bench(96, 76);
+  if(d > 0.2) bench(106, 60);
+  if(d > 0.45){ R(g,20,18,18,14,'#332a22'); R(g,21,19,16,12,'#cfc6b0'); R(g,24,23,10,1,'#8a7d6a'); }
+
+  // 侧墙壁灯：人越多越多一盏
+  if(d > 0.12){
+    R(g,8,40,8,5,'#3a3228');
+    R(g,10,41,4,3,'#5a504a');
+  }
+  if(d > 0.25){
+    R(g,176,40,8,5,'#3a3228');
+    R(g,178,41,4,3,'#5a504a');
+  }
+  // 走道两侧的扶手
+  if(d > 0.35){
+    R(g,50,110,92,2,'#2a1f1a');
+    R(g,56,108,8,2,'#3a3228'); R(g,128,108,8,2,'#3a3228');
+  }
+  // 后墙上一排冷光
+  if(d > 0.5){
+    R(g,44,90,3,10,'#4a403a');
+    R(g,145,90,3,10,'#4a403a');
+    glow(g,46,92,12,'rgba(200,220,255,0.08)','rgba(200,220,255,0)');
+    glow(g,147,92,12,'rgba(200,220,255,0.08)','rgba(200,220,255,0)');
+  }
+  // 顶上的两盏壁灯
+  if(d > 0.65){
+    R(g,30,12,8,3,'#3a3028'); R(g,32,10,4,2,'#c9a227');
+    R(g,154,12,8,3,'#3a3028'); R(g,156,10,4,2,'#c9a227');
+  }
+
+  drawCatIn(g);
+  vig(g,.55);
+}
+
+/* ---------------- 场景 5：永动轮陈列馆 ---------------- */
+function drawMuseum(g, d){
+  R(g,0,0,W,H,'#0f0d0c');
+  // 穹顶
+  R(g,0,0,W,72,'#1a1714');
+  g.fillStyle='#211d19';
+  g.beginPath(); g.moveTo(0,56); g.quadraticCurveTo(96,0,192,56); g.lineTo(192,72); g.lineTo(0,72); g.closePath(); g.fill();
+  for(let i=1;i<7;i++){ const y=12+i*8; R(g,0,y,W,1,'#282320'); }
+  for(let i=1;i<9;i++){ const x=i*22; line(g,x,6,x,72,'#282320'); }
+
+  // 天窗光柱
+  R(g,78,10,36,10,'#3e4a52');
+  glow(g,96,16,74,'rgba(220,235,255,' + (0.18 + 0.30*d).toFixed(2) + ')','rgba(220,235,255,0)');
+  R(g,74,20,44,58,'rgba(220,235,255,.045)');
+
+  // 墙裙
+  R(g,0,72,W,10,'#241f1b');
+  R(g,0,72,W,1,'#3a322c');
+
+  // 地面：抛光石地
+  R(g,0,82,W,H-82,'#221d19');
+  R(g,0,82,W,1,'#463c33');
+  for(let i=1;i<5;i++) R(g,0,82+i*6,W,1,'#1a1613');
+  for(let i=0;i<8;i++) line(g,i*26,82,i*26-16,H,'#171310');
+  R(g,64,84,64,18,'rgba(201,162,39,.06)');
+
+  // 中央展台
+  R(g,60,72,72,10,'#3a322c'); R(g,60,72,72,1,'#514740');
+  R(g,70,82,52,4,'#2e2823');
+
+  // 永动轮：轮圈 + 轮毂（辐条在动画里转）
+  function ring(cx,cy,r,col){
+    for(let a=0;a<Math.PI*2;a+=0.012){
+      const x=Math.round(cx+Math.cos(a)*r);
+      const y=Math.round(cy+Math.sin(a)*r*0.55);
+      R(g,x,y,1,1,col);
+    }
+  }
+  ring(96,50,30,'#8a6d24');
+  ring(96,50,29,'#d8b45a');
+  R(g,92,46,9,9,'#c9a227');
+  R(g,94,48,5,5,'#3a322c');
+  // 支架
+  R(g,58,50,4,22,'#4a403a'); R(g,130,50,4,22,'#4a403a');
+  R(g,56,48,8,4,'#5a504a'); R(g,128,48,8,4,'#5a504a');
+  anim.push({type:'wheel', x:96, y:50, r:28, sp:0.7});
+
+  // 展柜
+  function vitrine(cx){
+    R(g,cx,58,26,26,'#2a2420');
+    R(g,cx,58,26,1,'#3f3833');
+    R(g,cx+2,60,22,17,'#20242c');
+    R(g,cx+4,62,18,13,'rgba(200,220,255,.10)');
+    // 玻璃反光
+    for(let i=0;i<10;i++) R(g,cx+5+i,62+i,1,1,'rgba(220,235,255,.16)');
+    // 柜里的东西
+    R(g,cx+9,70,8,2,'#8a7d6a');
+    R(g,cx+10,66,6,4,'#c9a227');
+    R(g,cx+11,64,4,2,'#8a6d24');
+    R(g,cx+7,74,12,2,'#3a3630');
+    anim.push({type:'bulb', x:cx+13, y:64});
+  }
+  vitrine(8); vitrine(158);
+  if(d > 0.3) vitrine(36);
+
+  // 铭牌
+  R(g,84,88,24,7,'#4a4038'); R(g,85,89,22,5,'#c9a227');
+  R(g,89,91,14,1,'#3b3339');
+
+  drawCatIn(g);
+  vig(g,.62);
+}
+
+function drawScene(){
+  anim = [];
+  octx.clearRect(0,0,W,H);
+  const d = sceneDetail();
+  if(S.scene === 0) drawRoom(octx, d, false);
+  else if(S.scene === 1) drawRoom(octx, d, true);
+  else if(S.scene === 2) drawWorkshop(octx, d);
+  else if(S.scene === 3) drawExpo(octx, d);
+  else if(S.scene === 4) drawHall(octx, d);
+  else drawMuseum(octx, d);
+  /* 日间照明交给 CSS 滤镜（[data-theme="day"] .scene canvas），
+     不在这里盖白——场景是按夜色画的美术，盖白会把整张图洗掉。 */
+}
+
+// 本周目"家当程度"：设备总级数折算成 0~1，用来在同一场景里加小件
+function sceneDetail(){
+  let n = 0;
+  for(const u of HER) n += lv(u.id);
+  for(const u of ALV) n += lv(u.id);
+  for(const u of CAT) n += lv(u.id);
+  return Math.min(1, n / 60);
+}
+
+/* 每帧：底图 + 动画 */
+function paintScene(tms){
+  sctx.clearRect(0,0,W,H);
+  sctx.drawImage(off,0,0);
+  const t = tms/1000;
+  for(const a of anim){
+    if(a.type === 'cat'){
+      const tt = tms;
+      if(tt > a.nextBlink){ a.blinkUntil = tt + 130; a.nextBlink = tt + 2200 + Math.random()*4200; }
+      const closed = tt < a.blinkUntil;
+      const img = closed ? catImage(a.pose, true, catLit()) : a.img;
+      drawCatImg(sctx, img, a.ox, a.oy, a.inBed);
+    } else if(a.type === 'bulb'){
+      const f = 0.82 + Math.sin(t*3.1)*0.05 + Math.sin(t*11)*0.03;
+      sctx.globalAlpha = 1;
+      glow(sctx, a.x, a.y+3, 40, 'rgba(255,214,140,'+(0.10*f)+')', 'rgba(255,214,140,0)');
+    } else if(a.type === 'wave'){
+      for(let i=0;i<a.w;i++){
+        const v = Math.sin(t*3 + i*.8)*1.6;
+        sctx.fillStyle = '#5fe0a0';
+        sctx.fillRect(a.x+i, (a.y + Math.round(v))|0, 1, 1);
+      }
+    } else if(a.type === 'needle'){
+      const v = Math.round(Math.sin(t*2.2)*2 + Math.sin(t*9.1)*0.6);
+      sctx.fillStyle = a.c;
+      sctx.fillRect(a.x, a.y + v, 1, a.h);
+    } else if(a.type === 'wheel'){
+      const ang = t * (a.sp || 0.6);
+      for(let k=0;k<10;k++){
+        const th = ang + k*Math.PI/5;
+        sctx.fillStyle = k%2 ? '#b8912f' : '#d8b45a';
+        for(let r=3;r<a.r;r++){
+          const x = Math.round(a.x + Math.cos(th)*r);
+          const y = Math.round(a.y + Math.sin(th)*r*0.55);
+          sctx.fillRect(x,y,1,1);
+        }
+      }
+      sctx.fillStyle = '#e8dcc8';
+      sctx.fillRect(a.x-2, a.y-2, 4, 3);
+    } else if(a.type === 'led'){
+      if(a.skip) continue;
+      const on = (Math.sin(t*2 + (a.x+a.y)*0.7) > -0.3);
+      sctx.fillStyle = on ? a.c : '#16202a';
+      sctx.fillRect(a.x, a.y, 2, 2);
+    } else if(a.type === 'code'){
+      for(let i=0;i<7;i++){
+        const w = 8 + ((i*7 + Math.floor(t*1.5))%3)*5;
+        sctx.fillStyle = 'rgba(95,224,160,'+(0.55+0.3*Math.sin(t*2+i))+')';
+        sctx.fillRect(a.x, a.y+i*2, Math.min(w, a.w), 1);
+      }
+    } else if(a.type === 'win'){
+      const on = Math.sin(t*1.4 + a.x*0.3) > -0.2;
+      if(!on){ sctx.fillStyle='#222c3a'; sctx.fillRect(a.x,a.y,4,4); }
+    } else if(a.type === 'beacon'){
+      const on = Math.sin(t*2.4) > 0;
+      sctx.fillStyle = on ? '#ff5a4a' : '#5a2a26';
+      sctx.fillRect(a.x, a.y, 3, 2);
+      if(on) glow(sctx, a.x+1, a.y+1, 16, 'rgba(255,90,74,.22)', 'rgba(255,90,74,0)');
+    }
+  }
+  // 环境光：底图和猫都画完之后统一罩一层，两者才在同一个光下
+  sctx.save();
+  sctx.globalAlpha = 1;
+  const litBoost = (S.scene >= 4) ? 0.10 * sceneDetail() : 0;
+  sctx.fillStyle = 'rgba(255,196,128,' + (0.045 + litBoost).toFixed(3) + ')';
+  sctx.fillRect(0, 0, W, H);
+  sctx.restore();
+  sctx.globalAlpha = 1;
+}
+
+/* ============================================================
+   UI 渲染
+   ============================================================ */
+let shopRefs = [];
+let shopGroup = 'her';
+function renderShop(){
+  const box = $('shopList');
+  box.replaceChildren();
+  shopRefs = [];
+
+  function addSection(title){
+    const d = document.createElement('div');
+    d.className = 'sec'; d.textContent = title;
+    box.appendChild(d);
+  }
+  function addRow(u, kind){
+    const row = document.createElement('div');
+    row.className = 'row';
+    const info = document.createElement('div');
+    info.className = 'info';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = u.name;
+    const em = document.createElement('em');
+    em.textContent = '';
+    nm.appendChild(em);
+    const ds = document.createElement('div');
+    ds.className = 'ds';
+    ds.textContent = u.desc;
+    info.append(nm, ds);
+    const btn = document.createElement('button');
+    btn.className = 'buy';
+    btn.innerHTML = '<span>0</span><small>Lv.0</small>';
+    btn.onclick = () => buy(u.id);
+    row.append(info, btn);
+    box.appendChild(row);
+    shopRefs.push({u, row, btn, nm, em, ds, kind});
+  }
+
+  const g = shopGroup;
+  if(g === 'all' || g === 'her'){
+    addSection('赫尔曼 · 机构与演算');
+    for(const u of HER) addRow(u,'her');
+  }
+  if(g === 'all' || g === 'alv'){
+    addSection('阿尔瓦 · 传热与稳定');
+    for(const u of ALV) addRow(u,'alv');
+  }
+  if(g === 'all' || g === 'cat'){
+    if(g === 'cat' && S.cat){
+      const er = document.createElement('button');
+      er.className = 'catenter';
+      er.innerHTML = '进入小猫的小鱼工厂<small>鱼干 ' + fmt(S.cat.ip) +
+        ' · 每秒 ' + fmt(catRate()) + '</small>';
+      er.onclick = openCatView;
+      box.appendChild(er);
+    }
+    addSection('小猫 · 全局加成');
+    for(const u of CAT) addRow(u,'cat');
+  }
+
+  addSection('永动轮');
+  addFinalRow(box);
+
+  updateShop();
+}
+
+function updateShop(){
+  updateFinal();
+  for(const r of shopRefs){
+    const u = r.u, c = priceOf(u), L = lv(u.id);
+    const maxed = u.max && L >= u.max;
+    r.btn.querySelector('span').textContent = maxed ? '已满级' : fmt(c);
+    r.btn.querySelector('small').textContent = 'Lv.' + L + (u.max ? '/' + u.max : '');
+    r.btn.disabled = maxed || S.ip < c;
+    r.row.classList.toggle('max', !!maxed);
+    // 描述只在等级变化时重写，别每 0.1 秒刷一遍 innerHTML
+    if(r.lastLv !== L){
+      r.lastLv = L;
+      if(r.kind === 'her'){
+        r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">+' + fmt(u.val*1) + ' 产出</span> <span class="dn" style="white-space:nowrap">+发热</span>';
+      } else if(r.kind === 'alv'){
+        r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">+' + fmt(u.val) + ' 散热</span>';
+      } else {
+        r.ds.innerHTML = u.desc + ' <span class="up" style="white-space:nowrap">×' + u.val + '</span>';
+      }
+    }
+  }
+}
+
+
+function renderSceneCaption(){
+  const s = SCENES[S.scene];
+  $('sceneName').textContent = s.name;
+  $('sceneDesc').textContent = s.desc;
+  // 进度条 = 本周目上限的完成度（场景改由本周目进度驱动，不再按设备价格）
+  const fill = $('tierFill');
+  fill.style.width = (S.capRun > 0 ? Math.min(100, S.run / S.capRun * 100) : 0) + '%';
+}
+
+function renderLog(){
+  const box = $('logBox');
+  if(!box) return;
+  box.replaceChildren();
+  for(const e of S.log.slice(0,60)){
+    const p = document.createElement('p');
+    const tm = document.createElement('time');
+    const d = new Date(e.t);
+    tm.textContent = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    p.appendChild(tm);
+    const sp = document.createElement('span');
+    if(e.cls) sp.className = e.cls;
+    sp.textContent = e.text;
+    p.appendChild(sp);
+    box.appendChild(p);
+  }
+}
+
+const SHELF_GROUP = [
+  {t:'时间',   k:'time'},
+  {t:'手上',   k:'taps'},
+  {t:'夜里',   k:'nights'},
+  {t:'主线',   k:'all'},
+  {t:'赫尔曼', k:'her'},
+  {t:'阿尔瓦', k:'alv'},
+  {t:'小猫',   k:'cat'}
+];
+
+function renderShelf(){
+  const box = $('shelfList');
+  box.replaceChildren();
+
+  // 成就：拿到了才出现在最上面
+  for(const a of ACH){
+    if(S.ach.indexOf(a.id) < 0) continue;
+    const d = document.createElement('div');
+    d.className = 'item open';
+    const ico = document.createElement('div');
+    ico.className = 'ico'; ico.textContent = a.icon;
+    const tx = document.createElement('div');
+    tx.className = 'tx';
+    const tn = document.createElement('div');
+    tn.className = 'tn'; tn.textContent = a.name;
+    const td = document.createElement('div');
+    td.className = 'td'; td.textContent = a.desc;
+    tx.append(tn, td); d.append(ico, tx); box.appendChild(d);
+  }
+
+  const got = ITEMS.filter(it => S.items.indexOf(it.id) >= 0).length;
+
+  for(const g of SHELF_GROUP){
+    const list = ITEMS.filter(it => it.kind === g.k);
+    if(!list.length) continue;
+    const n = list.filter(it => S.items.indexOf(it.id) >= 0).length;
+
+    const head = document.createElement('div');
+    head.className = 'sec';
+    head.style.marginTop = '14px';
+    head.textContent = g.t + ' · ' + n + '/' + list.length;
+    box.appendChild(head);
+
+    for(const it of list){
+      const open = S.items.indexOf(it.id) >= 0;
+      const d = document.createElement('div');
+      d.className = 'item' + (open ? ' open' : '');
+      const ico = document.createElement('div');
+      ico.className = 'ico';
+      ico.textContent = open ? it.icon : '·';
+      const tx = document.createElement('div');
+      tx.className = 'tx';
+      const tn = document.createElement('div');
+      tn.className = 'tn';
+      tn.textContent = open ? it.name : '？？？';
+      const td = document.createElement('div');
+      td.className = 'td';
+      td.textContent = open ? '点开看看批注' : shelfLabel(it);
+      tx.append(tn, td);
+      if(!open){
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const fill = document.createElement('i');
+        const pct = Math.min(100, shelfValue(it.kind) / it.need * 100);
+        fill.style.width = pct.toFixed(1) + '%';
+        bar.appendChild(fill);
+        tx.appendChild(bar);
+      }
+      if(open){
+        const note = document.createElement('div');
+        note.className = 'note';
+        note.innerHTML = '<p><b>阿尔瓦：</b>' + it.a + '</p><p><b>赫尔曼：</b>' + it.h + '</p>';
+        tx.appendChild(note);
+        d.onclick = () => d.classList.toggle('show');
+      }
+      d.append(ico, tx);
+      box.appendChild(d);
+    }
+  }
+
+  const foot = document.createElement('div');
+  foot.className = 'sec';
+  foot.style.marginTop = '14px';
+  foot.style.textAlign = 'center';
+  foot.textContent = '共 ' + got + ' / ' + ITEMS.length;
+  box.appendChild(foot);
+}
+
+function renderRebirth(){
+  const g = fragGain();
+  const capped = reachedCap();
+  $('fragTotal').textContent = S.frag;
+
+  const pct = S.capRun > 0 ? Math.min(100, S.run / S.capRun * 100) : 0;
+  let info = '第 ' + S.cycle + ' 周目 · 上限 ' + fmt(S.capRun) + '（已到 ' + pct.toFixed(1) + '%）';
+  if(capped){
+    info += '<br>守了 ' + Math.round(cycleMinutes()) + ' 分钟' +
+            ' · 储存 ' + fmt(S.capRun) +
+            ' → <b style="color:#c9a0d0">' + g + '</b> 片记忆碎片';
+  } else {
+    info += '<br>这一夜还没到头。';
+  }
+  if(S.challenge){
+    info += '<br><span style="color:#c9a0d0">挑战进行中 · 不要碰永动轮</span>';
+  }else if(S.challengeReady && S.snapshot){
+    let n = 0;
+    if(S.snapshot.cat && S.snapshot.cat.lv) for(const k in S.snapshot.cat.lv) n += S.snapshot.cat.lv[k];
+    info += '<br>挑战快照：碎片 ' + S.snapshot.frag + ' · 小猫 ' + n + ' 级（在设置里重新挑战）';
+  }
+  $('reInfo').innerHTML = info;
+
+  const btn = $('reBtn');
+  btn.style.display = (S.seenBad && !S.challenge) ? '' : 'none';
+  btn.disabled = !(capped && g > 0 && S.seenBad);
+  $('reSub').textContent = (capped && g > 0)
+    ? ('换取 ' + g + ' 片 · 全局 +' + (g * FRAG_PER * 100).toFixed(0) + '%')
+    : '这一夜还没到头';
+  const cg = $('catGo');
+  if(cg) cg.style.display = canUnlockCat() ? '' : 'none';
+  const ch = $('catHidden');
+  if(ch) ch.style.display = canUnlockCatHidden() ? '' : 'none';
+}
+
+/* 事件 */
+/* ============================================================
+   小猫的小鱼工厂
+   ============================================================ */
+const CW = 192, CH = 108;
+let catCv = null, catCtx = null, catOff = null, catOffCtx = null;
+let catFish = [];          // 需要摆动的鱼
+
+function catWorldTier(){
+  let n = 0;
+  for(const u of CATSUB) if(!u.util) n += clv(u.id);
+  return n >= 30 ? 3 : n >= 16 ? 2 : n >= 6 ? 1 : 0;
+}
+
+function drawCatWorld(){
+  if(!catCv){
+    catCv = $('catScene');
+    if(!catCv) return;
+    catCtx = catCv.getContext('2d');
+    catCtx.imageSmoothingEnabled = false;
+    catOff = document.createElement('canvas');
+    catOff.width = CW; catOff.height = CH;
+    catOffCtx = catOff.getContext('2d');
+    catOffCtx.imageSmoothingEnabled = false;
+  }
+  const g = catOffCtx;
+  const tier = catWorldTier();
+  catFish = [];
+
+  g.clearRect(0, 0, CW, CH);
+  R(g,0,0,CW,CH,'#100e0c');
+
+  // 砖墙
+  R(g,0,0,CW,76,'#241d18');
+  for(let y=0;y<76;y+=6){
+    const off = (y/6)%2 ? 8 : 0;
+    for(let x=-8;x<CW;x+=16) R(g,x+off,y,15,5,'#2c231d');
+  }
+  // 墙根
+  R(g,0,70,CW,6,'#1c1712');
+
+  // 石板地
+  R(g,0,76,CW,CH-76,'#1b1613');
+  R(g,0,76,CW,1,'#3d3128');
+  for(let x=0;x<CW;x+=14) R(g,x,77,1,CH-77,'#141110');
+  for(let y=82;y<CH;y+=7) for(let x=(y%14?7:0);x<CW;x+=14) R(g,x,y,6,4,'#221c17');
+
+  // 串灯：从左上斜拉到右
+  for(let i=0;i<4;i++){
+    const x = 22 + i*46, y = 12 + Math.round(Math.sin(i*1.1)*3);
+    R(g,x,y,1,10,'#3a3229');
+    R(g,x-3,y+10,7,3,'#4a4038');
+    R(g,x-1,y+13,3,3,'#ffe0a0');
+  }
+  glow(g,96,10,120,'rgba(255,190,120,.10)','rgba(255,190,120,0)');
+
+  // 晾鱼架（tier>=1）
+  if(tier >= 1){
+    R(g,26,34,3,44,'#4a3a2c');
+    R(g,96,34,3,44,'#4a3a2c');
+    R(g,24,34,76,3,'#5a4634');
+    R(g,24,34,76,1,'#6d5540');
+    R(g,24,52,76,2,'#4a3a2c');
+    for(let i=0;i<4;i++){
+      catFish.push({x:34 + i*18, y:38, len:8});
+    }
+  }
+
+  // 木箱堆（tier 越高越多）
+  R(g,120,60,26,18,'#6a4f34'); R(g,120,60,26,1,'#7d5f40'); R(g,124,66,18,1,'#503b26');
+  if(tier >= 1){
+    R(g,124,44,20,16,'#6a4f34'); R(g,124,44,20,1,'#7d5f40');
+    R(g,148,52,22,16,'#5c4530'); R(g,148,52,22,1,'#70563c');
+  }
+  if(tier >= 2){
+    R(g,10,58,18,20,'#5c4530'); R(g,10,58,18,1,'#70563c');
+    // 木桶
+    R(g,100,62,14,16,'#6a4f34'); R(g,100,62,14,1,'#7d5f40');
+    R(g,100,66,14,1,'#3f2f20'); R(g,100,74,14,1,'#3f2f20');
+  }
+  if(tier >= 3){
+    // 招牌
+    R(g,150,18,30,16,'#4a3a2c'); R(g,151,19,28,14,'#c9a227');
+    R(g,155,23,20,2,'#4a3a2c'); R(g,155,28,12,2,'#4a3a2c');
+    R(g,163,34,2,10,'#4a3a2c');
+    // 吊着的鱼串
+    for(let i=0;i<3;i++) catFish.push({x:58+i*9, y:55, len:7});
+  }
+
+  // 挂在架子上的灯（tier>=1）
+  if(tier >= 1){
+    R(g,22,34,4,4,'#3a3229');
+    R(g,20,38,8,3,'#4a4038');
+    R(g,22,41,4,4,'#ffe0a0');
+    glow(g,24,43,34,'rgba(255,200,120,.20)','rgba(255,200,120,0)');
+  }
+
+  // 地上摊着的鱼干（tier>=2）：细长、朝一边、带尾巴
+  if(tier >= 2){
+    const pile = [[13,84],[19,88],[26,83],[21,92],[29,89]];
+    for(const [px,py] of pile){
+      R(g,px,py,8,2,'#9aa6ad');          // 身子
+      R(g,px+8,py-1,1,4,'#7d888f');      // 尾
+      R(g,px+8,py,1,2,'#9aa6ad');
+      R(g,px+1,py,1,1,'#b8c2c8');        // 背光
+      R(g,px+5,py+1,1,1,'#2b2620');      // 眼
+    }
+  }
+  // 猫罐头（tier>=1）
+  if(tier >= 1){
+    R(g,152,72,10,7,'#8a8f96');
+    R(g,152,72,10,1,'#c2c7cd');
+    R(g,153,74,8,3,'#c96a5a');
+    R(g,154,75,6,1,'#e8a48f');
+    R(g,152,78,10,1,'#6d737a');
+  }
+  // 毛线球（tier>=2）
+  if(tier >= 2){
+    R(g,44,84,8,8,'#a86a8a');
+    R(g,45,83,6,1,'#c484a4');
+    R(g,43,87,1,1,'#c484a4');
+    R(g,52,89,1,1,'#c484a4');
+    R(g,45,85,2,1,'#8e5573');
+  }
+  // 第二罐罐头 + 第二个毛线球（tier>=3）
+  if(tier >= 3){
+    R(g,164,68,9,6,'#8a8f96');
+    R(g,164,68,9,1,'#c2c7cd');
+    R(g,165,70,7,2,'#c96a5a');
+    R(g,54,76,7,7,'#8a6a9a');
+    R(g,55,75,5,1,'#a884b8');
+  }
+
+  // 箱子上的账本（一直有）
+  R(g,126,56,12,4,'#d8cfbb'); R(g,126,56,12,1,'#e6ddc9');
+  R(g,128,58,8,1,'#3f2f1f');
+
+  // 猫：坐在右边箱子上
+  const img = catImage('sit', false, 1);
+  if(img && img.__src !== undefined){
+    const cx = 122, cy = 42;
+    g.save();
+    g.fillStyle = 'rgba(0,0,0,.22)';
+    g.beginPath();
+    g.ellipse(cx + 10, cy + 17, 7, 1.5, 0, 0, Math.PI*2);
+    g.fill();
+    g.restore();
+    g.save();
+    g.translate(cx + (img.width||18), cy);
+    g.scale(-1, 1);
+    g.drawImage(img, 0, 0);
+    g.restore();
+  }
+
+  vig(g, .58);
+  paintCatWorld(performance.now());
+}
+
+function paintCatWorld(tms){
+  if(!catCtx || !catOff) return;
+  const t = tms / 1000;
+  catCtx.clearRect(0, 0, CW, CH);
+  catCtx.drawImage(catOff, 0, 0);
+
+  // 灯串呼吸
+  catCtx.save();
+  catCtx.fillStyle = 'rgba(255,214,140,' + (0.05 + 0.03*Math.sin(t*1.7)).toFixed(3) + ')';
+  catCtx.fillRect(0, 0, CW, 40);
+  catCtx.restore();
+
+  // 挂着的鱼干：细条、尾巴朝上、头朝下
+  for(const f of catFish){
+    const sway = Math.sin(t * 1.6 + f.x * 0.2) * 1.0;
+    const x = Math.round(f.x + sway);
+    const len = f.len || 8;
+
+    // 吊线
+    catCtx.fillStyle = '#3a3229';
+    catCtx.fillRect(f.x, f.y - 5, 1, 5);
+
+    // 尾鳍（上，分叉）
+    catCtx.fillStyle = '#7d888f';
+    catCtx.fillRect(x - 1, f.y, 1, 2);
+    catCtx.fillRect(x + 1, f.y, 1, 2);
+
+    // 身子：2px 宽、细长
+    catCtx.fillStyle = '#9aa6ad';
+    catCtx.fillRect(x, f.y + 1, 1, len);
+    catCtx.fillRect(x + 1, f.y + 2, 1, len - 2);
+
+    // 背上一道亮
+    catCtx.fillStyle = '#b8c2c8';
+    catCtx.fillRect(x, f.y + 1, 1, 2);
+
+    // 头（下，略收）
+    catCtx.fillStyle = '#8e99a0';
+    catCtx.fillRect(x, f.y + len, 1, 1);
+
+    // 眼
+    catCtx.fillStyle = '#2b2620';
+    catCtx.fillRect(x + 1, f.y + 3, 1, 1);
+  }
+}
+
+/* ---------- 小猫支线界面 ---------- */
+let catRefs = [];
+
+function renderCat(){
+  const box = $('catList');
+  if(!box || !S.cat) return;
+  box.replaceChildren();
+  catRefs = [];
+  for(const u of CATSUB){
+    const row = document.createElement('div');
+    row.className = 'row';
+    const info = document.createElement('div');
+    info.className = 'info';
+    const nm = document.createElement('div');
+    nm.className = 'nm';
+    nm.textContent = u.name;
+    const em = document.createElement('em');
+    em.textContent = '';
+    nm.appendChild(em);
+    const ds = document.createElement('div');
+    ds.className = 'ds';
+    ds.textContent = u.desc;
+    info.append(nm, ds);
+    const btn = document.createElement('button');
+    btn.className = 'buy';
+    btn.onclick = () => buyCat(u.id);
+    row.append(info, btn);
+    box.appendChild(row);
+    catRefs.push({u, row, btn, em});
+  }
+  updateCat();
+}
+
+function updateCat(){
+  if(!S.cat) return;
+  $('catIp').textContent = fmt(S.cat.ip);
+  $('catLine').innerHTML = '每秒 <b>' + fmt(catRate()) + '</b> · 累计 ' + fmt(S.cat.total) +
+    ' · 主线产出 +' + (3 * clv('c13')) + '% · 储存 ×' + Math.pow(CAT_STASH_MULT, clv('c11')).toFixed(1) + ''
+    '<br>主线离线：' + offlineCapH() + ' 小时 · ' + Math.round(offlineEff()*100) + '% 效率';
+  for(const r of catRefs){
+    const u = r.u, L = clv(u.id), c = catPrice(u), maxed = !!u.max && L >= u.max;
+    r.btn.innerHTML = '<span>' + (maxed ? '已满' : fmt(c)) + '</span><small>Lv.' + L +
+      (u.max ? '/' + u.max : '') + '</small>';
+    r.btn.disabled = maxed || S.cat.ip < c;
+    r.row.classList.toggle('max', maxed);
+    r.em.textContent = u.util
+      ? (u.id === 'c9'  ? ' ' + offlineCapH() + ' 小时'
+        : u.id === 'c10' ? ' ' + Math.round(offlineEff()*100) + '%'
+        : u.id === 'c11' ? ' ×' + Math.pow(1.5, L).toFixed(1)
+        : u.id === 'c13' ? ' +' + (3 * L) + '%'
+        : ['关', '自动买产线', '＋囤货', '＋带回来的'][L] || '关')
+      : ' +' + u.val + '/级';
+  }
+}
+
+function renderSet(){
+  const hasCh = !!S.challengeReady;
+  $('setChSec').style.display = hasCh ? '' : 'none';
+  const btn = $('setChallenge');
+  btn.style.display = hasCh ? '' : 'none';
+  if(!hasCh) return;
+  if(S.challenge){
+    btn.disabled = true;
+    btn.innerHTML = '挑战进行中 · 不要碰永动轮';
+    return;
+  }
+  btn.disabled = false;
+  const sn = S.snapshot;
+  let n = 0;
+  if(sn && sn.cat && sn.cat.lv) for(const k in sn.cat.lv) n += sn.cat.lv[k];
+  btn.innerHTML = '重新挑战<small>' + (sn
+    ? '快照：碎片 ' + sn.frag + ' · 小猫 ' + n + ' 级 · 主线从第一夜重来'
+    : '主线和碎片重来一次，小猫进度保留') + '</small>';
+}
+function openSet(){ $('setView').classList.add('on'); document.body.style.overflow = 'hidden'; renderSet(); }
+function closeSet(){ $('setView').classList.remove('on'); document.body.style.overflow = ''; }
+
+function exportSave(){
+  try{
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lab_idle_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('已导出存档');
+  }catch(e){ toast('导出失败'); }
+}
+function importSave(file){
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(String(r.result));
+      if(!d || typeof d !== 'object' || typeof d.ip !== 'number') throw new Error('bad');
+      wiping = false;
+      localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+      location.reload();
+    }catch(e){ toast('这不是有效的存档文件'); }
+  };
+  r.readAsText(file);
+}
+
+/* 开始挑战：进入前先整份存快照，主线归零 */
+function startChallenge(){
+  if(S.challenge || !S.challengeReady) return;
+  if(!confirm('进入挑战模式？\n\n主线会被清空，碎片和小猫保持你现在的进度。\n这一局里不要碰永动轮，也不要结束这一夜，直到小猫把所有人送上好结局。\n\n通关后会把现在的存档原样盖回来。')) return;
+  const sn = S.snapshot;
+  if(sn) S.frag = sn.frag || 0;
+  saveSnapshot();               // 整份存档进快照
+  S.challenge = true;
+  S.restorePending = true;
+  resetRun();
+  closeSet();
+  log('你把这一夜重新摆回原样。猫看了一眼门，没有走。——挑战开始。', 'hot');
+  toast('挑战开始');
+  save();
+}
+
+function openCatView(){
+  if(!S.cat) return;
+  $('catView').classList.add('on');
+  document.body.style.overflow = 'hidden';
+  renderCat(); drawCatWorld();
+}
+function closeCatView(){
+  $('catView').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+/* 解锁：第 10 周目起（也就是重置过 9 次之后），在「结束这一夜」界面里出现。
+ * 猫有九条命 —— 前九次重置它都不在，第九次之后它才出现。 */
+// 小猫入口有两条，干的是同一件事：普通路线（第十夜起）和硬核路线（守满 8 小时）。
+// 硬核一旦解锁就把普通那条收起来，别让玩家看见两个一样的按钮。
+const CAT_UNLOCK_CYCLE = 10;
+function canUnlockCat(){ return !S.cat && S.cycle >= CAT_UNLOCK_CYCLE && !S.hiddenCatReady; }
+function canUnlockCatHidden(){ return !S.cat && S.hiddenCatReady; }
+function catOffered(){ return canUnlockCat() || canUnlockCatHidden(); }
+
+function openHiddenCat(){
+  if(S.cat || !S.hiddenCatReady) return;
+  playCards([
+    {t:'猫还坐在门口', b:'跟它出去走走',
+     d:'天快亮了。这一夜你什么都没做成，也没有按下那个开关。\n猫站起来，尾巴扫过门槛。'},
+    {t:'街上', d:'它走得比平常慢，像在等你。\n拐过两个路口，是一排你不认识的屋顶。'},
+    {t:'', d:'它在这个城市里，有一整片自己的地方。'}
+  ], () => {
+    S.cat = { ip: 0, lv: {}, total: 0, last: now(), on: true };
+    S.hiddenCat = true;
+    log('你没有让这一夜结束。猫带你看了它的地盘。——硬核路线开始。','hot');
+    toast('解锁 · 小猫（隐藏）');
+    renderCat(); renderRebirth();
+    save();
+  });
+}
+
+function openCatLine(){
+  if(!canUnlockCat()) return;
+  playCards([
+    {t:'猫甩了甩尾巴', b:'跟出去', d:'猫在门边停了一下，回头看了一眼那盏灯。'},
+    {t:'街上', d:'天还没亮。猫沿着墙根走，尾巴抬得很高。'},
+    {t:'', d:'从这一夜起，猫有自己的一摊事了。'}
+  ], () => {
+    S.cat = {ip:0, lv:{}, total:0, last:now(), on:true};
+    endFinale();
+    log('猫甩了甩尾巴，走出了门。它开始有自己的账本了。', 'hot');
+    toast('解锁 · 小猫');
+    renderCat(); renderRebirth();
+    save();
+  });
+}
+
+let evTimer = 0, evCur = null, evClose = null;
+
+function scheduleEvent(){
+  evTimer = now() + (110 + Math.random()*70) * 1000;
+}
+
+// 抽一张事件卡（里程碑与结局过场也走这里）
+function presentEvent(ev, onClose){
+  evCur = ev;
+  evClose = onClose || null;
+  S.evtOpen = true;
+  $('evTitle').textContent = ev.title;
+  $('evDesc').textContent = ev.desc;
+  const opts = $('evOpts');
+  opts.replaceChildren();
+  ev.opts.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<b>' + (i+1) + '</b>' + o.label +
+      '<br><span style="color:#8a7d6a;font-size:10.5px">' + o.sub + '</span>';
+    b.onclick = () => resolveEvent(i);
+    opts.appendChild(b);
+  });
+  $('event').classList.add('on');
+}
+
+function resolveEvent(i){
+  if(!S.evtOpen) return;
+  S.evtOpen = false;
+  $('event').classList.remove('on');
+  S.battles += 1;
+  const o = evCur && evCur.opts[i];
+  if(o && o.run) o.run();
+  const cb = evClose;
+  evClose = null; evCur = null;
+  save();
+  if(cb){ cb(); return; }
+  scheduleEvent();
+}
+
+// 随机事件：只在当前场景的池子里抽，本周目不重复；小猫事件（stage -1）全阶段可出
+function openEvent(){
+  if(S.evtOpen || reachedCap()) return;
+  const pool = EVENTS.filter(e =>
+    !S.seenEv.includes(e.id) && (e.stage === S.scene || e.stage === -1));
+  if(!pool.length) return;
+  const ev = pool[Math.floor(Math.random() * pool.length)];
+  S.seenEv.push(ev.id);
+  presentEvent(ev);
+}
+
+// 里程碑：满足条件即触发，跨周目只来一次
+function checkMilestones(){
+  if(S.evtOpen) return;
+  for(const m of MILESTONES){
+    if(m.manual || S.milestones.includes(m.id)) continue;
+    let hit = false;
+    try{ hit = !!m.when(); }catch(e){ hit = false; }
+    if(!hit) continue;
+    S.milestones.push(m.id);
+    presentEvent(m);
+    return;
+  }
+}
+
+
+/* ============================================================
+   主循环
+   ============================================================ */
+let lastT = performance.now();
+let acc = 0, uiAcc = 0;
+let paintedScene = -1;
+
+function tick(dt){
+  syncCap();   // 储存上限跟着散热比 / 碎片实时走
+
+  // 隐藏：第一周目硬守 8 小时，不碰永动轮，猫会自己找上门
+  if(!S.hiddenCatReady && !S.cat && S.cycle === 1 && !S.fx && cycleMinutes() >= HIDDEN_MIN){
+    S.hiddenCatReady = true;
+    log('猫从桌上跳下来，走到门口坐下，又回头看了你一眼。','hot');
+    toast('有什么不一样了');
+    renderRebirth();
+    save();
+  }
+
+  // 在线时长（只算页面开着的时候）
+  S.secs += dt;
+
+  // 稳定性：向「散热比决定的平衡点」缓动，限速 ±3 %/s。
+  //
+  // 旧写法是 stab += (散热 - 发热) * 1.5 * dt —— 用绝对差当 %/s，
+  // 后期散热涨到几千时一帧就回满，稳定条恒定 100，等于没有这个系统。
+  // 现在改成「当前值朝目标值收敛」，上限天然被限速吃掉。
+  const stabTarget = 100 / (1 + Math.pow(Math.max(1e-6, coolRatio()), -STAB_SLOPE));
+  const dStab = stabTarget - S.stab;
+  S.stab = Math.max(0, Math.min(100, S.stab + Math.max(-3, Math.min(3, dStab * 1.2)) * dt));
+
+  // 产出
+  const r = rate();
+  if(r > 0) gain(r * dt);
+
+  // buff 清理
+  if(S.buffs.length){
+    const t = now();
+    S.buffs = S.buffs.filter(b => b.until > t);
+  }
+
+  // 技能冷却
+  for(const k in S.cd) if(S.cd[k] > 0) S.cd[k] = Math.max(0, S.cd[k] - dt);
+
+  // 成就：按行为累计，只在达标那一刻喊一声
+  if(S.nights >= 20)  awardAch('nights20');
+  if(S.nights >= 40)  awardAch('nights40');
+  if(S.taps >= 1000) awardAch('tap1000');
+  if(SHELF_CAT_N() >= 40) awardAch('cat40');
+  if(S.secs >= 86400) awardAch('pole');
+  if(S.secs >= 259200) awardAch('weekly');
+  if(S.secs >= 604800) awardAch('month');
+  if(clv('c12') >= 3) awardAch('auto3');
+
+  // 收藏解锁：按行为累计，不只按能量
+  for(const it of ITEMS){
+    if(S.items.includes(it.id)) continue;
+    if(shelfValue(it.kind) >= it.need){
+      S.items.push(it.id);
+      log('收藏室多了一件东西：' + it.name, 'hot');
+      toast('解锁 · ' + it.name);
+      renderShelf();
+    }
+  }
+
+  // 场景：本周目内按累计能量推进，重启归 0
+  const sc = sceneForRun(S.run);
+  if(sc > S.scene) S.scene = sc;
+
+  autoDrive(dt);
+
+  // 小猫支线：并行产出，不受周目影响
+  if(S.cat){
+    const g = catRate() * dt;
+    S.cat.ip += g;
+    S.cat.total += g;
+    S.cat.last = now();
+  }
+
+  // 里程碑（跨周目只触发一次）
+  checkMilestones();
+
+  // 事件（封顶后不再打扰）
+  if(!atCap() && !S.evtOpen && now() > evTimer && S.run > 5000) openEvent();
+}
+
+function renderUI(){
+  $('ip').textContent = fmt(S.ip);
+  $('unitLbl').textContent = '/ ' + fmt(storageMax());
+  const r = rate();
+  $('rateLine').innerHTML = '每秒 <b>' + fmt(r) + '</b> · 稳定性系数 ×' + stabFactor().toFixed(2) +
+    (buffMult() > 1 ? ' · 加成 ×' + buffMult().toFixed(2) : '');
+  const pct = S.stab;
+  $('stabVal').textContent = Math.round(pct) + '%';
+  const bar = $('stabBar');
+  $('stabFill').style.width = pct + '%';
+  bar.className = 'bar' + (pct < 20 ? ' danger' : pct < 45 ? ' warn' : '');
+  $('heatLine').textContent = '发热 ' + heat().toFixed(1) + ' / 散热 ' + alvaRate().toFixed(1) +
+    ' · 比 ×' + coolRatio().toFixed(2);
+
+  // 技能
+  const cdMax = {ab1:14, ab2:40, ab3:70};
+  for(const k in cdMax){
+    const b = $(k);
+    const left = S.cd[k];
+    b.disabled = left > 0;
+    b.querySelector('.cd').style.width = (left/cdMax[k]*100) + '%';
+    const sub = b.querySelector('small');
+    if(left > 0) sub.textContent = Math.ceil(left) + ' 秒';
+    else sub.textContent = k==='ab1' ? '立刻 8 秒产出' : k==='ab2' ? '稳定性 +22' : '20 秒 ×2.5';
+  }
+
+  updateEndNight();
+  if(paintedScene !== S.scene){ paintedScene = S.scene; drawScene(); }
+  updateCapBanner();
+  updateShop();
+  renderSceneCaption();
+  if($('tab-re').style.display !== 'none') renderRebirth();
+  if($('catView').classList.contains('on')) updateCat();
+}
+
+function loop(tms){
+  const dt = Math.min(0.5, (tms - lastT)/1000);
+  lastT = tms;
+  tick(dt);
+  paintScene(tms);
+  if($('catView').classList.contains('on')) paintCatWorld(tms);
+  uiAcc += dt;
+  if(uiAcc > 0.1){ uiAcc = 0; renderUI(); }
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   交互
+   ============================================================ */
+function doAbility(k){
+  if(S.cd[k] > 0) return;
+  S.taps += 1;
+  if(k === 'ab1'){
+    const g = Math.max(10, rate()*8);
+    gain(g);
+    addStab(-8);
+    S.cd[k] = 14;
+    toast('+' + fmt(g) + ' 能量');
+  } else if(k === 'ab2'){
+    addStab(22);
+    S.cd[k] = 40;
+    toast('稳定性 +22');
+  } else if(k === 'ab3'){
+    buff(2.5, 20);
+    S.cd[k] = 70;
+    toast('20 秒内产出 ×2.5');
+  }
+}
+
+function switchTab(name){
+  for(const b of document.querySelectorAll('.tabs button'))
+    b.classList.toggle('on', b.dataset.tab === name);
+  for(const t of ['shop','shelf','re','log'])
+    $('tab-' + t).style.display = (t === name ? '' : 'none');
+  if(name === 'shelf') renderShelf();
+  if(name === 're') renderRebirth();
+  if(name === 'log') renderLog();
+}
+
+/* 挑战被破坏：立刻回到进入挑战前的存档，不给确认 */
+function abortChallenge(){
+  if(!S.challenge) return;
+  S.challenge = false;
+  S.restorePending = false;
+  const ok = restoreSnapshot();
+  paintedScene = -1;
+  renderShop(); renderRebirth(); renderSceneCaption(); renderShelf(); drawScene();
+  if(ok){
+    log('灯又亮回来了。屋子还是你离开时的样子。', 'warm');
+    toast('挑战中断 · 存档已还原');
+  }
+  save();
+}
+
+function resetRun(){
+  S.ip = 0; S.run = 0; S.stab = 100; S.lv = {}; S.buffs = [];
+  S.cd = {ab1:0, ab2:0, ab3:0}; S.lastCycleMin = Math.max(0.1, cycleMinutes());
+  S.scene = 0; S.fx = false; S.route = ''; S.boost = 0; S.seenEv = [];
+  S.cycle = 1; S.cycleAt = now(); S.breakthrough = 0;
+  syncCap(); paintedScene = -1;
+  renderShop(); renderRebirth(); renderSceneCaption(); drawScene();
+}
+
+function endNight(fromEndScreen){
+  const g = fragGain();
+  if(!reachedCap() || g <= 0 || !S.seenBad){
+    if(reachedCap() && g <= 0) toast('再守一会儿才有碎片可换');
+    return;
+  }
+  if(S.challenge){ abortChallenge(); return; }
+  if(!fromEndScreen && !confirm('结束这一夜？\n\n第 ' + S.cycle + ' 周目到此为止，换取 ' + g + ' 片记忆碎片（全局 +' + (g*FRAG_PER*100).toFixed(0) + '%）。')) return;
+  $('endnight').classList.remove('on');
+
+  S.frag += g;
+  S.nights += 1;
+  S.ip = 0; S.run = 0; S.stab = 100; S.lv = {}; S.buffs = [];
+  S.cd = {ab1:0, ab2:0, ab3:0};
+  S.lastCycleMin = Math.max(0.1, cycleMinutes());
+  S.scene = 0; S.fx = false; S.route = '';
+  S.boost = 0; S.seenEv = [];
+  S.cycle += 1;
+  S.cycleAt = now();
+  syncCap();
+
+  log('第 ' + (S.cycle - 1) + ' 夜结束。灯灭了，又亮起来，桌子还是那两张。', 'hot');
+  toast('获得 ' + g + ' 片记忆碎片');
+  paintedScene = -1;
+  renderShop(); renderRebirth(); renderSceneCaption(); drawScene();
+  save();
+}
+
+/* ============================================================
+   结局 · 永动轮总装
+   ============================================================ */
+const FINAL_RATIO = 0.8;   // 总装价格 = 本周目上限的 80%
+const GOOD_STORAGE = 3.0e8;  // ★ 好结局：把上限顶到这里。
+                             // 这个值是照真实运行时标定的，不是拍脑袋：
+                             //   1e8 → 第 19 周目（太早，猫还没来得及起作用）
+                             //   3e8 → 第 27 周目，累计约 3 小时
+                             //   1e9 → 第 38 周目（太磨）
+                             // 前提是猫在第 10 周目解锁，所以好结局必然在猫之后。
+const HIDDEN_MIN   = 480;    // 第一周目守满 8 小时，猫会自己找上门
+const MIN_GOOD_CYCLE = 12;   // 前 12 个周目只能走坏结局
+
+function finalPrice(){ return Math.min(S.ip, S.capRun * FINAL_RATIO); }
+function enoughForGoodEnding(){
+  /*
+   * 「前 12 个周目只能走坏结局」这道闸，只对**正常轮回**成立。
+   *
+   * 挑战模式和隐藏线都必须绕开它：
+   *   · 挑战模式 startChallenge() 里会 resetRun()，周目被拨回 1；
+   *   · 隐藏线本来就永远停在第 1 周目，压根没有周目可言。
+   * 这两条线的玩家已经在放弃转生了，再拿周目数卡他们就永远通不了关
+   * —— 之前正是这个原因，挑战模式那句测试一直失败。
+   */
+  if(!S.challenge && !S.hiddenCat && S.cycle < MIN_GOOD_CYCLE) return false;
+  return storageMax() >= GOOD_STORAGE && S.run >= 0.9 * S.capRun;
+}
+
+/* 收藏解锁的六种行为 */
+function shelfValue(kind){
+  if(kind === 'time')  return S.secs;
+  if(kind === 'taps')  return S.taps;
+  if(kind === 'nights')return S.nights;
+  if(kind === 'her')   return HER.reduce((n,u) => n + lv(u.id), 0);
+  if(kind === 'alv')   return ALV.reduce((n,u) => n + lv(u.id), 0);
+  if(kind === 'cat')   return SHELF_CAT_N();
+  return S.all;
+}
+function SHELF_CAT_N(){
+  return Object.keys(S.cat ? S.cat.lv : {}).reduce((n,k) => n + clv(k), 0);
+}
+function shelfLabel(it){
+  const v = shelfValue(it.kind);
+  if(it.kind === 'time'){
+    const h = v / 3600, needH = it.need / 3600;
+    if(needH < 1) return v.toFixed(0) + ' / ' + it.need + ' 秒';
+    return (h < 10 ? h.toFixed(1) : h.toFixed(0)) + ' / ' + needH.toFixed(0) + ' 小时';
+  }
+  if(it.kind === 'taps')   return v + ' / ' + it.need + ' 次手动操作';
+  if(it.kind === 'nights') return v + ' / ' + it.need + ' 夜';
+  if(it.kind === 'her')    return '赫尔曼的设备共 ' + v + ' / ' + it.need + ' 级';
+  if(it.kind === 'alv')    return '阿尔瓦的设备共 ' + v + ' / ' + it.need + ' 级';
+  if(it.kind === 'cat')    return '小猫支线共 ' + v + ' / ' + it.need + ' 级';
+  return '累计 ' + fmt(v) + ' / ' + fmt(it.need) + ' 能量';
+}
+
+const ACH = [
+  {id:'hardcore', icon:'猫', name:'小猫拯救世界',
+   desc:'这一次，没有人遭遇不幸，没有人陷入循环，只有角落里一只累坏了的小猫在打哈欠。', hidden:true},
+
+  /* 显式成就：按行为累计，拿到了才出现在收藏室最上面 */
+  {id:'nights20', icon:'夜', name:'二十个天亮',
+   desc:'第二十次看见窗外泛灰。赫尔曼已经习惯了在同一个位置醒来，阿尔瓦已经习惯了这个习惯。'},
+  {id:'nights40', icon:'夜', name:'灯油钱',
+   desc:'四十夜。账本上有一栏专门记灯油，阿尔瓦算过，这笔钱足够在乡下买一块地。'},
+  {id:'tap1000', icon:'手', name:'亲手递上去',
+   desc:'一千次。扳手、铅笔、图纸、量杯，还有那根递过去就再没拿回来的表笔。'},
+  {id:'cat40', icon:'猫', name:'这个家有猫',
+   desc:'窗台、烟囱、码头、剧院阁楼、自己的地盘——猫把整条街都登记成了自己的。'},
+  {id:'pole', icon:'轮', name:'一整天没熄灯',
+   desc:'连续二十四小时，那盏灯没灭过。猫睡在灯罩上，醒来发现人还坐在原处。'},
+  {id:'weekly', icon:'日', name:'三天',
+   desc:'三天。房子里的味道变了——不再是新纸和焊锡，是咖啡、尘埃和熬久了的木头。'},
+  {id:'month', icon:'周', name:'七天',
+   desc:'七天。阿尔瓦把这一个星期的开销算完，第一次没有把「够不够」说出口。'},
+  {id:'auto3', icon:'哨', name:'猫替你看家',
+   desc:'三个等级的开满之后，猫学会了在你睡着的时候替你把该买的买好。它一次也没买错过。'}
+];
+
+function awardAch(id){
+  if(S.ach.indexOf(id) >= 0) return;
+  const a = ACH.find(x => x.id === id);
+  if(!a) return;
+  S.ach.push(id);
+  toast('成就 · ' + a.name);
+  log('【成就】' + a.name + ' —— ' + a.desc, 'hot');
+}
+
+let cardQueue = [], cardDone = null, cardFinale = false;
+
+function nextCard(){
+  if(!cardQueue.length){
+    $('event').classList.remove('on');
+    $('event').classList.remove('finale');   // 过场结束，恢复成普通事件层
+    S.evtOpen = false;                       // 过场收尾要复位，否则之后再也不弹随机事件
+    const d = cardDone; cardDone = null;
+    cardFinale = false;
+    if(d) d();
+    return;
+  }
+  const c = cardQueue.shift();
+  $('evKicker').textContent = cardFinale ? 'ENDING' : 'INTERLUDE';
+  $('evTitle').textContent = c.t || '';
+  $('evDesc').textContent = c.d;
+  const opts = $('evOpts');
+  opts.replaceChildren();
+  if(c.opts && c.opts.length){
+    /* 带选项的卡片（M8「最后一次关灯」用）：
+       选完把这一选的旁白接成下一张卡，全程留在 finale 过场层里，
+       不会先关掉事件层退回操作界面。 */
+    c.opts.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.innerHTML = '<b>' + (i+1) + '</b>' + o.label +
+        '<br><span style="color:#8a7d6a;font-size:10.5px">' + o.sub + '</span>';
+      b.onclick = () => {
+        const before = S.log.length ? S.log[0].text : '';
+        if(o.run) o.run();
+        const said = (S.log.length && S.log[0].text !== before) ? S.log[0].text : '';
+        if(said) cardQueue.unshift({t:'', d:said});
+        nextCard();
+      };
+      opts.appendChild(b);
+    });
+  } else {
+    const b = document.createElement('button');
+    b.innerHTML = '<b>·</b>' + (c.b || '……');
+    b.onclick = nextCard;
+    opts.appendChild(b);
+  }
+  $('event').classList.add('on');
+  $('event').classList.toggle('finale', cardFinale);
+}
+
+/* finale = true 时强制置顶：铺满全屏、吃掉所有点击，玩家点不到下面任何东西。
+   结局过场必须用它 —— 否则玩家能在 S.fx 已经置上的时候继续买东西。 */
+function playCards(cards, done, finale){
+  cardQueue = cards.slice(); cardDone = done;
+  cardFinale = !!finale;
+  S.evtOpen = true;                 // 过场期间不弹随机事件
+  nextCard();
+}
+function endFinale(){ S.evtOpen = false; save(); }
+
+function buyFinal(){
+  if(S.fx) return;
+
+  // 挑战模式：先给你看一眼差多少
+  if(S.challenge){
+    const have = storageMax(), need = GOOD_STORAGE;
+    if(!confirm('你确认准备好了吗？\n\n储存上限  ' + fmt(have) + ' / ' + fmt(need))) return;
+    if(have < need || !atCap()){
+      toast('再准备准备吧');
+      return;
+    }
+  }else if(!atCap()){
+    return;
+  }
+  const pay = finalPrice();
+  S.ip -= pay;
+  S.fx = true;
+  const good = enoughForGoodEnding();
+  if(good){
+    if(S.challenge || S.hiddenCat){
+      S.challenge = false;
+      awardAch('hardcore');
+    }else{
+      S.challengeReady = true;
+      S.snapshot = { frag: S.frag, cat: S.cat ? JSON.parse(JSON.stringify(S.cat)) : null };
+    }
+  }else if(S.challenge){
+    S.challenge = false;
+  }
+  save(); renderShop();
+  if(good) playGoodEnding(); else playBadEnding();
+}
+
+function finishChallenge(){
+  const ok = restoreSnapshot();
+  S.restorePending = false;
+  if(ok){
+    paintedScene = -1;
+    renderShop(); renderRebirth(); renderSceneCaption(); renderShelf(); drawScene();
+    log('你把这一夜收了回来。什么都没少，除了那些只有你记得的东西。', 'hot');
+    toast('挑战结束 · 存档已还原');
+  }
+  save();
+}
+
+function playBadEnding(){
+  playCards([
+    {t:'这一夜到头了', b:'阿尔瓦算完了最后一个数',
+     d:'图摊在桌上，两个人各按着一角。猫趴在纸边上，压住了半张图。'},
+
+    {t:'同一个数',
+     d:'阿尔瓦把铅笔放下，用力放下，笔尖的声音很清脆。他把纸转过去，让那一列字对着赫尔曼。\n'+
+       '「余量是负的。」阿尔瓦说，声音很平静，但平静得像琉璃一样容易碎。「轴承这一项，按现在的尺寸做，永远补不上。」\n'+
+       '赫尔曼低头看了一眼那些数字，好像在看什么不属于这个世界的东西。赫尔曼说：「再改改呢。」\n'+
+       '「改了也是负的。」阿尔瓦的指尖点着纸，点得很重，像要把纸戳穿。「我算过六遍。赫尔曼，六遍了。」\n'+
+       '他很少这么直呼赫尔曼的名字。这一个名字就像他终于放下了什么东西。\n'+
+       '猫察觉到了什么，钻到了桌子底下。'},
+
+    {t:'吵起来的那半分钟',
+     d:'「我们没有钱了！」阿尔瓦的声音第一次这么尖锐。「赫尔曼，我们已经没有钱了。账本我一个人记的，没人比我更清楚这意味着什么。」\n'+
+       '「那我去拉投资。」赫尔曼说，但他的声音也开始抖动。「我可以——」\n'+
+       '「你什么都不能！」阿尔瓦站了起来。「因为没人想投资一台永远做不出来的机器。我反复算过了，这个设计的物理极限就在这里。从这里开始，再改什么都是死路。」\n'+
+       '「那是你的算法有问题。」赫尔曼说。\n'+
+       '猫喵了一声，没人理它。'},
+
+    {d:'「我的算法？」阿尔瓦的嗓音发抖。「我用了你学的每一个方法，我按照你的理想，我一个人算了三年的账本，我放弃了所有其他的工作机会只是为了在你的理想后面追，而你告诉我——我的算法有问题？」\n'+
+       '「阿尔维——」赫尔曼伸出了手，但最后没有碰到什么。\n'+
+       '「不要这样叫我。」阿尔瓦说，「我信过你的理想。我真的信了很久。但现在我再也没办法相信下去了。」\n'+
+       '杯子摔在地上，碎裂的声音吞没了所有其他的声音。有一片碎片飞进桌底，桌下的猫缩得更紧了。'},
+
+    {d:'门关上的声音很大。\n'+
+       '赫尔曼冲出了房间。阿尔瓦没有去追。\n'+
+       '阿尔瓦在桌边坐到天亮，把那一列数又算了一遍。然后第二遍、第三遍。\n'+
+       '猫在黑暗里看着他。\n'+
+       '天亮时，阿尔瓦把手里的稿纸揉成一团，对着桌子下的猫伸出手：\n'+
+       '「吓到你了吗？抱歉，我们走吧。」'},
+
+    {d:'之后的三个月里，两个人没见过一面。\n'+
+       '有人看见工坊的灯每天亮到后半夜。阿尔瓦知道赫尔曼在做什么，甚至也能想象到他会以什么样的方式一次次失败。\n'+
+       '阿尔瓦想过很多次回去那里，至少把备用钥匙还回去，每一次都走到巷口，每一次都转身回来。\n'+
+       '理由很多：钱不够、方案不可行、再坚持只会更惨。但真实的理由是，他害怕自己会再次说出那些话。'},
+
+    {d:'那一夜，工坊的灯像以往一样亮着。\n'+
+       '十一点左右，邻居说他们听到了一声闷响——很沉，像什么东西整个陷了下去。然后是玻璃碎裂的声音，一整条街的玻璃都在那一瞬间碎掉。'},
+
+    {d:'那场事故发生的时候，阿尔瓦在三个街区外的书店里。\n'+
+       '他看到天空整个亮了一下——不是灯的那种温暖的黄，是爆炸的那种白。光之后是一片很短的黑。\n'+
+       '声音比光晚了半秒钟才传过来。\n'+
+       '阿尔瓦站在那里，身体还在读书的姿态，脑子却停在了一个他不想去的地方。\n'+
+       '阿尔瓦猜想自己或许应该赶过去看看，但是他发现自己腿软到起不了身。\n'+
+       '猫跳到了他膝盖上，阿尔瓦抱住了猫，没再动。\n'+
+       '这是阿尔瓦最后一次为不回去那个地方找理由。'},
+
+    {d:'第二天早上，他看到了那篇报道。报纸很新，纸张还有油墨的味道。\n'+
+       '「昨夜十一时许，本市一间工坊发生爆炸，一人罹难。据邻近住户称，遇难者一直在调试一台机器。警方目前判断本次爆炸为机械局部过热导致的事故。」\n'+
+       '字很小，挤在第二版右下角。阿尔瓦用指尖沿着这些字划过去，一遍又一遍。'},
+
+    {d:'有人说：死者好像是附近的大学生，叫什么，赫尔曼·塞曼。\n'+
+       '阿尔瓦听到的时候没有反应。他继续看着报纸，看着那段话，好像如果看得足够久就能改变结果。\n'+
+       '猫在他脚边走来走去，用头去蹭他的腿，发出很小的呜呜声。\n'+
+       '没有人蹲下来摸它。'},
+
+    {t:'第二天早上',
+     d:'阿尔瓦回到工坊时，天还没有完全亮。\n'+
+       '墙没了一半，屋顶的大部分塌在了地上。空气里还有焦味，烧焦的木头、金属、还有一种他不想去辨认的东西。\n'+
+       '图纸散在废墟里，边角都被烧成了黑色，中间的那些设计图纸还能看清。他一张一张把它们捡起来，按照原来的顺序摆好。\n'+
+       '最后他找到了那枚绿宝石胸针。扣针弯了，宝石上有一道深深的白痕，像是被什么很尖的东西刮过。\n'+
+       '阿尔瓦把它握在手里很久。他想起赫尔曼说过，「这个算你的」。但他现在没办法拒绝了。'}
+  ], () => {
+    // ★ 先把结果写进存档，再播 M8 —— 中间刷新不该让玩家重看一遍坏结局。
+    //   旧写法在这里只置 seenBad/route，endFinale() 里才 save()，
+    //   而 M8 弹窗要等玩家点选，那段时间里存档是「fx=true 且 route 为空」，
+    //   load() 会把整个坏结局过场重放一遍，玩家就卡在黑屏里出不来了。
+    S.seenBad = true;
+    S.route = 'bad';
+    S.endingDone = true;
+    endFinale();
+    const m8 = MILESTONES.find(x => x.id === 'M8');
+    if(m8 && !S.milestones.includes('M8')){
+      S.milestones.push('M8');
+      // 里程碑本身要落盘，否则刷新后 M8 会再弹一次
+      save();
+      /* M8 走结局同款卡片过场：整段留在 finale 层里，
+         不会像普通事件那样先关掉事件层、退回操作界面再进结局。 */
+      playCards([{t:m8.title, d:m8.desc, opts:m8.opts}],
+        () => { S.endingDone = true; save(); showEndNight(); }, true);
+    } else {
+      showEndNight();
+    }
+  }, true);   // ← finale：强制置顶，过场期间点不到下面的界面
+}
+
+function playGoodEnding(){
+  playCards([
+    {t:'这一夜到头了', b:'阿尔瓦算完了最后一个数',
+     d:'图摊在桌上，两个人各按着一角。猫趴在纸边上，压住了半张图。'},
+
+    {t:'最后一处',
+     d:'「这里。」阿尔瓦指着纸上那一行数字，指尖点得很轻，好像在确认某个微妙的平衡。「按这个工况，余量是零点四。」\n'+
+       '「够吗？」赫尔曼问。\n'+
+       '「不够。」阿尔瓦说，「现在不够。但是——」他停了一下，指尖滑向下一个设计图，「如果这里改成这样，或许就够了。」\n'+
+       '赫尔曼弯下腰去看，脸很接近纸面。「你说的是？」\n'+
+       '「只是一个想法。」阿尔瓦说，但他的声音里有了一点不同的东西——不是疑虑，而是试探。「要不要试试。」\n'+
+       '两个人对着同一个地方，一直改到天快亮。赫尔曼把灯端近了一点，阿尔瓦的眼睛被灯烤得很亮。一次也没有移开。'},
+
+    {d:'天亮的时候，那只轮子转了起来。很安静，没有摩擦，没有吱呀吱呀的声音。\n'+
+       '一开始两个人都没有出声，因为害怕出声会打破这个声音。\n'+
+       '后来整个屋子里都是它在转的声音——很轻，很均匀，像有一个看不见的东西在持续计数，一下又一下，永远不会停。'},
+
+    {d:'猫从桌下走出来，绕着那个转动的轮子走了一圈。最后在它正前方坐了下来，眼睛跟随着轮子的转动。\n'+
+       '赫尔曼没有喊，也没有跳起来。赫尔曼很慢地把那枚绿宝石胸针从领结上摘下来，放在最近的图纸上。\n'+
+       '「这个是你的，」赫尔曼说，「我的执念，但是没有你不会有执念成真的那一刻。」\n'+
+       '阿尔瓦看着那枚胸针。很久，他说：「我不要。」\n'+
+       '「那就当是押金，」赫尔曼说，声音里带着笑，「押它会一直转下去。」'},
+
+    {d:'赫尔曼说：「阿尔维，我们做到了。」\n'+
+       '阿尔瓦没有立刻回答。他抬起手，把滑下来的白发拢回去，指尖无意中摸到了头上那根母亲的发圈。\n'+
+       '他停顿了一下，好像在确认它还在那里。然后才说：「是的。」\n'+
+       '他想：原来这就是永动机转动时的声音。原来它真的听起来是这样的。'},
+
+    {t:'三个月后',
+     d:'学会的人来看过一次，带着测量仪器，在工坊里待了三天。\n'+
+       '最后一天离开时，他们留下了一张盖了章的证明。证明写得很正式，但阿尔瓦知道那张纸意味着什么——永动机不再是两个人的幻想，而是可以复现的现实。\n'+
+       '阿尔瓦把那张纸压在玻璃板底下。在它下面，还压着另一张纸——当年那张收据，记录了他们欠的所有钱。'},
+
+    {d:'账本上第一次出现了一行不需要任何解释和防守的数字。\n'+
+       '阿尔瓦照着账本的格式，用力把这一行写下来。笔尖在纸上停留了很久，停在「盈余」两个字上。\n'+
+       '然后他把这一页翻过去了。'},
+
+    {t:'那盏灯',
+     d:'从那以后，工坊的灯还是亮到后半夜。习惯改不了，也没必要改。\n'+
+       '赫尔曼还是会通宵工作，用尽一天的所有时间去想下一个改进。阿尔瓦还是会一个人坐着，算完最后一个数，才舍得休息。\n'+
+       '猫睡在灯罩上，感受着灯的热度。它已经习惯了这个节奏——两个人的执念，各不相同，却能在同一盏灯下并存。\n'+
+       '只是从那以后，阿尔瓦再没说过「这条路走不通」。他改成了「我们还能试试」。\n'+
+       '猫从灯罩上跳下来，在阿尔瓦脚边坐下。阿尔瓦把手指伸过去，让它闻了闻。\n'+
+       '「谢谢小猫。」阿尔瓦说。然后他又补了一句，声音低下去，像是在跟很远的人说话：「以及……谢谢你，帮我们把不可能变成可能。」\n'+
+       '赫尔曼在旁边听见了，笑了一声：「你是在跟猫说话，还是在跟谁说话？」阿尔瓦没有回答，只是把猫抱了起来。'}
+  ], () => {
+    S.breakthrough += 1;
+    S.route = 'good';
+    S.endingDone = true;
+    endFinale();
+    syncCap();
+    log('永动轮转起来了。这一夜的上限被推到 ' + fmt(S.capRun) + '。', 'hot');
+    toast('突破 · 上限提高');
+    renderShop(); renderRebirth();
+    save();
+    if(S.restorePending) finishChallenge();
+    showEndNight();
+  }, true);   // ← finale：强制置顶，过场期间点不到下面的界面
+}
+
+function showEndNight(){
+  $('endnight').classList.add('on');
+  updateEndNight();
+}
+
+/* 结夜没有时间门槛：碎片只看散热比，什么时候结由玩家定。
+ * 唯一的前提是这一夜烧到了头（reachedCap）。 */
+function updateEndNight(){
+  const box = $('endnight');
+  if(!box || !box.classList.contains('on')) return;
+  const capped = reachedCap();
+
+  /* 隐藏线：这里不是「结束这一夜」，是「还差多少」。
+   * 这条线没有坏结局，也就没有转生 —— 唯一的去处就是把上限顶到 goodCap。 */
+  if(S.hiddenCat){
+    const pct = Math.min(100, (S.capRun / GOOD_STORAGE) * 100);
+    $('endLines').innerHTML = '猫坐回桌角，尾巴垂着。<br>' +
+      '这一夜不会结束。<span class="hi">上限 ' + fmt(S.capRun) + '</span>' +
+      ' / ' + fmt(GOOD_STORAGE) + '（' + pct.toFixed(1) + '%）';
+    const b = $('endnightBtn');
+    b.disabled = true;
+    b.textContent = '通关条件 · 把上限顶到 ' + fmt(GOOD_STORAGE);
+    return;
+  }
+
+  const g = fragGain();
+  $('endLines').innerHTML = '天亮了。<br>这一夜到此为止。' +
+    (g > 0 ? '<br><span class="hi">' + g + ' 片记忆碎片</span>' : '');
+  const b = $('endnightBtn');
+  b.disabled = g <= 0;
+  // 到了钟形峰值就提示「现在结最划算」
+  b.textContent = g > 0
+    ? (atPeak() ? '结束这一夜 · 正是时候' : '结束这一夜')
+    : '这一夜还没烧到头';
+  b.classList.toggle('peak', g > 0 && atPeak());
+}
+
+function updateCapBanner(){
+  const b = $('capBanner');
+  if(S.fx || S.challenge){ b.classList.remove('on'); return; }
+  if(atCap()){
+    $('capTitle').textContent = '这一夜的火烧到头了';
+    $('capDesc').textContent = '最后一块还在桌上。';
+    b.classList.add('on');
+  } else if(S.ip >= S.capRun){
+    $('capTitle').textContent = '储存装满了';
+    $('capDesc').textContent = '花掉一些，瓶子才有地方进水。';
+    b.classList.add('on');
+  } else {
+    b.classList.remove('on');
+  }
+}
+
+let finalRef = null;
+function addFinalRow(box){
+  const row = document.createElement('div');
+  row.className = 'row';
+  const info = document.createElement('div');
+  info.className = 'info';
+  const nm = document.createElement('div');
+  nm.className = 'nm';
+  nm.textContent = '永动轮总装';
+  const ds = document.createElement('div');
+  ds.className = 'ds';
+  info.append(nm, ds);
+  const btn = document.createElement('button');
+  btn.className = 'buy';
+  btn.onclick = buyFinal;
+  row.append(info, btn);
+  box.appendChild(row);
+  finalRef = {row, btn, ds};
+}
+function updateFinal(){
+  if(!finalRef) return;
+  const {row, btn, ds} = finalRef;
+  if(S.fx){
+    ds.textContent = '已经装上了。';
+    btn.innerHTML = '<span>已装</span><small>—</small>';
+    btn.disabled = true;
+    return;
+  }
+  const capped = atCap();
+  if(S.challenge){
+    ds.textContent = '储存上限 ' + fmt(storageMax()) + ' / ' + fmt(GOOD_STORAGE);
+    btn.innerHTML = '<span>' + fmt(Math.min(S.ip, S.capRun * FINAL_RATIO)) + '</span><small>查看</small>';
+    btn.disabled = false;
+    return;
+  }
+  ds.textContent = capped ? '最后一块。装上它，这一夜就结束了。' : '要等这一夜跑到头，才装得上。';
+  btn.innerHTML = '<span>' + fmt(capped ? finalPrice() : S.capRun * FINAL_RATIO) + '</span>' +
+                  '<small>' + (capped ? '装上' : '未到头') + '</small>';
+  btn.disabled = !capped;
+}
+
+/* 启动 */(function init(){
+  const had = load();
+  if(!had){ S.cycleAt = now(); }
+  syncCap();
+  drawScene();
+  renderSceneCaption();
+  renderShop();
+  renderShelf();
+  renderLog();
+  renderRebirth();
+
+  if(had){
+    offline();
+    offlineCat();
+  } else {
+    log('莱顿，十九世纪末。两个刚毕业的学生租下了一间出租屋，还带来了一只在学校里长大的猫。');
+  }
+  scheduleEvent();
+
+  // 上次在结局过场里被刷新打断。
+  //
+  // 旧逻辑只看 `fx && !route`，那样有两个坑：
+  //   1. 坏结局播完后 route 已经是 'bad'，但玩家还没点「结束这一夜」，
+  //      这时候刷新就什么都不做 —— 停在黑屏上，也点不到按钮（卡死）。
+  //   2. 反过来，如果 route 还没写进去，刷新会把整段过场重播一遍。
+  //
+  // 现在用 endingDone 明确区分「过场播完了」和「过场没播完」：
+  //   · endingDone = true  → 直接进「结束这一夜」界面
+  //   · route 为空且未播完 → 补播过场
+  if(had && S.fx){
+    if(S.endingDone || S.route){
+      // 过场已经看过了，直接给收尾界面
+      setTimeout(() => {
+        if(!S.evtOpen) showEndNight();
+      }, 300);
+    } else if(!S.evtOpen){
+      setTimeout(() => {
+        if(S.fx && !S.route){
+          if(enoughForGoodEnding()) playGoodEnding(); else playBadEnding();
+        }
+      }, 500);
+    }
+  }
+
+  $('ab1').onclick = () => doAbility('ab1');
+  $('ab2').onclick = () => doAbility('ab2');
+  $('ab3').onclick = () => doAbility('ab3');
+  for(const b of document.querySelectorAll('.tabs button'))
+    b.onclick = () => switchTab(b.dataset.tab);
+  for(const b of document.querySelectorAll('#shopSub button'))
+    b.onclick = () => {
+      shopGroup = b.dataset.g;
+      for(const o of document.querySelectorAll('#shopSub button'))
+        o.classList.toggle('on', o === b);
+      renderShop();
+    };
+  $('reBtn').onclick = () => endNight(false);
+  $('capGo').onclick = buyFinal;
+  $('endnightBtn').onclick = () => endNight(true);
+  $('catGo').onclick = openCatLine;
+  $('catHidden').onclick = openHiddenCat;
+  $('catBack').onclick = closeCatView;
+  $('setBtn').onclick = openSet;
+  $('setClose').onclick = closeSet;
+  $('setExport').onclick = exportSave;
+  $('setImport').onclick = () => $('setFile').click();
+  $('setFile').onchange = e => { if(e.target.files[0]) importSave(e.target.files[0]); };
+  $('setWipe').onclick = () => {
+    if(!confirm('确定清空全部存档？记忆碎片、收藏室、小猫和挑战快照都会消失。')) return;
+    hardReset();
+  };
+  $('setChallenge').onclick = startChallenge;
+  if(S.cat){ renderCat(); }
+
+  // 后台标签页：rAF 会被冻结，用独立计时兜底
+  let bgT = performance.now();
+  setInterval(() => {
+    const t0 = performance.now();
+    if(document.hidden){
+      const bdt = Math.min(5, (t0 - bgT) / 1000);
+      if(bdt > 0) tick(bdt);
+    }
+    bgT = t0;
+  }, 1000);
+
+  setInterval(save, 5000);
+  window.addEventListener('beforeunload', save);
+
+  /* ---------- 昼夜主题 ---------- */
+  const themeToggle = document.getElementById('themeToggle');
+  const htmlEl = document.documentElement;
+  const savedTheme = localStorage.getItem('lab_theme') || 'night';
+
+  htmlEl.setAttribute('data-theme', savedTheme);
+  updateThemeButton();
+
+  function updateThemeButton(){
+    const cur = htmlEl.getAttribute('data-theme') || 'night';
+    themeToggle.textContent = cur === 'day' ? '☀' : '☾';
+    themeToggle.title = cur === 'day' ? '切换到夜间' : '切换到白天';
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const cur = htmlEl.getAttribute('data-theme') || 'night';
+    const next = cur === 'day' ? 'night' : 'day';
+    htmlEl.setAttribute('data-theme', next);
+    localStorage.setItem('lab_theme', next);
+    updateThemeButton();
+    paintedScene = -1;
+    drawScene();
+  });
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
