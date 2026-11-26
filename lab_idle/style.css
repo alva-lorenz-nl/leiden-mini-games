@@ -829,7 +829,7 @@
   }
 
   /* 竖版 / 手机浏览器：主图+小猫技能固定在上方，下方升级/日志面板独立滑动 */
-  @media (max-width:859px) and (min-height:700px){
+  @media (max-width:859px) and (min-height:540px){
     html,body{height:100dvh;overflow:hidden}
     body{padding:8px 10px}
     .wrap{
@@ -861,8 +861,9 @@
     .scene canvas{
       width:100%;
       height:auto;
-      aspect-ratio:16 / 9;
-      display:block;
+      max-height:29dvh;
+      object-fit:contain;
+      margin:0 auto;
     }
     .scene .cap{padding:10px 10px 6px;font-size:10.5px}
     .scene .cap b{font-size:11.5px}

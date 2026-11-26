@@ -1261,15 +1261,9 @@ function getCatHitBox(){
 
 function canvasPoint(cv, ev){
   const rect = cv.getBoundingClientRect();
-  const cw = cv.width, ch = cv.height;
-  // 按等比绘制区域换算坐标，避免任何比例差异导致点击偏移
-  const scale = Math.min(rect.width / cw, rect.height / ch);
-  const drawW = cw * scale, drawH = ch * scale;
-  const offX = (rect.width - drawW) / 2;
-  const offY = (rect.height - drawH) / 2;
   return {
-    x: (ev.clientX - rect.left - offX) / scale,
-    y: (ev.clientY - rect.top - offY) / scale
+    x: (ev.clientX - rect.left) * (cv.width / rect.width),
+    y: (ev.clientY - rect.top) * (cv.height / rect.height)
   };
 }
 

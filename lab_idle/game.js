@@ -44,7 +44,6 @@ const S = {
   seenEv:[],                    // 本周目已看过的事件 id（重启清空）
   milestones:[],                // 已触发的里程碑 id（跨周目保留）
   introSeen:false,              // 是否看过初次开场剧情
-  abUsed:[],                    // 记录新手期体验过的小猫技能
 };
 
 /* ---------- 工具 ---------- */
@@ -478,7 +477,6 @@ function load(){
     if(Array.isArray(d.seenEv)) S.seenEv = d.seenEv;
     if(Array.isArray(d.milestones)) S.milestones = d.milestones;
     S.introSeen = (typeof d.introSeen === 'boolean') ? d.introSeen : true;
-    S.abUsed = Array.isArray(d.abUsed) ? d.abUsed.filter(x => typeof x === 'string') : [];
     if(d.cat && typeof d.cat === 'object') S.cat = d.cat;
     if(typeof d.cycle !== 'number'){          // 旧存档迁移：当作第 1 周目，计时从现在起
       S.cycle = 1;
@@ -1463,9 +1461,6 @@ function updateTabBadges(){
   const needAttn = hasAffordableTree() || canUnlockCat() || canUnlockCatHidden();
   reTab.classList.toggle('has-dot', needAttn);
 }
-function abTried(k){
-  return Array.isArray(S.abUsed) && S.abUsed.includes(k);
-}
 
 let dismissedGuideKey = '';
 let currentGuideKey = '';
@@ -1474,10 +1469,8 @@ function updateGuide(){
   const el = $('catGuide');
   const body = $('catGuideBody');
   if(!el || !body) return;
-  for(const id of ['ab1','ab2','ab3']){
-    const b = $(id);
-    if(b) b.classList.remove('guide-pulse');
-  }
+  const ab1 = $('ab1');
+  if(ab1) ab1.classList.remove('guide-pulse');
 
   const blocking =
     S.fx || S.evtOpen ||
@@ -1513,26 +1506,26 @@ function updateGuide(){
       msg = '<b>小猫引路 (4/4)：</b>等鱼干宽裕了，还可以点<b>「留一盏灯 / 按时回来」</b>让离线收益更丰厚，或者买<b>「自动值守 / 小猫监督官」</b>，猫就会在你走神时替你把升级都打理好。';
     }
   }
-  // 1. 本轮已研究到尽头（含满仓停产提醒）
+  // 1. 本轮已跑满上限（含满仓停产提醒）
   else if(atCap()){
     if(S.ip >= S.capRun){
       key = 'full_cap_' + S.cycle;
       msg = (S.seenBad && !S.challenge)
         ? '<b>小猫提醒：</b>容器装得满满当当，机器暂时停下来喘口气啦——现在可以直接点工位顶部的<b>「尝试启动永动轮」</b>，或切到「记忆碎片」结束这一夜。'
-        : '<b>小猫提醒：</b>容器装得满满当当，机器暂时停下来喘口气啦——今晚能做的都做尽了，去工位顶部点击<b>「尝试启动永动轮」</b>看看结果吧。';
+        : '<b>小猫提醒：</b>容器装得满满当当，机器暂时停下来喘口气啦——现在就去工位顶部点击<b>「尝试启动永动轮」</b>，看看两人今晚的成果吧。';
       isWarn = true;
     } else if(S.ip < finalPrice()){
       key = 'cap_wait_' + S.cycle;
-      msg = '<b>小猫备忘：</b>这一夜似乎已经研究到尽头了！先忍住别花能量，等手里蓄够（<b>' + fmt(finalPrice()) + '</b>），就能点工位顶部的<b>「尝试启动永动轮」</b>。';
+      msg = '<b>小猫备忘：</b>这一夜的进度已经跑满啦！先忍住别花能量，等手里攒够八成（<b>' + fmt(finalPrice()) + '</b>），就能点工位顶部的<b>「尝试启动永动轮」</b>。';
     } else if(enoughForGoodEnding()){
       key = 'cap_good_' + S.cycle;
       msg = '<b>小猫备忘：</b>猫竖起了耳朵——这一次火候和底气都攒够了！快去工位顶部点击<b>「尝试启动永动轮」</b>，迎接不一样的结局吧。';
     } else if(!S.seenBad){
       key = 'cap_first';
-      msg = '<b>小猫备忘：</b>今晚能做的都做尽了！点击工位顶部的<b>「尝试启动永动轮」</b>，看看今晚会发生什么吧。';
+      msg = '<b>小猫备忘：</b>零件和能量都备齐了！点击工位顶部的<b>「尝试启动永动轮」</b>，看看今晚会发生什么吧。';
     } else if(S.cycle <= 3){
       key = 'cap_c2';
-      msg = '<b>小猫备忘：</b>这一夜又走到尽头啦：结夜前把热度调到<b>「刚好」</b>能换到最多记忆碎片。可以直接去「记忆碎片」收手结夜，或点「尝试启动永动轮」拿一份坚持奖励。';
+      msg = '<b>小猫备忘：</b>这一夜又到头啦：结夜前把热度调到<b>「刚好」</b>能换到最多记忆碎片。可以直接去「记忆碎片」收手结夜，或点「尝试启动永动轮」拿一份坚持奖励。';
     }
   }
   // 2. 小猫支线可解锁提醒（第 10 周目或隐藏 8 小时）
@@ -1550,35 +1543,30 @@ function updateGuide(){
       msg = '<b>小猫引路：</b>碎片攥在手里不会自己起作用——往下翻就是<b>「记忆碎片升级树」</b>：点亮<b>「旧日底稿」</b>能省去慢热开荒，点亮<b>「深井蓄能」</b>能把天花板越推越高，点亮后每夜永久生效！';
     }
   }
-  // 4. 第一周目生动多步引导（先体验三枚小猫技能，再循序升级、过热降温、温控、事件与收藏室）
+  // 4. 第一周目生动多步引导（7 步，覆盖升级、过热、技能、温控、事件与收藏室）
   else if(S.cycle === 1 && !S.seenBad){
-    if(!abTried('ab1')){
-      key = 'c1_ab1';
-      msg = '<b>小猫引路 (1/7)：</b>猫用肉垫拍了拍桌上的铜踏板——开局还买不起设备，先点一下<b>「踩踏板」</b>，立刻就能攒出第一笔能量！';
-      if($('ab1') && S.cd.ab1 <= 0) $('ab1').classList.add('guide-pulse');
-    } else if(!abTried('ab2') || !abTried('ab3')){
-      key = 'c1_ab23';
-      msg = '<b>小猫引路 (2/7)：</b>另外两枚小猫按钮现在也能直接点：试着按一遍<b>「呼噜声」</b>（安抚机器回稳）和<b>「尾巴扫纸」</b>（让两人短时间手速翻倍）吧！';
-      if(!abTried('ab2') && $('ab2') && S.cd.ab2 <= 0) $('ab2').classList.add('guide-pulse');
-      if(!abTried('ab3') && $('ab3') && S.cd.ab3 <= 0) $('ab3').classList.add('guide-pulse');
-    } else if(lv('h1') === 0){
-      key = 'c1_h1';
-      msg = '<b>小猫引路 (3/7)：</b>能量够买第一件东西啦！去「工位 → 赫尔曼」买第一摞<b>「演算草纸」</b>，让屋里的机器自己转起来。';
+    if(lv('h1') === 0){
+      key = 'c1_step1';
+      msg = '<b>小猫引路 (1/7)：</b>猫用肉垫拍了拍桌上的铜踏板——先点一下<b>「踩踏板」</b>攒出第一笔能量，再去「工位 → 赫尔曼」买第一摞<b>「演算草纸」</b>，让机器先自己转起来吧。';
+      if(ab1 && S.cd.ab1 <= 0) ab1.classList.add('guide-pulse');
     } else if(lv('h1') < 3 && shelfValue('alv') === 0){
-      key = 'c1_h1_more';
-      msg = '<b>小猫引路 (4/7)：</b>纸页沙沙响起来了！趁热打铁把<b>「演算草纸」</b>再多升两级，赫尔曼写起算式会越来越顺手。';
+      key = 'c1_step2';
+      msg = '<b>小猫引路 (2/7)：</b>纸页沙沙响起来了！趁热打铁把<b>「演算草纸」</b>再多升两级，赫尔曼写起算式会越来越顺手。顺便一提，画布里的小猫也可以直接点它摸摸头哦。';
     } else if(shelfValue('alv') === 0){
-      key = 'c1_alv';
-      msg = '<b>小猫引路 (5/7)：</b>升级了产出反而速度变慢了？不要担心，是机器过热了！攒够 <b>100 能量</b>就去找<b>「阿尔瓦」</b>升级散热系统（买第一台「恒温焊锡炉」），让屋里凉快下来吧。';
+      key = 'c1_step3';
+      msg = '<b>小猫引路 (3/7)：</b>升级了产出反而速度变慢了？不要担心，是机器过热了！攒够 <b>100 能量</b>就去找<b>「阿尔瓦」</b>升级散热系统（买第一台「恒温焊锡炉」），让屋里凉快下来吧。';
+    } else if(lv('h2') === 0 && lv('a1') === 1){
+      key = 'c1_step4';
+      msg = '<b>小猫引路 (4/7)：</b>焊锡炉一接上，屋里安稳多了，能装下的能量也变宽了！再试试画布下方的三枚小猫按钮：<b>「呼噜声」</b>能安抚过热的机器，<b>「尾巴扫纸」</b>能让两人短时间手速翻倍。';
     } else if(lv('h2') === 0 || shelfValue('alv') < 2){
-      key = 'c1_balance';
-      msg = '<b>小猫引路 (6/7)：</b>焊锡炉一接上，屋里立刻安稳多了。接下来可以交替给赫尔曼和阿尔瓦添置新家伙，顺手留意温控提示：<b>「偏热」</b>找阿尔瓦降温，<b>「过冷」</b>找赫尔曼加把劲，稳在<b>「刚好」</b>附近最舒服。';
+      key = 'c1_step5';
+      msg = '<b>小猫引路 (5/7)：</b>现在可以交替给赫尔曼和阿尔瓦添置新家伙啦。留意稳定性下方的温控提示：<b>「偏热」</b>就找阿尔瓦降温，<b>「过冷」</b>就找赫尔曼加把劲，稳在<b>「刚好」</b>附近最舒服。';
     } else if(S.battles === 0){
-      key = 'c1_event_preview';
-      msg = '<b>小猫引路 (7/7)：</b>等机器跑顺了，屋里时不时会冒出两个人和猫的<b>随机小插曲（事件弹窗）</b>，不同选择会带来不同收获。现在就专心把这一夜推进到尽头吧！';
+      key = 'c1_step6';
+      msg = '<b>小猫引路 (6/7)：</b>等机器跑顺了，屋里时不时会冒出两个人和猫的<b>随机小插曲（事件弹窗）</b>，不同选择会带来不同收获。现在专心把工位顶部的「尝试启动永动轮」进度推到 100% 吧！';
     } else if(S.battles === 1){
-      key = 'c1_event_done';
-      msg = '<b>小猫备忘：</b>刚才的小插曲已经收进<b>「日志 → 仅看事件」</b>啦，随时能翻回来看。随着研究推进，<b>「收藏室」</b>里也会悄悄多出两人的旧物，记得偶尔点开翻翻。';
+      key = 'c1_step7';
+      msg = '<b>小猫引路 (7/7)：</b>刚才的小插曲已经帮你收进<b>「日志 → 仅看事件」</b>啦，随时能翻回来看。随着能量越攒越多，<b>「收藏室」</b>里也会悄悄多出旧物，记得偶尔点开翻翻两人的批注。';
     }
   }
   // 5. 第二周目点亮第一个底稿后：交代温控与碎片关系
@@ -1635,11 +1623,7 @@ function loop(tms){
    ============================================================ */
 function doAbility(k, isAuto){
   if(S.cd[k] > 0) return;
-  if(!isAuto){
-    S.taps += 1;
-    if(!Array.isArray(S.abUsed)) S.abUsed = [];
-    if(!S.abUsed.includes(k)) S.abUsed.push(k);
-  }
+  if(!isAuto) S.taps += 1;
   if(k === 'ab1'){
     const g = Math.max(10, rate()*8);
     gain(g);
@@ -1718,7 +1702,7 @@ function doResetNight(g, customLog){
 function endNight(fromEndScreen){
   const g = fragGain();
   if(!reachedCap() || g <= 0 || !S.seenBad){
-    if(reachedCap() && g <= 0) toast('这一夜还没走到尽头');
+    if(reachedCap() && g <= 0) toast('这一夜还没跑到头');
     return;
   }
   if(S.challenge){ abortChallenge(); return; }
@@ -2063,7 +2047,7 @@ function updateFinal(){
   if(!btn || !ds || !title) return;
   if(S.fx){
     title.textContent = '永动轮已启动';
-    ds.textContent = '这一夜的火已经烧到尽头了。';
+    ds.textContent = '这一夜的火烧到头了。';
     btn.disabled = true;
     btn.classList.remove('ready');
     return;
@@ -2074,27 +2058,23 @@ function updateFinal(){
   if(S.challenge || S.hiddenCat){
     const ready = capped && storageMax() >= GOOD_STORAGE && S.ip >= cost;
     ds.textContent = ready
-      ? '这一次，图纸上的每个数都严丝合缝了——按下开关吧'
-      : ((S.hiddenCat ? '这一夜还不算完' : '挑战进行中') + ' · 点击查看距离突破还差多少');
+      ? '火候与上限均已达标，点击装上永动轮'
+      : ((S.hiddenCat ? '无转生路线' : '挑战模式') + ' · 点击查看当前达标进度');
     btn.disabled = false;
     btn.classList.toggle('ready', ready);
     return;
   }
   if(!capped){
     const pct = S.capRun > 0 ? Math.min(100, Math.floor(S.run / S.capRun * 100)) : 0;
-    if(pct < 35) ds.textContent = '研究还远不够充分（' + pct + '%），桌上的算式还缺一大截';
-    else if(pct < 75) ds.textContent = '离设想还差些火候（' + pct + '%），再多推演一会儿吧';
-    else ds.textContent = '隐约摸到这一夜的边界了（' + pct + '%），再添一把柴';
+    ds.textContent = '这一夜进度 ' + pct + '% · 跑满上限后可启动';
     btn.disabled = true;
     btn.classList.remove('ready');
   } else if(S.ip < cost){
-    ds.textContent = '这一夜似乎已经研究到尽头了……再蓄一点能量就能试机（' + fmt(S.ip) + ' / ' + fmt(cost) + '）';
+    ds.textContent = '这一夜已到头 · 蓄能中（当前 ' + fmt(S.ip) + ' / 需 ' + fmt(cost) + '）';
     btn.disabled = true;
     btn.classList.remove('ready');
   } else {
-    ds.textContent = enoughForGoodEnding()
-      ? '这一次，图纸上的每个数都严丝合缝了——按下开关吧'
-      : '今晚能做的都做尽了，按下开关看看结果吧';
+    ds.textContent = '火候到了，点击装上永动轮';
     btn.disabled = false;
     btn.classList.add('ready');
   }
