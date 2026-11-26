@@ -1,0 +1,251 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>永动轮实验室日常 · 小猫监督官</title>
+<meta name="tag" content="放置 · 养成">
+<meta name="description" content="十九世纪末的出租屋，两个学生和一只猫。他们想造一台永动的机器，代价是每一个天亮。">
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAyklEQVR4nJ2TsRHDIAxFv+hcu/QqWSoLZJWs4NojZIoUpjMtlEqRCBOCBJd35/Mhie8vnQx8YGaGQS/vyiKtuJfPQgAQ1w0+JHADHxLiulmGTiEAWOYJAOBD+npLvAsz837ElpmM5E2RksvtaZ41MUdENOb7jVpfWxce13uzNbM9EdTm1J3PiIgmVrtzben+hwHkvRt203JVx2io9woi+rnnxOIIUleKSEydkSVe/kLLPJ271ZqTdt6PmJ/SWd7Sf2elJsv9qHfF4gXsWNrsDQpYlQAAAABJRU5ErkJggg==">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<button id="themeToggle" class="themeToggle" title="切换昼夜">☀</button>
+<button id="setBtn" title="设置">⚙</button>
+<button id="helpBtn" title="实验室守则（说明）">?</button>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">PERPETUAL WHEEL · 1890s</div>
+    <h1>永动轮实验室日常<small>两位未来的大发明家和小猫监督官</small></h1>
+  </header>
+
+  <div class="ticker" id="ticker" title="点击换一条">猫蹲在桌角，看着煤油灯把影子拉得很长。</div>
+
+  <div class="layout">
+    <div class="col-main">
+  <div class="panel scene">
+    <canvas id="scene" width="192" height="108"></canvas>
+    <div class="tierbar"><span id="tierFill"></span></div>
+    <div class="cap"><span><b id="sceneName">学院 · 借来的地下室</b><br><i id="sceneDesc">墙上有潮气，电流计的指针第一次自己动了起来。</i></span></div>
+  </div>
+
+  <div class="panel stats-panel">
+    <div class="res">
+      <span class="num" id="ip">0</span>
+      <span class="unit">能量 <b id="unitLbl" style="color:#b79a6a;font-weight:400"></b></span>
+    </div>
+    <div class="rate" id="rateLine">每秒 <b>0</b> · 稳定性系数 ×1.00</div>
+
+    <div class="stab">
+      <div class="lab"><span>系统稳定性</span><b id="stabVal">100%</b></div>
+      <div class="bar" id="stabBar"><span id="stabFill"></span></div>
+      <div class="heat" id="heatLine">发热 0.8 / 散热 1.0 · 净 +0.2</div>
+    </div>
+
+    <div class="cats">
+      <button class="ab" id="ab1"><b>踩踏板</b><small>立刻 8 秒产出</small><div class="cd"></div></button>
+      <button class="ab" id="ab2"><b>呼噜声</b><small>稳定性 +22</small><div class="cd"></div></button>
+      <button class="ab" id="ab3"><b>尾巴扫纸</b><small>20 秒 ×2.5</small><div class="cd"></div></button>
+    </div>
+    <div class="catsHint">技能被小猫接管了（三个按钮都由猫触发）</div>
+  </div>
+
+    </div>
+    <div class="col-side">
+  <div class="tabs">
+    <button data-tab="shop" class="on">工位</button>
+    <button data-tab="shelf">收藏室</button>
+    <button data-tab="re">记忆碎片</button>
+    <button data-tab="log">日志</button>
+  </div>
+
+  <div class="tab-body">
+  <div class="panel tab-panel" id="tab-shop">
+    <button class="launch-btn" id="wheelLaunchBtn" disabled>
+      <b id="wheelLaunchTitle">尝试启动永动轮</b>
+      <small id="wheelLaunchDesc">要等这一夜跑到头，才装得上。</small>
+    </button>
+    <div class="shopTopBar">
+      <div class="sub" id="shopSub">
+        <button data-g="her" class="on">赫尔曼</button>
+        <button data-g="alv">阿尔瓦</button>
+        <button data-g="cat">小猫</button>
+      </div>
+      <div class="bulk" id="bulkBar" title="批量购买">
+        <button data-b="1" class="on">×1</button>
+        <button data-b="10">×10</button>
+        <button data-b="max">Max</button>
+      </div>
+    </div>
+    <div id="shopList"></div>
+    <div class="foot" id="shopHint">两个人在同一间屋子里，一点点的事。</div>
+  </div>
+
+  <div class="panel tab-panel" id="tab-shelf" style="display:none">
+    <div id="shelfList"></div>
+  </div>
+
+  <div class="panel tab-panel rebirth" id="tab-re" style="display:none">
+    <div class="big">
+      <div class="frag" id="fragTotal">0</div>
+      <small>记忆碎片 · 每片 +3.5% 全局产出与储存上限</small>
+    </div>
+    <p>结束这一夜会把这里的一切清空：能量、设备、两个人的状态。留下的只有记忆碎片，和架子上那些旧东西。</p>
+    <p id="reInfo"></p>
+    <button class="btn" id="reBtn">结束这一夜<small id="reSub">还差一点</small></button>
+    <button class="reset" id="catGo" style="display:none">猫甩了甩尾巴，走出了门</button>
+    <button class="reset" id="catHidden" style="display:none">猫还坐在门口，好像在等谁</button>
+  </div>
+
+  <div class="panel tab-panel" id="tab-log" style="display:none">
+    <div class="sub" id="logSub" style="margin-bottom:10px">
+      <button data-lf="all" class="on">全部日志</button>
+      <button data-lf="event">仅看事件</button>
+    </div>
+    <div class="log" id="logBox"></div>
+  </div>
+  </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="setView">
+  <div class="setwrap">
+    <div class="catbar">
+      <span class="ct">设置</span>
+      <button id="setClose">← 返回</button>
+    </div>
+    <div class="panel">
+      <div class="sec">存档</div>
+      <button class="setrow" id="setExport">导出存档<small>下载一份 JSON，备份或换设备用</small></button>
+      <button class="setrow" id="setImport">导入存档<small>用 JSON 覆盖当前进度</small></button>
+      <button class="setrow" id="setCopyCode">复制存档码<small>生成一段文本存档码，方便手机浏览器或换设备备份</small></button>
+      <button class="setrow" id="setPasteCode">粘贴存档码<small>粘贴之前复制的存档码，覆盖当前进度</small></button>
+      <input type="file" id="setFile" accept=".json,application/json" style="display:none">
+      <div class="sec" id="setChSec" style="display:none">挑战</div>
+      <button class="setrow" id="setChallenge" style="display:none"></button>
+      <div class="sec">关于与反馈</div>
+      <button class="setrow" id="setChangelog">更新日志<small>查看近期改动记录 · 当前版本 v<span class="appVer">1.2</span></small></button>
+      <button class="setrow" id="setFeedback">联系开发者 / 反馈建议<small>eleanorsch@outlook.com · 点击复制邮箱地址</small></button>
+      <div class="aboutnote">
+        遇到 Bug、有数值建议或想聊剧情，欢迎发邮件至 <a href="mailto:eleanorsch@outlook.com?subject=%E6%B0%B8%E5%8A%A8%E8%BD%AE%E5%AE%9E%E9%AA%8C%E5%AE%A4%E5%8F%8D%E9%A6%88">eleanorsch@outlook.com</a>。<br>
+        v<span class="appVer">1.2</span> · 《第五人格》同人二创 · 免费游玩，角色版权归原作者所有。
+      </div>
+      <div class="sec">危险</div>
+      <button class="setrow danger" id="setWipe">清空全部存档<small>碎片、收藏、小猫、挑战快照全部消失</small></button>
+    </div>
+  </div>
+</div>
+
+  <div id="helpView">
+  <div class="setwrap">
+    <div class="catbar">
+      <span class="ct">实验室守则 · 小猫备忘</span>
+      <button id="helpClose">← 返回</button>
+    </div>
+    <div class="panel helpdoc">
+      <div class="sec">一、 各项数值的含义</div>
+      <ul class="helplist">
+        <li><b>能量与储存上限</b>：实验产出的核心资源，用于升级工位。当前能量装满上限时会暂停进水，需先花掉一部分；本轮累计能量达到上限时，代表这一夜已经跑到头。</li>
+        <li><b>每秒产出</b>：由赫尔曼的基础产出、系统稳定性系数、小猫全局倍率、事件本轮加成与记忆碎片共同相乘决定。</li>
+        <li><b>系统稳定性（0% ~ 100%）</b>：决定产出效率（满值 100%，最低保留 25% 产出），会根据当前的散热与发热比例自动向平衡点缓动。</li>
+        <li><b>发热与散热</b>：升级<b>赫尔曼</b>提高基础产出，但会增加发热；升级<b>阿尔瓦</b>提高散热，既能稳住系统效率，也能抬高本轮的能量储存上限。</li>
+        <li><b>小猫技能</b>：主界面三个按钮均由小猫触发，可用于手动获取爆发能量、紧急回稳或开启短时倍率。</li>
+      </ul>
+
+      <div class="sec">二、 散热比怎么算、怎么提供加成？</div>
+      <ul class="helplist">
+        <li><b>计算方式</b>：散热比 = <b>阿尔瓦总散热 ÷ 当前总发热</b>（发热随赫尔曼产出呈次线性增长，不会无限甩开散热）。</li>
+        <li><b>稳定效率</b>：散热比越高，系统稳定性的平衡点越高，机器运行越平稳。</li>
+        <li><b>碎片收益曲线</b>：散热比存在一个最佳甜点区（约 <b>×2.60</b> 左右）。热度行右侧会实时提示 <b>偏热 / 刚好（碎片峰值） / 过冷</b>；越接近「刚好」，结算收益越高，偏热或过冷都会打折（保留最低保底）。</li>
+      </ul>
+
+      <div class="sec">三、 记忆碎片怎么获取？</div>
+      <ul class="helplist">
+        <li><b>获取条件</b>：本轮累计能量跑满储存上限后，结束这一夜即可获得记忆碎片，每片永久提供 <b>+3.5% 全局产出与储存上限</b>。</li>
+        <li><b>注意升级阿尔瓦</b>：碎片数量取决于结算时的<b>散热比</b>与当前周目深度，不看挂机时长。如果只顾着买赫尔曼冲产出，散热比过低会让碎片大打折扣；记得同步升级<b>阿尔瓦</b>的散热设备，既能抬高上限，也能把散热比调到「刚好」区间再结算。</li>
+      </ul>
+
+      <div class="sec">四、 哪些事件只会出现一次？</div>
+      <ul class="helplist">
+        <li><b>里程碑事件（永久唯一）</b>：达到特定关键进度节点时触发，<b>跨周目永远只出现一次</b>。</li>
+        <li><b>普通随机事件（本轮不重复）</b>：随当前场景在挂机时随机触发（另有部分小猫日常事件全阶段可见）。同一事件在<b>本轮内</b>不会重复出现，进入下一轮后仍有可能再次遇到，方便尝试不同选项。</li>
+        <li><b>剧情回看</b>：所有触发过的事件记录都会永久保存在<b>「日志 → 仅看事件」</b>中，跨周目不会清空。</li>
+      </ul>
+
+      <div class="sec">五、 事件里的「本轮产出 +X%」范围是什么？</div>
+      <ul class="helplist">
+        <li><b>生效范围</b>：仅对<b>当前这一轮（本周目）</b>的主线每秒能量产出生效，与稳定性、小猫倍率、记忆碎片等相乘叠加。</li>
+        <li><b>叠加与重置</b>：同一轮内多次事件获得的「本轮产出」会直接相加，单轮最高叠加至 <b>+25%</b>；结束这一夜进入下一轮后归零重算。标明「永久」的效果则会跨周目一直保留。</li>
+      </ul>
+      <div class="aboutnote" style="margin-top:14px;padding-top:10px;border-top:1px solid var(--line)">
+        反馈与联系开发者：<a href="mailto:eleanorsch@outlook.com?subject=%E6%B0%B8%E5%8A%A8%E8%BD%AE%E5%AE%9E%E9%AA%8C%E5%AE%A4%E5%8F%8D%E9%A6%88">eleanorsch@outlook.com</a><br>
+        v<span class="appVer">1.2</span> · 《第五人格》同人二创 · 免费游玩，角色版权归原作者所有。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="changelogView">
+  <div class="setwrap">
+    <div class="catbar">
+      <span class="ct">更新日志</span>
+      <button id="changelogClose">← 返回</button>
+    </div>
+    <div class="panel">
+      <div id="changelogList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="catView">
+    <div class="catwrap">
+      <div class="catbar">
+        <span class="ct">小猫 · 小鱼工厂</span>
+        <button id="catBack">← 返回</button>
+      </div>
+      <div class="catsc"><canvas id="catScene" width="192" height="108"></canvas></div>
+      <div class="panel">
+        <div class="res" style="padding:0 0 4px">
+          <span class="num" id="catIp" style="font-size:22px">0</span>
+          <span class="unit">鱼干</span>
+        </div>
+        <div class="rate" id="catLine" style="margin-bottom:10px">每秒 <b>0</b></div>
+        <div id="catList"></div>
+      </div>
+    </div>
+  </div>
+
+<div id="capBanner">
+  <div class="t" id="capTitle">这一夜的火烧到头了</div>
+  <div class="d" id="capDesc">最后一块还在桌上。</div>
+  <b id="capGo">装上最后一块</b>
+</div>
+
+<div id="endnight">
+  <div class="inner">
+    <div class="ln" id="endLines"></div>
+    <button id="endnightBtn">结束这一夜</button>
+  </div>
+</div>
+
+<div class="event" id="event">
+  <div class="box">
+    <div class="k" id="evKicker">INTERLUDE</div>
+    <div class="t" id="evTitle"></div>
+    <div class="d" id="evDesc"></div>
+    <div class="opts" id="evOpts"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="balance.js"></script>
+<script src="story.js"></script>
+<script src="ticker.js"></script>
+<script src="changelog.js"></script>
+<script src="scene.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
