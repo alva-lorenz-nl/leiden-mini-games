@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0e17" />
+  <meta name="description" content="《卢卡的“永动”实验手记》—— 纯前端放置增量小游戏。从仓鼠跑轮、黄油猫到超导线圈与量子真空，帮卢卡在阿尔瓦教授的红笔洗礼下冲击永动专利！" />
+  <meta property="og:title" content="卢卡的“永动”实验手记 · 放置增量小游戏" />
+  <meta property="og:description" content="10 级物理/电磁/AI 组件 · 三层转生 · 评审团质询挑战 · 突发随机事件，打开即玩、本地自动存档。" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0e17'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%232dd4bf' stroke-width='3' stroke-dasharray='8 5'/%3E%3Cpath d='M35 14L21 35h11l-3 15 14-21H32l3-15z' fill='%23fbbf24'/%3E%3C/svg%3E" />
+  <title>卢卡的“永动”实验手记 · v3.2.6</title>
+  <link rel="stylesheet" href="style.css?v=3.2.6" />
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- 顶部导航栏 -->
+  <header class="topbar">
+    <div class="brand">
+      <h1>卢卡的“永动”实验手记</h1>
+      <span class="badge" id="stageBadge">阶段 I</span>
+      <span class="brand-sub mono" id="versionTag">v3.2.6</span>
+    </div>
+    <div class="util-actions">
+      <button id="themeToggleBtn" class="ghost" onclick="toggleTheme()" title="切换赛博实验室 / 复古手记主题">⚡ 赛博风</button>
+      <button id="muteSfxBtn" class="ghost" onclick="handleToggleMute()">🔊 音效</button>
+      <button class="ghost" onclick="handleShareProgress()">📤 分享战绩</button>
+      <button class="ghost" onclick="openChangelogModal()">📋 更新日志</button>
+      <button class="ghost" onclick="openAboutModal()">✉️ 联系开发者</button>
+      <button class="primary" onclick="openSettingsModal()">⚙️ 设置与存档</button>
+    </div>
+  </header>
+
+  <!-- 实验室快讯 -->
+  <div class="ticker-wrap" id="tickerBar" onclick="handleTickerClick()" style="cursor:pointer;" title="点击实验室快讯">
+    <span class="ticker-tag">实验室快讯</span>
+    <div class="ticker-viewport">
+      <span class="ticker-text" id="tickerText">正在连接实验室广播……</span>
+    </div>
+  </div>
+
+  <!-- 金曲奇式随机事件横幅 -->
+  <div class="event-banner" id="eventBanner">
+    <div>
+      <strong style="color: var(--gold);" id="eventBannerTitle">✨ 突发事件！</strong>
+      <div class="muted" style="color: #fef3c7;" id="eventBannerDesc"></div>
+    </div>
+    <button class="event-btn" id="eventActionBtn" onclick="claimRandomEvent()">立刻响应！</button>
+  </div>
+
+  <!-- 评审团质询挑战状态横幅 -->
+  <div class="event-banner" id="challengeBanner" style="background: linear-gradient(90deg, rgba(46, 16, 101, 0.92), rgba(69, 10, 10, 0.92)); border-color: var(--purple);">
+    <div>
+      <strong style="color: #e9d5ff;" id="chBannerTitle">⚖️ 质询挑战中</strong>
+      <div class="muted" style="color: #f3e8ff;" id="chBannerProgress"></div>
+    </div>
+    <div class="row">
+      <button class="primary" id="chCompleteBtn" onclick="completeChallenge()" disabled>尚未达标</button>
+      <button class="thesis-btn" onclick="exitChallenge()">退出挑战</button>
+    </div>
+  </div>
+
+  <!-- 调参面板（默认隐藏，控制台 toggleTuning() 可呼出） -->
+  <div class="card" id="tuningCard" style="display: none;">
+    <div class="card-header">
+      <h2>实时数值调参面板（测试用）</h2>
+      <button class="primary" onclick="spawnRandomEvent()">立即刷新随机事件</button>
+    </div>
+    <div class="tuning-grid">
+      <div>
+        <label class="muted">价格增长率倍率</label>
+        <input type="number" id="tuneGrowthMult" step="0.01" min="0.5" max="1.5" value="1.00" onchange="updateTuning()" />
+      </div>
+      <div>
+        <label class="muted">论文初稿门槛 (本轮累计E)</label>
+        <input type="number" id="tuneThesisReq" step="50000" min="500" value="25000000" onchange="updateTuning()" />
+      </div>
+      <div>
+        <label class="muted">正式答辩门槛 (当前 RP)</label>
+        <input type="number" id="tuneDefenseReq" step="1000" min="100" value="10000" onchange="updateTuning()" />
+      </div>
+      <div>
+        <label class="muted">时间加速倍率 (仅测试)</label>
+        <input type="number" id="tuneTimeScale" step="1" min="1" max="100" value="1" onchange="updateTuning()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 主体双栏工作区 -->
+  <div class="workspace">
+
+    <!-- 左侧：固定主控台 -->
+    <aside class="sidebar">
+      <!-- 核心能量与点击 -->
+      <section class="card hero-card">
+        <div class="energy-display" id="energyDisplayBox">
+          <div class="em-orb-wrap" id="emOrbWrap" onclick="manualClick()" title="点击电磁球扰动实验台">
+            <svg class="em-orb-svg" viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <radialGradient id="orbCoreGrad" cx="42%" cy="38%" r="58%">
+                  <stop offset="0%" class="orb-stop-inner" />
+                  <stop offset="55%" class="orb-stop-mid" />
+                  <stop offset="100%" class="orb-stop-outer" />
+                </radialGradient>
+              </defs>
+              <!-- 外圈电磁场轨道 -->
+              <g class="orb-ring-cw">
+                <ellipse cx="60" cy="60" rx="50" ry="20" transform="rotate(-24 60 60)" class="orb-orbit" />
+                <circle cx="105" cy="40" r="3.2" class="orb-electron" />
+              </g>
+              <g class="orb-ring-ccw">
+                <ellipse cx="60" cy="60" rx="50" ry="20" transform="rotate(36 60 60)" class="orb-orbit orb-orbit-2" />
+                <circle cx="20" cy="31" r="2.8" class="orb-electron orb-electron-2" />
+              </g>
+              <!-- 虚线磁感环 -->
+              <circle cx="60" cy="60" r="40" class="orb-halo" />
+              <!-- 中心电磁球体 -->
+              <circle cx="60" cy="60" r="24" fill="url(#orbCoreGrad)" class="orb-core" />
+              <!-- 球内电弧折线 -->
+              <path d="M46 62 L55 53 L59 61 L68 50 L64 61 L74 58" class="orb-arc" />
+              <!-- 玻璃高光 -->
+              <ellipse cx="52" cy="49" rx="7" ry="4" transform="rotate(-30 52 49)" class="orb-glint" />
+            </svg>
+          </div>
+          <div class="energy-label">当前有效能量 (E)</div>
+          <div class="energy-val mono" id="energyVal">0</div>
+          <div class="eps-pill mono">⚡ <span id="epsVal">0</span> / 秒</div>
+          <div class="buff-bar" id="buffBar"></div>
+        </div>
+
+        <button id="manualClickBtn" class="clicker-btn" onclick="manualClick()">
+          <span>🔧 手动扰动实验台</span>
+          <span class="clicker-power mono">+<span id="clickVal">1</span> / 次</span>
+        </button>
+        <span id="critFlash" class="crit-flash"></span>
+
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="mini-stat-label">实验报告</div>
+            <div class="mini-stat-val mono" style="color: var(--blue);" id="reportVal">0 (×1.0)</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">红笔批注 (RP)</div>
+            <div class="mini-stat-val mono" style="color: var(--red-soft);" id="rpVal">0</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-label">专利点数 (PP)</div>
+            <div class="mini-stat-val mono" style="color: var(--purple);" id="ppVal">0</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 三层转生进度与操作 -->
+      <section class="card prestige-card">
+        <div class="card-header" style="margin-bottom: 10px;">
+          <h2>学术推进</h2>
+          <span class="muted mono" id="defenseCountBadge">已答辩 0 次</span>
+        </div>
+
+        <div class="prestige-list">
+          <div class="prestige-item" id="prestigeItemL1">
+            <div class="prestige-head">
+              <strong style="color: var(--blue);">实验报告</strong>
+              <span class="muted mono" id="reportProgText">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill fill-blue" id="reportProgBar"></div></div>
+            <button id="reportBtn" class="report-btn" onclick="requestPrestigeConfirm('report')" disabled>提交实验报告</button>
+          </div>
+
+          <div class="prestige-item" id="prestigeItemL2" style="display: none;">
+            <div class="prestige-head">
+              <strong style="color: var(--red-soft);">论文初稿</strong>
+              <span class="muted mono" id="thesisProgText">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill fill-red" id="thesisProgBar"></div></div>
+            <button id="thesisBtn" class="thesis-btn" style="width:100%;" onclick="requestPrestigeConfirm('thesis')" disabled>提交论文初稿</button>
+          </div>
+
+          <div class="prestige-item" id="prestigeItemL3" style="display: none;">
+            <div class="prestige-head">
+              <strong style="color: var(--purple);">正式答辩</strong>
+              <span class="muted mono" id="defenseProgText">0%</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill fill-purple" id="defenseProgBar"></div></div>
+            <button id="defenseBtn" class="defense-btn" onclick="requestPrestigeConfirm('defense')" disabled>正式答辩 / 申请专利</button>
+          </div>
+
+          <div id="prestigeHiddenHint" class="muted" style="font-size:11.5px; text-align:center; padding:3px 0; display:none;"></div>
+        </div>
+
+        <div class="prestige-meta mono" id="prestigeHints"></div>
+      </section>
+
+      <!-- 实验日志 -->
+      <section class="card log-card">
+        <div class="card-header" style="margin-bottom: 8px;">
+          <h2>实验日志</h2>
+          <span class="muted">实时记录</span>
+        </div>
+        <div class="log-box" id="logBox"></div>
+      </section>
+    </aside>
+
+    <!-- 右侧：功能工作区 -->
+    <main class="main-area">
+      <!-- 主导航标签 -->
+      <nav class="tab-bar">
+        <button id="tabLabBtn" class="tab-btn active-tab" onclick="switchTab('lab')">实验台</button>
+        <button id="tabShopBtn" class="tab-btn" onclick="switchTab('shop')">红笔商店<span class="tab-pill mono" id="tabRpBadge">0</span></button>
+        <button id="tabAutoBtn" class="tab-btn" onclick="switchTab('auto')">自动化</button>
+        <button id="tabDefenseBtn" class="tab-btn" onclick="switchTab('defense')">答辩与挑战</button>
+        <button id="tabAchBtn" class="tab-btn" onclick="switchTab('ach')">成就相册<span class="tab-pill mono" id="tabAchBadge">0</span></button>
+        <button id="tabStatsBtn" class="tab-btn" onclick="switchTab('stats')">统计与倍率</button>
+      </nav>
+
+      <!-- 1. 实验台 -->
+      <div id="tabLab">
+        <div class="boost-grid" id="boostGrid" style="display: none;">
+          <section class="boost-card" id="tickspeedCard" style="display: none;">
+            <div>
+              <div class="between">
+                <strong style="font-size: 13.5px; color: var(--accent);">⏱️ 实验台主频超频</strong>
+                <span class="badge mono" id="tsLevelBadge">Lv.0 · ×1.00</span>
+              </div>
+              <div class="muted" id="tsDesc" style="margin-top: 4px;"></div>
+            </div>
+            <div class="row">
+              <button id="tsBuyOneBtn" class="primary mono" style="flex: 1;" onclick="if(buyTickspeed(false)){ if(typeof SFX!=='undefined') SFX.playClick(); renderAll(); }">超频 +1</button>
+              <button id="tsBuyMaxBtn" class="mono" onclick="if(buyTickspeed(true)){ if(typeof SFX!=='undefined') SFX.playClick(); renderAll(); }">买满</button>
+            </div>
+          </section>
+
+          <section class="boost-card sac-card" id="sacrificeCard" style="display: none;">
+            <div>
+              <div class="between">
+                <strong style="font-size: 13.5px; color: var(--red-soft);">🔥 实验台过载献祭</strong>
+                <span class="badge red mono" id="sacCurBadge">L4 ×1.00</span>
+              </div>
+              <div class="muted" id="sacDesc" style="margin-top: 4px;"></div>
+            </div>
+            <button id="sacActionBtn" class="thesis-btn mono" onclick="performSacrifice()" disabled>拆解 L1~L3 装置进行过载</button>
+          </section>
+        </div>
+
+        <section class="card" id="labUpgradesCard" style="margin-bottom: 12px; display: none;">
+          <div class="card-header">
+            <h2>常规实验升级 <span class="muted" style="font-weight:400;">（本轮生效）</span></h2>
+            <button id="hideBoughtBtn" class="ghost" onclick="toggleHideBoughtLab()">隐藏已购：关</button>
+          </div>
+          <div class="upgrade-grid" id="labUpgradesContainer"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>实验组件与系统层级</h2>
+            <div class="row">
+              <button id="compactModeBtn" class="ghost" onclick="toggleCompactMode()">简洁视图：关</button>
+              <div class="seg-group">
+                <button id="buy1Btn" class="active-toggle" onclick="setBuyMode(1)">×1</button>
+                <button id="buy10Btn" onclick="setBuyMode(10)">×10</button>
+                <button id="buyMaxBtn" onclick="setBuyMode('max')">MAX</button>
+              </div>
+              <button class="primary" onclick="buyAllMax()">全部买满 [M]</button>
+            </div>
+          </div>
+          <div class="units-list" id="unitsContainer"></div>
+        </section>
+      </div>
+
+      <!-- 2. 红笔批注商店 -->
+      <section class="card" id="tabShop" style="display: none;">
+        <div class="card-header">
+          <h2>阿尔瓦的「红笔批注」商店</h2>
+          <div class="muted mono">可用 RP：<strong style="color: var(--red-soft);" id="shopRpDisplay">0</strong> · 累计交论文：<strong id="draftCountDisplay">0</strong> 次</div>
+        </div>
+        <div class="upgrade-grid" id="shopContainer"></div>
+      </section>
+
+      <!-- 3. 自动化外包 -->
+      <section class="card" id="tabAuto" style="display: none;">
+        <div class="card-header">
+          <h2>实验室自动化外包模块</h2>
+          <div class="muted">按层级从高到低自动采购，消耗 RP 可缩短间隔（5s → 2s → 0.5s → 0.1s）</div>
+        </div>
+        <div id="autoContainer"></div>
+      </section>
+
+      <!-- 4. 专利答辩 & 质询挑战 -->
+      <div id="tabDefense" style="display: none;">
+        <section class="card" style="margin-bottom: 12px;">
+          <div class="card-header">
+            <h2>跨学科范式树（理论学分 TT）</h2>
+            <div class="muted mono" id="ttSummary"></div>
+          </div>
+          <div class="row" id="ttBuyRow" style="margin-bottom: 10px;"></div>
+          <div class="preset-grid" id="paradigmPresetsContainer"></div>
+          <div class="upgrade-grid" id="paradigmContainer"></div>
+        </section>
+
+        <section class="card" style="margin-bottom: 12px;">
+          <div class="card-header">
+            <h2>专利答辩里程碑（永久便利）</h2>
+          </div>
+          <div id="milestoneContainer"></div>
+        </section>
+
+        <section class="card" id="challengeCard" style="display: none;">
+          <div class="card-header">
+            <h2>评审团质询挑战（可重复通关 5 次）</h2>
+          </div>
+          <div class="muted" style="margin-bottom: 10px;">进入挑战将重置当前答辩轮进度，建议先在上方范式树洗点切换对应流派。</div>
+          <div class="upgrade-grid" id="challengeContainer"></div>
+        </section>
+      </div>
+
+      <!-- 5. 成就与相册 -->
+      <div id="tabAch" style="display: none;">
+        <section class="card" style="margin-bottom: 12px;">
+          <div class="card-header">
+            <h2>🏅 实验室成就墙 & 黑历史相册</h2>
+            <div class="muted mono" id="achSummary"></div>
+          </div>
+          <div class="upgrade-grid" id="achMainContainer"></div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>✨ 致敬彩蛋与隐藏成就</h2>
+            <div class="muted mono" id="achEasterSummary"></div>
+          </div>
+          <div class="upgrade-grid" id="achEasterContainer"></div>
+        </section>
+      </div>
+
+      <!-- 6. 统计与倍率拆解 -->
+      <div id="tabStats" style="display: none;">
+        <section class="card" style="margin-bottom: 12px;">
+          <div class="card-header">
+            <h2>📊 实验台综合档案</h2>
+            <span class="muted mono" id="statsRunTimeBadge">本轮运行 0 秒</span>
+          </div>
+          <div class="stats-grid" id="statsGeneralGrid"></div>
+          <div>
+            <div class="between" style="font-size: 12px;">
+              <strong>各层级实时产能占比（L1 ~ L4）</strong>
+              <span class="muted mono" id="layerShareLegend"></span>
+            </div>
+            <div class="layer-share-bar" id="layerShareBar"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <h2>🧮 全局产出倍率拆解</h2>
+            <span class="badge gold mono" id="statsTotalMultBadge">总计 ×1.00</span>
+          </div>
+          <table class="mult-table">
+            <thead>
+              <tr>
+                <th>加成来源</th>
+                <th>说明</th>
+                <th style="text-align:right;">倍率</th>
+              </tr>
+            </thead>
+            <tbody id="multBreakdownBody"></tbody>
+          </table>
+          <div class="muted" id="statsL4ExtraHint" style="margin-top: 10px; font-size: 12px;"></div>
+          <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span class="muted" id="throwEnergyHint" style="font-size: 11.5px;">实验台角落有一块微微发凉的空地。</span>
+            <button class="ghost" id="throwEnergyBtn" style="font-size: 11.5px; opacity: 0.78;" onclick="throwEnergyOnFloor()">把 10 点能量扔在地上</button>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- 页脚 -->
+  <footer>
+    <span>卢卡的“永动”实验手记</span>
+    <button class="footer-link mono" onclick="openChangelogModal()">v3.2.6 更新日志</button>
+    <span>·</span>
+    <button class="footer-link" onclick="openSettingsModal()">设置与存档</button>
+    <span>·</span>
+    <button class="footer-link" onclick="openAboutModal()">关于与联系开发者</button>
+    <span>·</span>
+    <span class="muted">本地自动存档 · 按 [M] 一键买满</span>
+  </footer>
+</div>
+
+<!-- 1. 阿尔瓦退稿单 / 离线报告 / 答辩弹窗 -->
+<div class="modal-backdrop" id="alvaModal" onclick="if(event.target===this) closeModal()">
+  <div class="modal-card alva-card">
+    <div class="stamp" id="modalStamp" onclick="handleStampClick()" style="cursor:pointer;" title="红色印章">退 稿 通 知</div>
+    <h2 style="color: var(--red-soft); margin-bottom: 6px;">实验室通知单</h2>
+    <p id="modalQuote" style="margin: 10px 0; font-size: 14px; color: var(--modal-quote); line-height: 1.6;"></p>
+    <div class="muted" id="modalReward" style="margin-bottom: 16px; color: var(--gold-soft);"></div>
+    <div class="between">
+      <label class="muted" style="cursor:pointer;">
+        <input type="checkbox" id="muteModalCheck" onchange="toggleMuteModal()" /> 之后不再弹出退稿单（仅写入日志）
+      </label>
+      <button class="primary" onclick="closeModal()">收下并继续实验</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. 黑历史 CG 预览弹窗 -->
+<div class="modal-backdrop" id="cgModal" onclick="if(event.target===this) closeCgModal()">
+  <div class="modal-card" style="max-width: 620px; border-color: var(--gold);">
+    <div class="modal-header">
+      <h2 id="cgModalTitle" style="color: var(--gold);">黑历史 CG</h2>
+      <button onclick="closeCgModal()">关闭</button>
+    </div>
+    <div id="cgMediaContainer"></div>
+  </div>
+</div>
+
+<!-- 3. 设置与存档管理弹窗 -->
+<div class="modal-backdrop" id="settingsModal" onclick="if(event.target===this) closeSettingsModal()">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>⚙️ 游戏设置与存档管理</h2>
+      <button onclick="closeSettingsModal()">关闭</button>
+    </div>
+
+    <div class="setting-section">
+      <h3>界面与显示</h3>
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">实验台视觉主题</div>
+          <div class="setting-desc">在深色「赛博实验室」与暖纸「复古手记」两种风格间自由切换</div>
+        </div>
+        <div class="seg-group">
+          <button id="setThemeCyberBtn" onclick="setTheme('cyber')">⚡ 赛博</button>
+          <button id="setThemeVintageBtn" onclick="setTheme('vintage')">📜 复古</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">大数显示格式</div>
+          <div class="setting-desc">切换科学计数法（1.25e6）、中文单位或纯乐子用的熵增模糊计数法</div>
+        </div>
+        <div class="seg-group">
+          <button id="setNotSciBtn" onclick="setNotation('sci')">科学计数</button>
+          <button id="setNotCnBtn" onclick="setNotation('cn')">中文单位</button>
+          <button id="setNotEntropyBtn" onclick="setNotation('entropy')">熵增模糊</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">组件简洁视图</div>
+          <div class="setting-desc">收起组件台词与物理科普，一屏查看更多层级</div>
+        </div>
+        <button id="setCompactBtn" onclick="toggleCompactMode()">关</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">隐藏已购常规升级</div>
+          <div class="setting-desc">自动收起本轮已经买完的常规实验升级</div>
+        </div>
+        <button id="setHideBoughtBtn" onclick="toggleHideBoughtLab()">关</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">顶部实验室快讯</div>
+          <div class="setting-desc">显示或隐藏顶部的滚动新闻跑马灯</div>
+        </div>
+        <button id="setTickerBtn" onclick="toggleTickerSetting()">开</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">点击飘字动效</div>
+          <div class="setting-desc">关闭后可减轻旧设备连点时的渲染开销</div>
+        </div>
+        <button id="setFloatTextBtn" onclick="toggleFloatTextSetting()">开</button>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <h3>声音与通知</h3>
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">实验台合成音效</div>
+          <div class="setting-desc">开启或关闭实验台交互与事件提示音</div>
+        </div>
+        <button id="setSfxBtn" onclick="handleToggleMute()">开</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">静音退稿 / 答辩弹窗</div>
+          <div class="setting-desc">开启后不再弹窗打断操作，所有退稿批注仅写入日志</div>
+        </div>
+        <button id="setMuteModalBtn" onclick="toggleMuteModalSetting()">关</button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-title">跳过提交前确认弹窗</div>
+          <div class="setting-desc">开启后点击实验报告、论文或答辩将直接执行重置</div>
+        </div>
+        <button id="setSkipConfirmBtn" onclick="toggleSkipPrestigeConfirmSetting()">关</button>
+      </div>
+    </div>
+
+    <div class="setting-section">
+      <div class="between" style="margin-bottom: 6px;">
+        <h3 style="margin: 0;">存档备份与迁移</h3>
+        <span class="muted mono" id="saveTimeDisplay">自动保存中</span>
+      </div>
+      <div class="row">
+        <button class="primary" onclick="handleManualSave()">💾 立即保存</button>
+        <button onclick="handleExportToBox()">📋 导出并复制存档</button>
+        <button onclick="handleCopyDiagnostic()">🩺 复制 Bug 诊断包</button>
+      </div>
+      <textarea id="saveDataBox" class="save-textarea" placeholder="点击「导出并复制存档」可在此查看 Base64 代码；或将他人的/备份的 Base64 存档粘贴到这里后点击下方导入。"></textarea>
+      <div class="between" style="margin-top: 8px;">
+        <button class="primary" onclick="handleImportFromBox()">📥 从上方文本框导入存档</button>
+        <button id="hardResetBtn" class="danger-ghost" onclick="openHardResetModal()">🗑️ 清空全部存档</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 更新日志弹窗 -->
+<div class="modal-backdrop" id="changelogModal" onclick="if(event.target===this) closeChangelogModal()">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>📋 更新日志</h2>
+      <button onclick="closeChangelogModal()">关闭</button>
+    </div>
+    <div id="changelogContainer"></div>
+  </div>
+</div>
+
+<!-- 5. 关于与联系开发者弹窗 -->
+<div class="modal-backdrop" id="aboutModal" onclick="if(event.target===this) closeAboutModal()">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>✉️ 关于与联系开发者</h2>
+      <button onclick="closeAboutModal()">关闭</button>
+    </div>
+    <div id="aboutContainer"></div>
+  </div>
+</div>
+
+<!-- 6. 转生前确认弹窗 -->
+<div class="modal-backdrop" id="prestigeConfirmModal" onclick="if(event.target===this) closePrestigeConfirmModal()">
+  <div class="modal-card" id="prestigeConfirmCard">
+    <div class="modal-header">
+      <div>
+        <h2 id="pcTitle">提交确认</h2>
+        <div class="muted" id="pcSubtitle" style="margin-top:2px;"></div>
+      </div>
+      <button onclick="closePrestigeConfirmModal()">取消</button>
+    </div>
+
+    <div class="confirm-box gain">
+      <strong style="color: var(--accent);">✨ 本次将获得以下加成</strong>
+      <ul id="pcGainList"></ul>
+    </div>
+
+    <div class="confirm-box reset">
+      <strong style="color: var(--red-soft);">🔄 以下内容将被重置</strong>
+      <ul id="pcResetList"></ul>
+    </div>
+
+    <div class="confirm-box keep">
+      <strong style="color: var(--blue);">🛡️ 以下进度将被保留</strong>
+      <ul id="pcKeepList"></ul>
+    </div>
+
+    <div class="between" style="margin-top: 14px;">
+      <label class="muted" style="cursor:pointer;">
+        <input type="checkbox" id="skipPrestigeConfirmCheck" onchange="toggleSkipPrestigeConfirmFromModal()" /> 以后不再弹出确认（可在设置中恢复）
+      </label>
+      <div class="row">
+        <button onclick="closePrestigeConfirmModal()">再攒一会儿</button>
+        <button id="pcConfirmBtn" class="primary" onclick="confirmPrestigeAction()">确认执行</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. 实验报告战绩分享弹窗 -->
+<div class="modal-backdrop" id="shareModal" onclick="if(event.target===this) closeShareModal()">
+  <div class="modal-card" style="max-width: 600px;">
+    <div class="modal-header">
+      <h2>📤 实验报告 · 战绩结算单</h2>
+      <button onclick="closeShareModal()">关闭</button>
+    </div>
+
+    <div class="share-controls">
+      <label class="muted" for="assistantNameInput" style="white-space:nowrap;">实验助手 ID：</label>
+      <input type="text" id="assistantNameInput" class="share-input" maxlength="24" placeholder="输入你的昵称 / ID（留空显示匿名实验助手）" oninput="onAssistantNameInput()" />
+      <button onclick="rerollShareComment()">🎲 换一条批语</button>
+    </div>
+    <div class="between" style="margin-bottom: 10px;">
+      <span class="muted" style="font-size: 12px;">战绩单与导出图片风格：</span>
+      <div class="seg-group">
+        <button id="shareStyleVintageBtn" onclick="setShareStyle('vintage')">📜 复古报告</button>
+        <button id="shareStyleCyberBtn" onclick="setShareStyle('cyber')">⚡ 赛博终端</button>
+      </div>
+    </div>
+
+    <div id="shareReportPreview" class="report-paper"></div>
+
+    <div class="row" style="margin-top: 14px; justify-content: space-between;">
+      <div class="row">
+        <button class="primary" onclick="handleDownloadShareImage()">🖼️ 生成并保存分享图</button>
+        <button onclick="handleCopyShareText()">📋 复制文字版战绩</button>
+      </div>
+      <span class="muted" style="font-size: 11px;">支持下载 PNG 或长按图片转发</span>
+    </div>
+
+    <div id="shareImgPreviewWrap" class="share-img-preview">
+      <div class="muted" style="margin-bottom: 6px;">✅ 分享图已生成（手机端可长按下方图片直接保存或发送给同好）</div>
+      <img id="shareGeneratedImg" alt="卢卡永动实验报告分享图" />
+    </div>
+  </div>
+</div>
+
+<!-- 8. 质询挑战确认弹窗 -->
+<div class="modal-backdrop" id="challengeConfirmModal" onclick="if(event.target===this) closeChallengeConfirmModal()">
+  <div class="modal-card" style="border-color: var(--purple);">
+    <div class="modal-header">
+      <div>
+        <h2 id="ccTitle" style="color: var(--purple);">⚖️ 确认接受质询挑战？</h2>
+        <div class="muted" id="ccSubtitle" style="margin-top:2px;"></div>
+      </div>
+      <button onclick="closeChallengeConfirmModal()">取消</button>
+    </div>
+
+    <div class="luca-quote" id="ccQuote" style="margin-bottom: 10px;"></div>
+
+    <div class="confirm-box gain">
+      <strong style="color: var(--accent);">🎯 挑战目标与通关奖励</strong>
+      <ul id="ccGoalList"></ul>
+    </div>
+
+    <div class="confirm-box reset">
+      <strong style="color: var(--red-soft);">🚫 挑战限制（不可操作 / 特殊规则）</strong>
+      <ul id="ccLimitList"></ul>
+    </div>
+
+    <div class="confirm-box reset">
+      <strong style="color: var(--red-soft);">🔄 进入挑战时会重置以下内容</strong>
+      <ul id="ccResetList"></ul>
+    </div>
+
+    <div class="confirm-box keep">
+      <strong style="color: var(--blue);">🎁 挑战开局发放 &amp; 🛡️ 永久保留内容</strong>
+      <ul id="ccKeepList"></ul>
+    </div>
+
+    <div class="between" style="margin-top: 14px;">
+      <span class="muted" style="font-size: 11.5px;">提示：挑战中途可随时在顶部横幅点击「退出挑战」</span>
+      <div class="row">
+        <button onclick="closeChallengeConfirmModal()">再准备一下</button>
+        <button id="ccConfirmBtn" class="defense-btn" style="width:auto;" onclick="confirmChallengeEntry()">确认接受质询</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. 清空全部存档确认弹窗 -->
+<div class="modal-backdrop" id="hardResetModal" style="z-index: 1050;" onclick="if(event.target===this) closeHardResetModal()">
+  <div class="modal-card" style="max-width: 480px; border-color: var(--red);">
+    <div class="modal-header">
+      <h2 style="color: var(--red-soft);">⚠️ 确认清空全部存档？</h2>
+      <button onclick="closeHardResetModal()">取消</button>
+    </div>
+
+    <div class="confirm-box reset">
+      <strong style="color: var(--red-soft);">🗑️ 此操作不可撤销，以下数据将被永久清除：</strong>
+      <ul>
+        <li>当前能量、所有实验组件、主频超频与常规实验升级</li>
+        <li>全部实验报告、红笔批注 (RP)、专利点数 (PP) 与范式树学分</li>
+        <li>质询挑战通关记录、全部已解锁成就、实验日志与本地设置</li>
+      </ul>
+    </div>
+
+    <div class="muted" style="margin-bottom: 14px; line-height: 1.55;">
+      建议先点击下方按钮导出并复制一份 Base64 存档备份，确认无误后再执行清空。
+    </div>
+
+    <div class="between">
+      <button onclick="handleExportToBox()">📋 先导出并复制备份</button>
+      <div class="row">
+        <button onclick="closeHardResetModal()">取消</button>
+        <button class="thesis-btn" onclick="confirmHardReset()">🗑️ 确认彻底清空</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 移动端悬浮一键买满按钮 -->
+<button id="mobileFabMaxAll" class="mobile-fab fab-visible" onclick="buyAllMax()" aria-label="全部买满">⚡ 买满</button>
+
+<!-- 顶部轻量通知条 -->
+<div class="top-notice" id="topNoticeBox"></div>
+
+<!-- 右上角成就解锁轻提示栈 -->
+<div class="ach-toast-stack" id="achToastStack"></div>
+
+<!-- 轻提示 Toast -->
+<div class="toast" id="toastBox"></div>
+
+<!-- 按依赖顺序加载模块（v3.2.6 刷新缓存） -->
+<script src="copy.js?v=3.2.6"></script>
+<script src="balance.js?v=3.2.6"></script>
+<script src="sfx.js?v=3.2.6"></script>
+<script src="engine.js?v=3.2.6"></script>
+<script src="ui.js?v=3.2.6"></script>
+</body>
+</html>
